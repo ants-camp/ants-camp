@@ -63,7 +63,7 @@ project(':apps:competition-service') {
     apply plugin: 'org.springframework.boot'
 }
 
-project(':apps:gateway-service') {
+project(':apps:api-gateway') {
     apply plugin: 'org.springframework.boot'
 }
 
@@ -88,5 +88,13 @@ project(':apps:user-service') {
 }
 
 project(':apps:portfolio-service') {
+    apply plugin: 'org.springframework.boot'
+}
+
+project(':apps:config-server') {
+    apply plugin: 'org.springframework.boot'
+}
+
+project(':apps:eureka-server') {
     apply plugin: 'org.springframework.boot'
 }
