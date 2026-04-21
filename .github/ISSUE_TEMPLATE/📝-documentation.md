@@ -1,7 +1,7 @@
 ---
 name: "\U0001F4DD documentation"
 about: Describe this issue templat문서화 이슈 템플릿e's purpose here.
-title: "\U0001F4DD "
+title: "\U0001F4DD [DOCS] "
 labels: ''
 assignees: ''
 
