@@ -1,11 +1,16 @@
 package io.antcamp.competitionservice.domain;
 
-import java.time.LocalDateTime;
+import io.antcamp.competitionservice.domain.vo.CompetitionPeriod;
+import io.antcamp.competitionservice.domain.vo.ParticipantCount;
+import io.antcamp.competitionservice.domain.vo.RegisterPeriod;
 import java.util.UUID;
+import lombok.Builder;
+import lombok.Getter;
 
 /**
  * 대회 도메인 클래스 (순수 도메인 모델 - JPA 의존성 없음)
  */
+@Getter
 public class Competition {
 
     private final UUID competitionId;
@@ -14,43 +19,34 @@ public class Competition {
     private CompetitionStatus status;
     private String description;
     private int firstSeed;
-    private LocalDateTime registerStartAt;
-    private LocalDateTime registerEndAt;
-    private LocalDateTime competitionStartAt;
-    private LocalDateTime competitionEndAt;
-    private int minParticipants;
-    private int maxParticipants;
-    private int currentRegisters;
+    private RegisterPeriod registerPeriod;
+    private CompetitionPeriod competitionPeriod;
+    private ParticipantCount participantCount;
 
-    // 생성자 (신규 대회 생성)
+    // 신규 대회 생성 - competitionId, status는 도메인이 직접 결정
+    @Builder(builderMethodName = "create")
     public Competition(
             String name,
             CompetitionType type,
             String description,
             int firstSeed,
-            LocalDateTime registerStartAt,
-            LocalDateTime registerEndAt,
-            LocalDateTime competitionStartAt,
-            LocalDateTime competitionEndAt,
-            int minParticipants,
-            int maxParticipants
+            RegisterPeriod registerPeriod,
+            CompetitionPeriod competitionPeriod,
+            ParticipantCount participantCount
     ) {
         this.competitionId = UUID.randomUUID();
         this.name = name;
         this.type = type;
-        this.status = CompetitionStatus.PREPARING; // 기본값
+        this.status = CompetitionStatus.PREPARING;
         this.description = description;
         this.firstSeed = firstSeed;
-        this.registerStartAt = registerStartAt;
-        this.registerEndAt = registerEndAt;
-        this.competitionStartAt = competitionStartAt;
-        this.competitionEndAt = competitionEndAt;
-        this.minParticipants = minParticipants;
-        this.maxParticipants = maxParticipants;
-        this.currentRegisters = 0; // 기본값
+        this.registerPeriod = registerPeriod;
+        this.competitionPeriod = competitionPeriod;
+        this.participantCount = participantCount;
     }
 
-    // 재구성용 생성자 (DB 조회 등)
+    // 재구성용 생성자 (toDomain() 전용)
+    @Builder(builderMethodName = "restore")
     public Competition(
             UUID competitionId,
             String name,
@@ -58,13 +54,9 @@ public class Competition {
             CompetitionStatus status,
             String description,
             int firstSeed,
-            LocalDateTime registerStartAt,
-            LocalDateTime registerEndAt,
-            LocalDateTime competitionStartAt,
-            LocalDateTime competitionEndAt,
-            int minParticipants,
-            int maxParticipants,
-            int currentRegisters
+            RegisterPeriod registerPeriod,
+            CompetitionPeriod competitionPeriod,
+            ParticipantCount participantCount
     ) {
         this.competitionId = competitionId;
         this.name = name;
@@ -72,55 +64,38 @@ public class Competition {
         this.status = status;
         this.description = description;
         this.firstSeed = firstSeed;
-        this.registerStartAt = registerStartAt;
-        this.registerEndAt = registerEndAt;
-        this.competitionStartAt = competitionStartAt;
-        this.competitionEndAt = competitionEndAt;
-        this.minParticipants = minParticipants;
-        this.maxParticipants = maxParticipants;
-        this.currentRegisters = currentRegisters;
+        this.registerPeriod = registerPeriod;
+        this.competitionPeriod = competitionPeriod;
+        this.participantCount = participantCount;
     }
 
     // ─── 도메인 행위 ──────────────────────────────────────────────────────
 
-    /**
-     * 참가 신청 가능 여부 확인
-     */
     public boolean isRegisterable() {
-        LocalDateTime now = LocalDateTime.now();
         return status == CompetitionStatus.PREPARING
-                && now.isAfter(registerStartAt)
-                && now.isBefore(registerEndAt)
-                && currentRegisters < maxParticipants;
+                && registerPeriod.isOpen()
+                && !participantCount.isFull();
     }
 
-    /**
-     * 참가 신청 처리 (현재 신청 인원 증가)
-     */
     public void register() {
         if (!isRegisterable()) {
             throw new IllegalStateException("현재 참가 신청이 불가능한 대회입니다.");
         }
-        this.currentRegisters++;
+        this.participantCount = participantCount.increment();
     }
 
-    /**
-     * 참가 신청 취소 처리 (현재 신청 인원 감소)
-     */
     public void cancelRegister() {
-        if (this.currentRegisters <= 0) {
-            throw new IllegalStateException("취소할 신청 인원이 없습니다.");
+        if (status != CompetitionStatus.PREPARING) {
+            throw new IllegalStateException("대회가 시작된 이후에는 참가 취소가 불가능합니다.");
         }
-        this.currentRegisters--;
+        this.participantCount = participantCount.decrement();
     }
 
-    /**
-     * 대회 시작 (최소 참가 인원 충족 시)
-     */
     public void startCompetition() {
-        if (currentRegisters < minParticipants) {
+        if (!participantCount.isMetMinimum()) {
             throw new IllegalStateException(
-                    String.format("최소 참가 인원(%d명)을 충족하지 못했습니다. 현재: %d명", minParticipants, currentRegisters)
+                    String.format("최소 참가 인원(%d명)을 충족하지 못했습니다. 현재: %d명",
+                            participantCount.getMin(), participantCount.getCurrent())
             );
         }
         if (status != CompetitionStatus.PREPARING) {
@@ -129,9 +104,6 @@ public class Competition {
         this.status = CompetitionStatus.ONGOING;
     }
 
-    /**
-     * 대회 종료
-     */
     public void finishCompetition() {
         if (status != CompetitionStatus.ONGOING) {
             throw new IllegalStateException("진행 중인 대회만 종료할 수 있습니다.");
@@ -139,67 +111,10 @@ public class Competition {
         this.status = CompetitionStatus.FINISHED;
     }
 
-    /**
-     * 대회 취소
-     */
     public void cancelCompetition() {
         if (status == CompetitionStatus.FINISHED) {
             throw new IllegalStateException("이미 종료된 대회는 취소할 수 없습니다.");
         }
         this.status = CompetitionStatus.CANCELED;
-    }
-
-    // ─── Getters ────────────────────────────────────────────────────────
-
-    public UUID getCompetitionId() {
-        return competitionId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public CompetitionType getType() {
-        return type;
-    }
-
-    public CompetitionStatus getStatus() {
-        return status;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public int getFirstSeed() {
-        return firstSeed;
-    }
-
-    public LocalDateTime getRegisterStartAt() {
-        return registerStartAt;
-    }
-
-    public LocalDateTime getRegisterEndAt() {
-        return registerEndAt;
-    }
-
-    public LocalDateTime getCompetitionStartAt() {
-        return competitionStartAt;
-    }
-
-    public LocalDateTime getCompetitionEndAt() {
-        return competitionEndAt;
-    }
-
-    public int getMinParticipants() {
-        return minParticipants;
-    }
-
-    public int getMaxParticipants() {
-        return maxParticipants;
-    }
-
-    public int getCurrentRegisters() {
-        return currentRegisters;
     }
 }
