@@ -19,9 +19,19 @@ repositories {
 }
 
 dependencies {
+    // common
+    implementation project(':common')
+
+    // spring
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // lombok
+    implementation 'org.projectlombok:lombok:1.18.42'
+
+    // websocket
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
 }
 
 tasks.named('test') {

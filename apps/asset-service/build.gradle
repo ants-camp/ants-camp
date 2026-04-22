@@ -6,7 +6,7 @@ plugins {
 
 group = 'io.antcamp'
 version = '0.0.1-SNAPSHOT'
-description = 'account-service'
+description = 'asset-service'
 
 java {
     toolchain {
@@ -22,6 +22,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {
