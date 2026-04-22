@@ -1,13 +1,13 @@
-package io.antcamp.accountservice;
+package io.antcamp.assetservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class AccountServiceApplication {
+public class AssetServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(AccountServiceApplication.class, args);
+        SpringApplication.run(AssetServiceApplication.class, args);
     }
 
 }
