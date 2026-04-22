@@ -8,18 +8,18 @@ COPY gradle ./gradle
 # common-libs 복사
 COPY common ./common
 
-# ranking-service 소스 복사
-COPY apps/ranking-service ./apps/ranking-service
+# competition-service 소스 복사
+COPY apps/api-gateway ./apps/api-gateway
 
 RUN chmod +x gradlew
-RUN ./gradlew :apps:ranking-service:clean :apps:ranking-service:build -x test --no-daemon
+RUN ./gradlew :apps:api-gateway:clean :apps:api-gateway:build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/apps/ranking-service/build/libs/*.jar app.jar
+COPY --from=builder /app/apps/api-gateway/build/libs/*.jar app.jar
 
-EXPOSE 8094
+EXPOSE 8080
 
 ENTRYPOINT ["java", "-jar", "app.jar"]
