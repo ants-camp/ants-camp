@@ -1,10 +1,10 @@
-package io.antcamp.accountservice;
+package io.antcamp.assetservice;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class AccountServiceApplicationTests {
+class AssetServiceApplicationTests {
 
     @Test
     void contextLoads() {

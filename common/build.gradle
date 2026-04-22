@@ -18,8 +18,12 @@ dependencies {
     annotationProcessor 'jakarta.persistence:jakarta.persistence-api'
 
     // lombok
+    implementation 'org.projectlombok:lombok:1.18.42'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // slf4j
+    implementation 'org.slf4j:slf4j-api:1.7.31'
 
     testImplementation platform('org.junit:junit-bom:5.10.0')
     testImplementation 'org.junit.jupiter:junit-jupiter'
