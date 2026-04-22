@@ -1,4 +1,8 @@
 package io.antcamp.competitionservice.domain;
 
-public class CompetitionStatus {
+public enum CompetitionStatus {
+    PREPARING,
+    ONGOING,
+    FINISHED,
+    CANCELED
 }

@@ -1,5 +1,6 @@
 package io.antcamp.competitionservice.infrastructure;
 
+import io.antcamp.competitionservice.domain.JoinHistory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;

@@ -5,7 +5,7 @@ import java.util.UUID;
 /**
  * 대회 참여자 명부 도메인 클래스 (순수 도메인 모델 - JPA 의존성 없음)
  */
-public class JoinHistorys {
+public class JoinHistory {
 
     private final UUID participantId;
     private final UUID userId;       // 유저 서버의 PK값 (외부 서비스)
@@ -13,7 +13,7 @@ public class JoinHistorys {
     private final UUID competitionId;
 
     // 신규 참가 등록 생성자
-    public JoinHistorys(UUID userId, String nickname, UUID competitionId) {
+    public JoinHistory(UUID userId, String nickname, UUID competitionId) {
         this.participantId = UUID.randomUUID();
         this.userId = userId;
         this.nickname = nickname;
@@ -21,7 +21,7 @@ public class JoinHistorys {
     }
 
     // 재구성용 생성자 (DB 조회 등)
-    public JoinHistorys(UUID participantId, UUID userId, String nickname, UUID competitionId) {
+    public JoinHistory(UUID participantId, UUID userId, String nickname, UUID competitionId) {
         this.participantId = participantId;
         this.userId = userId;
         this.nickname = nickname;

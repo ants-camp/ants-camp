@@ -1,5 +1,6 @@
 package io.antcamp.competitionservice.infrastructure;
 
+import io.antcamp.competitionservice.domain.Competition;
 import io.antcamp.competitionservice.domain.CompetitionStatus;
 import io.antcamp.competitionservice.domain.CompetitionType;
 import jakarta.persistence.Column;
