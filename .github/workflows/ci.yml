@@ -3,7 +3,8 @@ name: AntCamp CI
 on:
   pull_request:
     branches:
-      - [ "main", "dev" ]
+      - "main"
+      - "dev"
 jobs:
   spotless-check:
     runs-on: ubuntu-latest
