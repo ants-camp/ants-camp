@@ -9,16 +9,16 @@ COPY gradle ./gradle
 COPY common ./common
 
 # trade-service 소스 복사
-COPY trade-service ./trade-service
+COPY apps/trade-service ./apps/trade-service
 
 RUN chmod +x gradlew
-RUN ./gradlew :trade-service:clean :trade-service:build -x test --no-daemon
+RUN ./gradlew :apps:trade-service:clean :apps:trade-service:build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/trade-service/build/libs/*.jar app.jar
+COPY --from=builder /app/apps/trade-service/build/libs/*.jar app.jar
 
 EXPOSE 8084
 

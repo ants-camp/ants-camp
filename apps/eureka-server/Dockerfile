@@ -9,16 +9,16 @@ COPY gradle ./gradle
 COPY common ./common
 
 # eureka-service 소스 복사
-COPY eureka-server ./eureka-server
+COPY apps/eureka-server ./apps/eureka-server
 
 RUN chmod +x gradlew
-RUN ./gradlew :eureka-server:clean :eureka-server:build -x test --no-daemon
+RUN ./gradlew :apps:eureka-server:clean :apps:eureka-server:build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/eureka-server/build/libs/*.jar app.jar
+COPY --from=builder /app/apps/eureka-server/build/libs/*.jar app.jar
 
 EXPOSE 8761
 

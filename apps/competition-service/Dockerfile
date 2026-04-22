@@ -9,16 +9,16 @@ COPY gradle ./gradle
 COPY common ./common
 
 # competition-service 소스 복사
-COPY competition-service ./portfolio-service
+COPY apps/competition-service ./apps/competition-service
 
 RUN chmod +x gradlew
-RUN ./gradlew :competition-service:clean :competition-service:build -x test --no-daemon
+RUN ./gradlew :apps:competition-service:clean :apps:competition-service:build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/competition-service/build/libs/*.jar app.jar
+COPY --from=builder /app/apps/competition-service/build/libs/*.jar app.jar
 
 EXPOSE 8092
 
