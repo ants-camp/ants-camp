@@ -3,9 +3,10 @@ name: AntCamp CI
 on:
   pull_request:
     branches:
-      - [ "main", "dev" ]
+      - "main"
+      - "dev"
 jobs:
-  build:
+  bulid:
     runs-on: ubuntu-latest
 
     steps:
