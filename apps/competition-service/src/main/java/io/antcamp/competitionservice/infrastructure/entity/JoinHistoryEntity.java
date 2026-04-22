@@ -1,5 +1,6 @@
-package io.antcamp.competitionservice.infrastructure;
+package io.antcamp.competitionservice.infrastructure.entity;
 
+import common.entity.BaseEntity;
 import io.antcamp.competitionservice.domain.JoinHistory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,6 +10,9 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.util.UUID;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 /**
  * 대회 참여자 명부 JPA 엔티티 (p_join_historys 테이블 매핑)
@@ -23,7 +27,9 @@ import java.util.UUID;
                 )
         }
 )
-public class JoinHistoryEntity {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at is NULL")
+public class JoinHistoryEntity extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -37,16 +43,10 @@ public class JoinHistoryEntity {
     private String nickname;
 
     @Column(name = "competition_id", nullable = false)
-    private UUID competitionId;
-
-    protected JoinHistoryEntity() {
-    }
+    private UUID competitionId; // 대회 엔티티의 pk ( p_competitions.competition_id 참조 )
 
     // ─── 정적 팩토리 메서드 ────────────────────────────────────────────────
 
-    /**
-     * 도메인 → 엔티티 변환
-     */
     public static JoinHistoryEntity from(JoinHistory domain) {
         JoinHistoryEntity entity = new JoinHistoryEntity();
         entity.participantId = domain.getParticipantId();
@@ -56,33 +56,12 @@ public class JoinHistoryEntity {
         return entity;
     }
 
-    /**
-     * 엔티티 → 도메인 변환
-     */
     public JoinHistory toDomain() {
-        return new JoinHistory(
-                participantId,
-                userId,
-                nickname,
-                competitionId
-        );
-    }
-
-    // ─── Getters ────────────────────────────────────────────────────────
-
-    public UUID getParticipantId() {
-        return participantId;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public String getNickname() {
-        return nickname;
-    }
-
-    public UUID getCompetitionId() {
-        return competitionId;
+        return JoinHistory.restore()
+                .participantId(participantId)
+                .userId(userId)
+                .nickname(nickname)
+                .competitionId(competitionId)
+                .build();
     }
 }
