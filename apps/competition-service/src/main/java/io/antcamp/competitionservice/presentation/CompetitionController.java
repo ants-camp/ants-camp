@@ -24,7 +24,19 @@ public class CompetitionController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CreateCompetitionResponse create(@RequestBody @Valid CreateCompetitionRequest request) {
-        Competition competition = competitionService.create(CreateCompetitionCommand.from(request));
+        CreateCompetitionCommand command = new CreateCompetitionCommand(
+                request.name(),
+                request.type(),
+                request.description(),
+                request.firstSeed(),
+                request.registerStartAt(),
+                request.registerEndAt(),
+                request.competitionStartAt(),
+                request.competitionEndAt(),
+                request.minParticipants(),
+                request.maxParticipants()
+        );
+        Competition competition = competitionService.create(command);
         return CreateCompetitionResponse.from(competition);
     }
 }

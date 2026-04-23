@@ -136,14 +136,17 @@ public class Competition {
 
     // 대회 시작
     public void startCompetition() {
+        if (status != CompetitionStatus.PREPARING) {
+            throw new IllegalStateException("준비 중인 대회만 시작할 수 있습니다.");
+        }
+        if (!competitionPeriod.isOngoing()) {
+            throw new IllegalStateException("대회 진행 기간이 아닙니다.");
+        }
         if (!participantCount.isMetMinimum()) {
             throw new IllegalStateException(
                     String.format("최소 참가 인원(%d명)을 충족하지 못했습니다. 현재: %d명",
                             participantCount.getMin(), participantCount.getCurrent())
             );
-        }
-        if (status != CompetitionStatus.PREPARING) {
-            throw new IllegalStateException("준비 중인 대회만 시작할 수 있습니다.");
         }
         this.status = CompetitionStatus.ONGOING;
     }
@@ -152,6 +155,9 @@ public class Competition {
     public void finishCompetition() {
         if (status != CompetitionStatus.ONGOING) {
             throw new IllegalStateException("진행 중인 대회만 종료할 수 있습니다.");
+        }
+        if (competitionPeriod.isOngoing()) {
+            throw new IllegalStateException("대회 진행 기간 중에는 종료할 수 없습니다.");
         }
         this.status = CompetitionStatus.FINISHED;
     }
@@ -196,6 +202,9 @@ public class Competition {
         }
         if (competitionPeriod == null) {
             throw new IllegalArgumentException("대회 기간은 필수입니다.");
+        }
+        if (registerPeriod.getEndAt().isAfter(competitionPeriod.getStartAt())) {
+            throw new IllegalArgumentException("신청 종료일은 대회 시작일 이전(또는 동일)이어야 합니다.");
         }
         if (participantCount == null) {
             throw new IllegalArgumentException("참가 인원 정보는 필수입니다.");

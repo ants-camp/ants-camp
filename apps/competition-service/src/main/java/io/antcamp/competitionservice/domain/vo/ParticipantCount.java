@@ -7,11 +7,14 @@ public class ParticipantCount {
 
     private final int min;
     private final int max;
-    private int current;
+    private final int current;
 
-    public ParticipantCount(int min, int max, int current) {
+    private ParticipantCount(int min, int max, int current) {
         if (min > max) {
             throw new IllegalArgumentException("최소 인원은 최대 인원보다 클 수 없습니다.");
+        }
+        if (min < 0 || current < 0) {
+            throw new IllegalArgumentException("참가 인원은 0 이상이어야 합니다.");
         }
         this.min = min;
         this.max = max;
@@ -21,6 +24,11 @@ public class ParticipantCount {
     public static ParticipantCount of(int min, int max) {
         return new ParticipantCount(min, max, 0);
     }
+
+    public static ParticipantCount of(int min, int max, int current) {
+        return new ParticipantCount(min, max, current);
+    }
+
 
     public boolean isFull() {
         return current >= max;
@@ -44,7 +52,15 @@ public class ParticipantCount {
         return new ParticipantCount(min, max, current - 1);
     }
 
-    public int getMin() { return min; }
-    public int getMax() { return max; }
-    public int getCurrent() { return current; }
+    public int getMin() {
+        return min;
+    }
+
+    public int getMax() {
+        return max;
+    }
+
+    public int getCurrent() {
+        return current;
+    }
 }

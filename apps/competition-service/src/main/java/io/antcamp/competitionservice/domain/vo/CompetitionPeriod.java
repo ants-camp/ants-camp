@@ -10,7 +10,10 @@ public class CompetitionPeriod {
     private final LocalDateTime startAt;
     private final LocalDateTime endAt;
 
-    public CompetitionPeriod(LocalDateTime startAt, LocalDateTime endAt) {
+    private CompetitionPeriod(LocalDateTime startAt, LocalDateTime endAt) {
+        if (startAt == null || endAt == null) {
+            throw new IllegalArgumentException("시작일과 종료일은 필수입니다.");
+        }
         if (startAt.isAfter(endAt)) {
             throw new IllegalArgumentException("대회 시작일은 종료일보다 이전이어야 합니다.");
         }
@@ -18,11 +21,20 @@ public class CompetitionPeriod {
         this.endAt = endAt;
     }
 
+    public static CompetitionPeriod of(LocalDateTime startAt, LocalDateTime endAt) {
+        return new CompetitionPeriod(startAt, endAt);
+    }
+
     public boolean isOngoing() {
         LocalDateTime now = LocalDateTime.now();
         return now.isAfter(startAt) && now.isBefore(endAt);
     }
 
-    public LocalDateTime getStartAt() { return startAt; }
-    public LocalDateTime getEndAt() { return endAt; }
+    public LocalDateTime getStartAt() {
+        return startAt;
+    }
+
+    public LocalDateTime getEndAt() {
+        return endAt;
+    }
 }

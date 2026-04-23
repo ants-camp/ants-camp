@@ -11,22 +11,22 @@ import lombok.Getter;
 @Getter
 public class JoinHistory {
 
-    private final UUID participantId;
+    private final UUID joinhistoryId;
     private final UUID userId;
     private final String nickname;
     private final UUID competitionId;
 
     @Builder(builderMethodName = "createBuilder", access = AccessLevel.PRIVATE)
     private JoinHistory(UUID userId, String nickname, UUID competitionId) {
-        this.participantId = UUID.randomUUID();
+        this.joinhistoryId = UUID.randomUUID();
         this.userId = userId;
         this.nickname = nickname;
         this.competitionId = competitionId;
     }
 
     @Builder(builderMethodName = "fromBuilder", access = AccessLevel.PRIVATE)
-    private JoinHistory(UUID participantId, UUID userId, String nickname, UUID competitionId) {
-        this.participantId = participantId;
+    private JoinHistory(UUID joinhistoryId, UUID userId, String nickname, UUID competitionId) {
+        this.joinhistoryId = joinhistoryId;
         this.userId = userId;
         this.nickname = nickname;
         this.competitionId = competitionId;
@@ -46,7 +46,7 @@ public class JoinHistory {
 
     public static JoinHistory from(UUID participantId, UUID userId, String nickname, UUID competitionId) {
         return JoinHistory.fromBuilder()
-                .participantId(participantId)
+                .joinhistoryId(participantId)
                 .userId(userId)
                 .nickname(nickname)
                 .competitionId(competitionId)

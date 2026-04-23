@@ -4,8 +4,6 @@ import common.entity.BaseEntity;
 import io.antcamp.competitionservice.domain.JoinHistory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -19,7 +17,7 @@ import org.hibernate.annotations.SQLRestriction;
  */
 @Entity
 @Table(
-        name = "p_join_historys",
+        name = "p_join_history",
         uniqueConstraints = {
                 @UniqueConstraint(
                         name = "uq_join_history_user_competition",
@@ -32,9 +30,8 @@ import org.hibernate.annotations.SQLRestriction;
 public class JoinHistoryEntity extends BaseEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "participant_id", nullable = false, updatable = false)
-    private UUID participantId;
+    private UUID joinhistoryId;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
@@ -49,7 +46,7 @@ public class JoinHistoryEntity extends BaseEntity {
 
     public static JoinHistoryEntity from(JoinHistory domain) {
         JoinHistoryEntity entity = new JoinHistoryEntity();
-        entity.participantId = domain.getParticipantId();
+        entity.joinhistoryId = domain.getJoinhistoryId();
         entity.userId = domain.getUserId();
         entity.nickname = domain.getNickname();
         entity.competitionId = domain.getCompetitionId();
@@ -58,7 +55,7 @@ public class JoinHistoryEntity extends BaseEntity {
 
     public JoinHistory toDomain() {
         return JoinHistory.from(
-                participantId,
+                joinhistoryId,
                 userId,
                 nickname,
                 competitionId

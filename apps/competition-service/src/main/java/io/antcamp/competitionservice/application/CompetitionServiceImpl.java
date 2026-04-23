@@ -24,9 +24,9 @@ public class CompetitionServiceImpl implements CompetitionService {
                 command.type(),
                 command.description(),
                 command.firstSeed(),
-                new RegisterPeriod(command.registerStartAt(), command.registerEndAt()),
-                new CompetitionPeriod(command.competitionStartAt(), command.competitionEndAt()),
-                new ParticipantCount(command.minParticipants(), command.maxParticipants(), 0)
+                RegisterPeriod.of(command.registerStartAt(), command.registerEndAt()),
+                CompetitionPeriod.of(command.competitionStartAt(), command.competitionEndAt()),
+                ParticipantCount.of(command.minParticipants(), command.maxParticipants())
         );
 
         return competitionRepository.save(competition);
