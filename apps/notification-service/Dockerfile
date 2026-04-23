@@ -9,16 +9,16 @@ COPY gradle ./gradle
 COPY common ./common
 
 # notification-service 소스 복사
-COPY notification-service ./notification-service
+COPY apps/notification-service ./apps/notification-service
 
 RUN chmod +x gradlew
-RUN ./gradlew :notification-service:clean :notification-service:build -x test --no-daemon
+RUN ./gradlew :apps:notification-service:clean :apps:notification-service:build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/notification-service/build/libs/*.jar app.jar
+COPY --from=builder /app/apps/notification-service/build/libs/*.jar app.jar
 
 EXPOSE 8098
 

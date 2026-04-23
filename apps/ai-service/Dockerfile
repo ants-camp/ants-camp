@@ -9,16 +9,16 @@ COPY gradle ./gradle
 COPY common ./common
 
 # ai-service 소스 복사
-COPY ai-service ./ai-service
+COPY apps/ai-service ./apps/ai-service
 
 RUN chmod +x gradlew
-RUN ./gradlew :ai-service:clean :ai-service:build -x test --no-daemon
+RUN ./gradlew :apps:ai-service:clean :apps:ai-service:build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/ai-service/build/libs/*.jar app.jar
+COPY --from=builder /app/apps/ai-service/build/libs/*.jar app.jar
 
 EXPOSE 8096
 
