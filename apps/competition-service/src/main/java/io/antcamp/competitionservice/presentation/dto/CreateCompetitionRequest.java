@@ -1,17 +1,21 @@
 package io.antcamp.competitionservice.presentation.dto;
 
 import io.antcamp.competitionservice.domain.CompetitionType;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDateTime;
 
 public record CreateCompetitionRequest(
-        String name,
-        CompetitionType type,
-        String description,
-        LocalDateTime registerStartAt,
-        LocalDateTime registerEndAt,
-        LocalDateTime competitionStartAt,
-        LocalDateTime competitionEndAt,
-        int minParticipants,
-        int maxParticipants
+        @NotBlank String name,
+        @NotNull CompetitionType type,
+        @NotBlank String description,
+        @Positive int firstSeed,
+        @NotNull LocalDateTime registerStartAt,
+        @NotNull LocalDateTime registerEndAt,
+        @NotNull LocalDateTime competitionStartAt,
+        @NotNull LocalDateTime competitionEndAt,
+        @Positive int minParticipants,
+        @Positive int maxParticipants
 ) {
 }

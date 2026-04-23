@@ -4,6 +4,7 @@ import io.antcamp.competitionservice.domain.vo.CompetitionPeriod;
 import io.antcamp.competitionservice.domain.vo.ParticipantCount;
 import io.antcamp.competitionservice.domain.vo.RegisterPeriod;
 import java.util.UUID;
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -23,9 +24,8 @@ public class Competition {
     private CompetitionPeriod competitionPeriod;
     private ParticipantCount participantCount;
 
-    // 신규 대회 생성 - competitionId, status는 도메인이 직접 결정
-    @Builder(builderMethodName = "create")
-    public Competition(
+    @Builder(builderMethodName = "createBuilder", access = AccessLevel.PRIVATE)
+    private Competition(
             String name,
             CompetitionType type,
             String description,
@@ -45,9 +45,8 @@ public class Competition {
         this.participantCount = participantCount;
     }
 
-    // 재구성용 생성자 (toDomain() 전용)
-    @Builder(builderMethodName = "restore")
-    public Competition(
+    @Builder(builderMethodName = "fromBuilder", access = AccessLevel.PRIVATE)
+    private Competition(
             UUID competitionId,
             String name,
             CompetitionType type,
@@ -69,13 +68,54 @@ public class Competition {
         this.participantCount = participantCount;
     }
 
-    // ─── 도메인 행위 ─────────────────────────────────────────────────────
+    // ─── 정적 팩토리 메서드 ───────────────────────────────────────────────
 
-    public boolean isRegisterable() {
-        return status == CompetitionStatus.PREPARING
-                && registerPeriod.isOpen()
-                && !participantCount.isFull();
+    public static Competition createCompetition(
+            String name,
+            CompetitionType type,
+            String description,
+            int firstSeed,
+            RegisterPeriod registerPeriod,
+            CompetitionPeriod competitionPeriod,
+            ParticipantCount participantCount
+    ) {
+        validate(name, type, description, firstSeed, registerPeriod, competitionPeriod, participantCount);
+
+        return Competition.createBuilder()
+                .name(name)
+                .type(type)
+                .description(description)
+                .firstSeed(firstSeed)
+                .registerPeriod(registerPeriod)
+                .competitionPeriod(competitionPeriod)
+                .participantCount(participantCount)
+                .build();
     }
+
+    public static Competition from(
+            UUID competitionId,
+            String name,
+            CompetitionType type,
+            CompetitionStatus status,
+            String description,
+            int firstSeed,
+            RegisterPeriod registerPeriod,
+            CompetitionPeriod competitionPeriod,
+            ParticipantCount participantCount
+    ) {
+        return Competition.fromBuilder()
+                .competitionId(competitionId)
+                .name(name)
+                .type(type)
+                .status(status)
+                .description(description)
+                .firstSeed(firstSeed)
+                .registerPeriod(registerPeriod)
+                .competitionPeriod(competitionPeriod)
+                .participantCount(participantCount)
+                .build();
+    }
+    // ─── 도메인 행위 ─────────────────────────────────────────────────────
 
     // 대회 신청
     public void register() {
@@ -122,5 +162,43 @@ public class Competition {
             throw new IllegalStateException("이미 종료된 대회는 취소할 수 없습니다.");
         }
         this.status = CompetitionStatus.CANCELED;
+    }
+
+    private boolean isRegisterable() {
+        return status == CompetitionStatus.PREPARING
+                && registerPeriod.isOpen()
+                && !participantCount.isFull();
+    }
+
+    private static void validate(
+            String name,
+            CompetitionType type,
+            String description,
+            int firstSeed,
+            RegisterPeriod registerPeriod,
+            CompetitionPeriod competitionPeriod,
+            ParticipantCount participantCount
+    ) {
+        if (name == null || name.isBlank()) {
+            throw new IllegalArgumentException("대회명은 필수입니다.");
+        }
+        if (type == null) {
+            throw new IllegalArgumentException("대회 타입은 필수입니다.");
+        }
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("대회 설명은 필수입니다.");
+        }
+        if (firstSeed <= 0) {
+            throw new IllegalArgumentException("초기 시드머니는 0보다 커야 합니다.");
+        }
+        if (registerPeriod == null) {
+            throw new IllegalArgumentException("신청 기간은 필수입니다.");
+        }
+        if (competitionPeriod == null) {
+            throw new IllegalArgumentException("대회 기간은 필수입니다.");
+        }
+        if (participantCount == null) {
+            throw new IllegalArgumentException("참가 인원 정보는 필수입니다.");
+        }
     }
 }

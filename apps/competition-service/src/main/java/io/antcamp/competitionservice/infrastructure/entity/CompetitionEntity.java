@@ -97,16 +97,16 @@ public class CompetitionEntity extends BaseEntity {
     }
 
     public Competition toDomain() {
-        return Competition.restore()
-                .competitionId(competitionId)
-                .name(name)
-                .type(type)
-                .status(status)
-                .description(description)
-                .firstSeed(firstSeed)
-                .registerPeriod(new RegisterPeriod(registerStartAt, registerEndAt))
-                .competitionPeriod(new CompetitionPeriod(competitionStartAt, competitionEndAt))
-                .participantCount(new ParticipantCount(minParticipants, maxParticipants, currentRegisters))
-                .build();
+        return Competition.from(
+                competitionId,
+                name,
+                type,
+                status,
+                description,
+                firstSeed,
+                new RegisterPeriod(registerStartAt, registerEndAt),
+                new CompetitionPeriod(competitionStartAt, competitionEndAt),
+                new ParticipantCount(minParticipants, maxParticipants, currentRegisters)
+        );
     }
 }

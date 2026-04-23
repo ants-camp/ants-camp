@@ -57,11 +57,11 @@ public class JoinHistoryEntity extends BaseEntity {
     }
 
     public JoinHistory toDomain() {
-        return JoinHistory.restore()
-                .participantId(participantId)
-                .userId(userId)
-                .nickname(nickname)
-                .competitionId(competitionId)
-                .build();
+        return JoinHistory.from(
+                participantId,
+                userId,
+                nickname,
+                competitionId
+        );
     }
 }

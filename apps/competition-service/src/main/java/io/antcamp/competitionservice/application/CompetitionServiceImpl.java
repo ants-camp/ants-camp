@@ -19,14 +19,15 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Override
     @Transactional
     public Competition create(CreateCompetitionCommand command) {
-        Competition competition = Competition.create()
-                .name(command.name())
-                .type(command.type())
-                .description(command.description())
-                .registerPeriod(new RegisterPeriod(command.registerStartAt(), command.registerEndAt()))
-                .competitionPeriod(new CompetitionPeriod(command.competitionStartAt(), command.competitionEndAt()))
-                .participantCount(new ParticipantCount(command.minParticipants(), command.maxParticipants(), 0))
-                .build();
+        Competition competition = Competition.createCompetition(
+                command.name(),
+                command.type(),
+                command.description(),
+                command.firstSeed(),
+                new RegisterPeriod(command.registerStartAt(), command.registerEndAt()),
+                new CompetitionPeriod(command.competitionStartAt(), command.competitionEndAt()),
+                new ParticipantCount(command.minParticipants(), command.maxParticipants(), 0)
+        );
 
         return competitionRepository.save(competition);
     }
