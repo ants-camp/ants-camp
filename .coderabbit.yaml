@@ -11,11 +11,9 @@ reviews:
   review_status: true
   collapse_walkthrough: true
   poem: false
-  target_branches:
-    - "main"
-    - "develop"
-    - "dev"
-    - "feat/*"
+  auto_review:
+    base_branches:
+      - ".*"
 
   path_filters:
     - "!**/*.md"
