@@ -9,16 +9,16 @@ COPY gradle ./gradle
 COPY common ./common
 
 # stock-service 소스 복사
-COPY stock-service ./stock-service
+COPY apps/stock-service ./apps/stock-service
 
 RUN chmod +x gradlew
-RUN ./gradlew :stock-service:clean :stock-service:build -x test --no-daemon
+RUN ./gradlew :apps:stock-service:clean :apps:stock-service:build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/stock-service/build/libs/*.jar app.jar
+COPY --from=builder /app/apps/stock-service/build/libs/*.jar app.jar
 
 EXPOSE 8088
 

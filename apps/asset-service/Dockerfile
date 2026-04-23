@@ -9,16 +9,16 @@ COPY gradle ./gradle
 COPY common ./common
 
 # asset-service 소스 복사
-COPY asset-service ./asset-service
+COPY apps/asset-service ./apps/asset-service
 
 RUN chmod +x gradlew
-RUN ./gradlew :asset-service:clean :asset-service:build -x test --no-daemon
+RUN ./gradlew :apps:asset-service:clean :apps:asset-service:build -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 
 WORKDIR /app
 
-COPY --from=builder /app/asset-service/build/libs/*.jar app.jar
+COPY --from=builder /app/apps/asset-service/build/libs/*.jar app.jar
 
 EXPOSE 8086
 
