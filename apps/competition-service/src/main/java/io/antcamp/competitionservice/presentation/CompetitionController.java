@@ -6,12 +6,14 @@ import io.antcamp.competitionservice.domain.Competition;
 import io.antcamp.competitionservice.domain.CompetitionStatus;
 import io.antcamp.competitionservice.presentation.dto.CreateCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.CreateCompetitionResponse;
-import io.antcamp.competitionservice.presentation.dto.FindCompetitionListResponse;
 import io.antcamp.competitionservice.presentation.dto.FindCompetitionResponse;
 import jakarta.validation.Valid;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -55,16 +57,15 @@ public class CompetitionController {
     }
 
     @GetMapping
-    public List<FindCompetitionListResponse> findAll(
-            @RequestParam(required = false) CompetitionStatus status) {
-        List<Competition> competitions;
+    public Page<FindCompetitionResponse> findAll(
+            @RequestParam(required = false) CompetitionStatus status,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<Competition> competitions;
         if (status != null) {
-            competitions = competitionService.findAllByStatus(status);
+            competitions = competitionService.findAllByStatus(status, pageable);
         } else {
-            competitions = competitionService.findAll();
+            competitions = competitionService.findAll(pageable);
         }
-        return competitions.stream()
-                .map(FindCompetitionListResponse::from)
-                .toList();
+        return competitions.map(FindCompetitionResponse::from);
     }
 }

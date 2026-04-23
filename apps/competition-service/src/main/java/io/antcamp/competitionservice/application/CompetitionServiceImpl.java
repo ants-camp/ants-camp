@@ -7,9 +7,10 @@ import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
 import io.antcamp.competitionservice.domain.vo.CompetitionPeriod;
 import io.antcamp.competitionservice.domain.vo.ParticipantCount;
 import io.antcamp.competitionservice.domain.vo.RegisterPeriod;
-import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,13 +44,13 @@ public class CompetitionServiceImpl implements CompetitionService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Competition> findAll() {
-        return competitionRepository.findAll();
+    public Page<Competition> findAll(Pageable pageable) {
+        return competitionRepository.findAll(pageable);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<Competition> findAllByStatus(CompetitionStatus status) {
-        return competitionRepository.findAllByCompetitionStatus(status);
+    public Page<Competition> findAllByStatus(CompetitionStatus status, Pageable pageable) {
+        return competitionRepository.findAllByCompetitionStatus(status, pageable);
     }
 }
