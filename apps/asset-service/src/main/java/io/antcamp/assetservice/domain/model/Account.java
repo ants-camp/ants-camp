@@ -21,8 +21,9 @@ public class Account {
     }
 
     public static Account create(UUID userId, String generatedNumber, AccountType type, Long initialAmount) {
+        AccountType resolvedType = (type != null) ? type : AccountType.PERSONAL;
         Long finalAmount;
-        if (type == AccountType.PERSONAL){
+        if (resolvedType == AccountType.PERSONAL){
             finalAmount = 10_000_000L;
         } else {
             finalAmount = initialAmount;
@@ -31,7 +32,7 @@ public class Account {
                 UUID.randomUUID(),
                 userId,
                 generatedNumber,
-                (type != null) ? type : AccountType.PERSONAL,
+                resolvedType,
                 finalAmount
         );
     }
