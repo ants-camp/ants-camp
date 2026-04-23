@@ -24,8 +24,10 @@ public class AccountEntity {
     private String accountNumber;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private AccountType type;
 
+    @Column(nullable = false)
     private Long accountAmount;
 
     private AccountEntity(UUID accountId, UUID userId, String accountNumber, AccountType type, Long accountAmount) {

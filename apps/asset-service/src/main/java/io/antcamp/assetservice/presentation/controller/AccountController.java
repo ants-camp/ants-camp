@@ -7,6 +7,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
+
 import java.util.UUID;
 
 @RestController
@@ -17,7 +19,7 @@ public class AccountController {
     private final AccountService accountService;
 
     @PostMapping
-    public ResponseEntity<UUID> createAccount(@RequestBody CreateAccountCommand command) {
+    public ResponseEntity<UUID> createAccount(@Valid @RequestBody CreateAccountCommand command) {
 
         UUID createdAccountId = accountService.createAccount(command);
 
