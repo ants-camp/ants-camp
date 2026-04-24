@@ -6,9 +6,10 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AccountRepository {
-
     //계좌 생성
     Account save(Account account);
 
     Optional<Account> findById(UUID accountId);
+
+    Optional<Account> findByIdWithLock(UUID accountId);
 }

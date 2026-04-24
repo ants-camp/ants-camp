@@ -27,4 +27,10 @@ public class AccountRepositoryImpl implements AccountRepository {
         return jpaAccountRepository.findById(accountId)
                 .map(AccountEntity::toDomain);
     }
+
+    @Override
+    public Optional<Account> findByIdWithLock(UUID accountId) {
+        return jpaAccountRepository.findByIdWithLock(accountId)
+                .map(AccountEntity::toDomain);
+    }
 }

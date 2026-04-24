@@ -31,16 +31,18 @@ public class AccountService {
 
     @Transactional
     public void deposit(UUID accountId, Long amount) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다. ID: " + accountId));
+        Account account = accountRepository.findByIdWithLock(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+
         account.deposit(amount);
         accountRepository.save(account);
     }
 
     @Transactional
     public void withdraw(UUID accountId, Long amount) {
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다. ID: " + accountId));
+        Account account = accountRepository.findByIdWithLock(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+
         account.withdraw(amount);
         accountRepository.save(account);
     }
