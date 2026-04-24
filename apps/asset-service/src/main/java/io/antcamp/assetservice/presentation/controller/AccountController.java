@@ -1,5 +1,6 @@
 package io.antcamp.assetservice.presentation.controller;
 
+import common.dto.ApiResponse;
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.application.service.AccountService;
@@ -44,12 +45,13 @@ public class AccountController {
     }
 
     @GetMapping("/{accountId}")
-    public ResponseEntity<AccountResult> getAccount(
+    public ResponseEntity<ApiResponse<AccountResult>> getAccount(
             @PathVariable UUID accountId,
             @RequestHeader("X-User-Id") UUID userId
     ) {
         AccountResult result = accountService.getAccount(accountId, userId);
-        return ResponseEntity.ok(result);
+
+        return ApiResponse.ok(result);
     }
 
 }
