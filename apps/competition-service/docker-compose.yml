@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: competition-postgres
+    environment:
+      POSTGRES_DB: competition
+      POSTGRES_USER: competition
+      POSTGRES_PASSWORD: competition1234
+    ports:
+      - "5432:5432"
+    volumes:
+      - competition-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  competition-postgres-data:

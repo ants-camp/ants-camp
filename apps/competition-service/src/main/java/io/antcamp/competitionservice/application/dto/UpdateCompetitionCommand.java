@@ -1,18 +1,23 @@
 package io.antcamp.competitionservice.application.dto;
 
-import io.antcamp.competitionservice.domain.model.CompetitionType;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-public record CreateCompetitionCommand(
+public record UpdateCompetitionCommand(
+        UUID competitionId,
         String name,
-        CompetitionType type,
         String description,
-        int firstSeed,
         LocalDateTime registerStartAt,
         LocalDateTime registerEndAt,
         LocalDateTime competitionStartAt,
         LocalDateTime competitionEndAt,
         int minParticipants,
-        int maxParticipants
+        int maxParticipants,
+
+        // isReadable = true일 때만 필요
+        String beforeContents,
+        String afterContents,
+        String reason,
+        String updatedBy
 ) {
 }

@@ -1,6 +1,6 @@
 package io.antcamp.competitionservice.infrastructure.persistence;
 
-import io.antcamp.competitionservice.domain.CompetitionStatus;
+import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.infrastructure.entity.CompetitionEntity;
 import java.util.UUID;
 import org.springframework.data.domain.Page;

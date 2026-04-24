@@ -1,32 +1,36 @@
 package io.antcamp.competitionservice.infrastructure.entity;
 
 import common.entity.BaseEntity;
-import io.antcamp.competitionservice.domain.Competition;
-import io.antcamp.competitionservice.domain.CompetitionStatus;
-import io.antcamp.competitionservice.domain.CompetitionType;
-import io.antcamp.competitionservice.domain.vo.CompetitionPeriod;
-import io.antcamp.competitionservice.domain.vo.ParticipantCount;
-import io.antcamp.competitionservice.domain.vo.RegisterPeriod;
+import io.antcamp.competitionservice.domain.model.Competition;
+import io.antcamp.competitionservice.domain.model.CompetitionPeriod;
+import io.antcamp.competitionservice.domain.model.CompetitionStatus;
+import io.antcamp.competitionservice.domain.model.CompetitionType;
+import io.antcamp.competitionservice.domain.model.ParticipantCount;
+import io.antcamp.competitionservice.domain.model.RegisterPeriod;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
+import jakarta.persistence.PostLoad;
+import jakarta.persistence.PostPersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
+import org.springframework.data.domain.Persistable;
 
-/**
- * 대회 JPA 엔티티 (p_competitions 테이블 매핑) VO 필드는 @Embedded 없이 직접 flat하게 매핑 → 도메인 VO에 JPA 의존성 없음
- */
 @Entity
 @Table(name = "p_competitions")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("deleted_at is NULL")
-public class CompetitionEntity extends BaseEntity {
+public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
+
+    @Transient
+    private boolean isNew = true;  // 추가
 
     @Id
     @Column(name = "competition_id", nullable = false, updatable = false)
@@ -49,21 +53,21 @@ public class CompetitionEntity extends BaseEntity {
     @Column(name = "first_seed", nullable = false)
     private int firstSeed;
 
-    // RegisterPeriod VO 필드 flat 매핑
+    @Column(name = "is_readable", nullable = false)
+    private boolean isReadable;
+
     @Column(name = "register_start_at", nullable = false)
     private LocalDateTime registerStartAt;
 
     @Column(name = "register_end_at", nullable = false)
     private LocalDateTime registerEndAt;
 
-    // CompetitionPeriod VO 필드 flat 매핑
     @Column(name = "competition_start_at", nullable = false)
     private LocalDateTime competitionStartAt;
 
     @Column(name = "competition_end_at", nullable = false)
     private LocalDateTime competitionEndAt;
 
-    // ParticipantCount VO 필드 flat 매핑
     @Column(name = "min_participants", nullable = false)
     private int minParticipants;
 
@@ -73,8 +77,6 @@ public class CompetitionEntity extends BaseEntity {
     @Column(name = "current_registers", nullable = false)
     private int currentRegisters;
 
-    // ─── 정적 팩토리 메서드 ────────────────────────────────────────────────
-
     public static CompetitionEntity from(Competition domain) {
         CompetitionEntity entity = new CompetitionEntity();
         entity.competitionId = domain.getCompetitionId();
@@ -83,6 +85,7 @@ public class CompetitionEntity extends BaseEntity {
         entity.status = domain.getStatus();
         entity.description = domain.getDescription();
         entity.firstSeed = domain.getFirstSeed();
+        entity.isReadable = domain.isReadable();
         entity.registerStartAt = domain.getRegisterPeriod().getStartAt();
         entity.registerEndAt = domain.getRegisterPeriod().getEndAt();
         entity.competitionStartAt = domain.getCompetitionPeriod().getStartAt();
@@ -101,9 +104,42 @@ public class CompetitionEntity extends BaseEntity {
                 status,
                 description,
                 firstSeed,
+                isReadable,
                 RegisterPeriod.of(registerStartAt, registerEndAt),
                 CompetitionPeriod.of(competitionStartAt, competitionEndAt),
                 ParticipantCount.of(minParticipants, maxParticipants, currentRegisters)
         );
+    }
+
+    public void update(Competition domain) {
+        this.name = domain.getName();
+        this.type = domain.getType();
+        this.status = domain.getStatus();
+        this.description = domain.getDescription();
+        this.firstSeed = domain.getFirstSeed();
+        this.isReadable = domain.isReadable();
+        this.registerStartAt = domain.getRegisterPeriod().getStartAt();
+        this.registerEndAt = domain.getRegisterPeriod().getEndAt();
+        this.competitionStartAt = domain.getCompetitionPeriod().getStartAt();
+        this.competitionEndAt = domain.getCompetitionPeriod().getEndAt();
+        this.minParticipants = domain.getParticipantCount().getMin();
+        this.maxParticipants = domain.getParticipantCount().getMax();
+        this.currentRegisters = domain.getParticipantCount().getCurrent();
+    }
+
+    @Override
+    public UUID getId() {
+        return competitionId;  // null 말고 실제 id 반환
+    }
+
+    @Override
+    public boolean isNew() {
+        return isNew;  // false 말고 isNew 필드 반환
+    }
+
+    @PostLoad
+    @PostPersist
+    void markNotNew() {
+        this.isNew = false;  // DB에서 조회하거나 저장 후엔 false로
     }
 }

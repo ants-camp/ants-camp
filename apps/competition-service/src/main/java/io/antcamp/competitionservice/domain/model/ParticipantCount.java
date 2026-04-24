@@ -1,4 +1,4 @@
-package io.antcamp.competitionservice.domain.vo;
+package io.antcamp.competitionservice.domain.model;
 
 /**
  * 참가 인원 VO (순수 도메인 - JPA 의존성 없음)

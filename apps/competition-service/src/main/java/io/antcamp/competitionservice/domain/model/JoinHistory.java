@@ -1,4 +1,4 @@
-package io.antcamp.competitionservice.domain;
+package io.antcamp.competitionservice.domain.model;
 
 import java.util.UUID;
 import lombok.AccessLevel;

@@ -1,15 +1,12 @@
-package io.antcamp.competitionservice.domain;
+package io.antcamp.competitionservice.domain.model;
 
-import io.antcamp.competitionservice.domain.vo.CompetitionPeriod;
-import io.antcamp.competitionservice.domain.vo.ParticipantCount;
-import io.antcamp.competitionservice.domain.vo.RegisterPeriod;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
 /**
- * 대회 도메인 클래스 (순수 도메인 모델 - JPA 의존성 없음)
+ * 대회 도메인 클래스 (순수 도메인 모델)
  */
 @Getter
 public class Competition {
@@ -20,6 +17,7 @@ public class Competition {
     private CompetitionStatus status;
     private String description;
     private int firstSeed;
+    private boolean isReadable;
     private RegisterPeriod registerPeriod;
     private CompetitionPeriod competitionPeriod;
     private ParticipantCount participantCount;
@@ -40,12 +38,13 @@ public class Competition {
         this.status = CompetitionStatus.PREPARING;
         this.description = description;
         this.firstSeed = firstSeed;
+        this.isReadable = false;
         this.registerPeriod = registerPeriod;
         this.competitionPeriod = competitionPeriod;
         this.participantCount = participantCount;
     }
 
-    @Builder(builderMethodName = "fromBuilder", access = AccessLevel.PRIVATE)
+    // @Builder 제거 - 일반 생성자로 변경
     private Competition(
             UUID competitionId,
             String name,
@@ -53,6 +52,7 @@ public class Competition {
             CompetitionStatus status,
             String description,
             int firstSeed,
+            boolean isReadable,
             RegisterPeriod registerPeriod,
             CompetitionPeriod competitionPeriod,
             ParticipantCount participantCount
@@ -63,6 +63,7 @@ public class Competition {
         this.status = status;
         this.description = description;
         this.firstSeed = firstSeed;
+        this.isReadable = isReadable;
         this.registerPeriod = registerPeriod;
         this.competitionPeriod = competitionPeriod;
         this.participantCount = participantCount;
@@ -92,6 +93,7 @@ public class Competition {
                 .build();
     }
 
+    // fromBuilder 제거 - 직접 생성자 호출
     public static Competition from(
             UUID competitionId,
             String name,
@@ -99,25 +101,27 @@ public class Competition {
             CompetitionStatus status,
             String description,
             int firstSeed,
+            boolean isReadable,
             RegisterPeriod registerPeriod,
             CompetitionPeriod competitionPeriod,
             ParticipantCount participantCount
     ) {
-        return Competition.fromBuilder()
-                .competitionId(competitionId)
-                .name(name)
-                .type(type)
-                .status(status)
-                .description(description)
-                .firstSeed(firstSeed)
-                .registerPeriod(registerPeriod)
-                .competitionPeriod(competitionPeriod)
-                .participantCount(participantCount)
-                .build();
+        return new Competition(
+                competitionId,
+                name,
+                type,
+                status,
+                description,
+                firstSeed,
+                isReadable,
+                registerPeriod,
+                competitionPeriod,
+                participantCount
+        );
     }
+
     // ─── 도메인 행위 ─────────────────────────────────────────────────────
 
-    // 대회 신청
     public void register() {
         if (!isRegisterable()) {
             throw new IllegalStateException("현재 참가 신청이 불가능한 대회입니다.");
@@ -125,7 +129,6 @@ public class Competition {
         this.participantCount = participantCount.increment();
     }
 
-    // 대회 신청 취소
     public void cancelRegister() {
         if (status != CompetitionStatus.PREPARING) {
             throw new IllegalStateException("대회가 시작된 이후에는 참가 취소가 불가능합니다.");
@@ -133,8 +136,6 @@ public class Competition {
         this.participantCount = participantCount.decrement();
     }
 
-
-    // 대회 시작
     public void startCompetition() {
         if (status != CompetitionStatus.PREPARING) {
             throw new IllegalStateException("준비 중인 대회만 시작할 수 있습니다.");
@@ -151,7 +152,6 @@ public class Competition {
         this.status = CompetitionStatus.ONGOING;
     }
 
-    // 대회 종료
     public void finishCompetition() {
         if (status != CompetitionStatus.ONGOING) {
             throw new IllegalStateException("진행 중인 대회만 종료할 수 있습니다.");
@@ -162,7 +162,6 @@ public class Competition {
         this.status = CompetitionStatus.FINISHED;
     }
 
-    // 대회 취소
     public void cancelCompetition() {
         if (status == CompetitionStatus.FINISHED) {
             throw new IllegalStateException("이미 종료된 대회는 취소할 수 없습니다.");
@@ -170,8 +169,36 @@ public class Competition {
         this.status = CompetitionStatus.CANCELED;
     }
 
+    public void publish() {
+        if (this.isReadable) {
+            throw new IllegalStateException("이미 게시된 대회입니다.");
+        }
+        if (this.status != CompetitionStatus.PREPARING) {
+            throw new IllegalStateException("준비 중인 대회만 게시할 수 있습니다.");
+        }
+        this.isReadable = true;
+    }
+
+    public void updateInfo(
+            String name,
+            String description,
+            RegisterPeriod registerPeriod,
+            CompetitionPeriod competitionPeriod,
+            ParticipantCount participantCount
+    ) {
+        if (this.status == CompetitionStatus.FINISHED || this.status == CompetitionStatus.CANCELED) {
+            throw new IllegalStateException("종료되거나 취소된 대회는 수정할 수 없습니다.");
+        }
+        this.name = name;
+        this.description = description;
+        this.registerPeriod = registerPeriod;
+        this.competitionPeriod = competitionPeriod;
+        this.participantCount = participantCount;
+    }
+
     private boolean isRegisterable() {
         return status == CompetitionStatus.PREPARING
+                && isReadable
                 && registerPeriod.isOpen()
                 && !participantCount.isFull();
     }

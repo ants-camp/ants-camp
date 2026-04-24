@@ -1,4 +1,4 @@
-package io.antcamp.competitionservice.domain;
+package io.antcamp.competitionservice.domain.model;
 
 public enum CompetitionStatus {
     PREPARING,
