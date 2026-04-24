@@ -20,9 +20,26 @@ public class AccountController {
 
     @PostMapping
     public ResponseEntity<UUID> createAccount(@Valid @RequestBody CreateAccountCommand command) {
-
         UUID createdAccountId = accountService.createAccount(command);
-
         return ResponseEntity.status(HttpStatus.CREATED).body(createdAccountId);
     }
+
+    @PostMapping("/{accountId}/deposit")
+    public ResponseEntity<Void> deposit(
+            @PathVariable UUID accountId,
+            @RequestParam Long amount) {
+
+        accountService.deposit(accountId, amount);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{accountId}/withdraw")
+    public ResponseEntity<Void> withdraw(
+            @PathVariable UUID accountId,
+            @RequestParam Long amount) {
+
+        accountService.withdraw(accountId, amount);
+        return ResponseEntity.ok().build();
+    }
+
 }
