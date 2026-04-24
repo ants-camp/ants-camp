@@ -1,0 +1,85 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - alertmanager:9093
+
+rule_files:
+  - alert-rules.yaml
+
+scrape_configs:
+  - job_name: 'eureka-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8761
+
+  - job_name: 'config-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8888
+
+  - job_name: 'gateway-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8080
+
+  - job_name: 'user-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8082
+
+  - job_name: 'trade-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8084
+
+  - job_name: 'asset-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8086
+
+  - job_name: 'stock-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8088
+
+  - job_name: 'portfolio-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8090
+
+  - job_name: 'competition-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8092
+
+  - job_name: 'ranking-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8094
+
+  - job_name: 'assistant-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8096
+
+  - job_name: 'notification-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - host.docker.internal:8098
