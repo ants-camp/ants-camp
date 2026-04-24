@@ -1,6 +1,7 @@
 package io.antcamp.assetservice.presentation.controller;
 
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
+import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.application.service.AccountService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,6 +41,12 @@ public class AccountController {
 
         accountService.withdraw(accountId, amount);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{accountId}")
+    public ResponseEntity<AccountResult> getAccount(@PathVariable UUID accountId) {
+        AccountResult result = accountService.getAccount(accountId);
+        return ResponseEntity.ok(result);
     }
 
 }
