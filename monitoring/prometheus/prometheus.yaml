@@ -16,70 +16,70 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8761
+          - eureka-server:8761
 
   - job_name: 'config-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8888
+          - config-server:8888
 
   - job_name: 'gateway-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8080
+          - gateway-service:8080
 
   - job_name: 'user-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8082
+          - user-service:8082
 
   - job_name: 'trade-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8084
+          - trade-service:8084
 
   - job_name: 'asset-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8086
+          - asset-service:8086
 
   - job_name: 'stock-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8088
+          - stock-service:8088
 
   - job_name: 'portfolio-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8090
+          - portfolio-service:8090
 
   - job_name: 'competition-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8092
+          - competition-service:8092
 
   - job_name: 'ranking-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8094
+          - ranking-service:8094
 
   - job_name: 'assistant-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8096
+          - assistant-service:8096
 
   - job_name: 'notification-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-          - host.docker.internal:8098
+          - notification-service:8098

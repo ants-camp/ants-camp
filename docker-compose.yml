@@ -416,11 +416,12 @@ services:
       - "${ALERTMANAGER_PORT}:9093"
     environment:
       - SLACK_ALERTMANAGER_WEBHOOK_URL=${SLACK_ALERTMANAGER_WEBHOOK_URL}
+      - WEBHOOK_SHARED_SECRET=${WEBHOOK_SHARED_SECRET}
     volumes:
       - ./monitoring/alertmanager/alertmanager.yaml:/etc/alertmanager/alertmanager.yaml
     entrypoint: ["/bin/sh", "-c"]
     command:
-      - 'sed "s|\$${SLACK_ALERTMANAGER_WEBHOOK_URL}|$$SLACK_ALERTMANAGER_WEBHOOK_URL|g" /etc/alertmanager/alertmanager.yaml > /tmp/am.yaml && /bin/alertmanager --config.file=/tmp/am.yaml'
+      - 'sed "s|\$${SLACK_ALERTMANAGER_WEBHOOK_URL}|$$SLACK_ALERTMANAGER_WEBHOOK_URL|g; s|\$${WEBHOOK_SHARED_SECRET}|$$WEBHOOK_SHARED_SECRET|g" /etc/alertmanager/alertmanager.yaml > /tmp/am.yaml && /bin/alertmanager --config.file=/tmp/am.yaml'
     networks:
       - kafka-network
     restart: unless-stopped
@@ -431,8 +432,8 @@ services:
     ports:
       - "${GRAFANA_PORT}:3000"
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin1234
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning

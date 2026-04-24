@@ -27,4 +27,4 @@ receivers:
   # notification-service 웹훅 — AI 분석 후 Slack 발송 (기본 경로)
   - name: 'notification-webhook'
     webhook_configs:
-      - url: 'http://host.docker.internal:8098/api/notifications/prometheus?secret=antcamp-webhook-secret'
+      - url: 'http://notification-service:8098/api/notifications/prometheus?secret=${WEBHOOK_SHARED_SECRET}'
