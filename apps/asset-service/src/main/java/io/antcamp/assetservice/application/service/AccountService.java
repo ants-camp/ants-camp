@@ -3,6 +3,7 @@ package io.antcamp.assetservice.application.service;
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
+import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.AccountType;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
@@ -49,12 +50,15 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public AccountResult getAccount(UUID accountId) {
+    public AccountResult getAccount(UUID accountId, UUID requesterUserId) {
 
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
-        // DTO 상자에 담아서 반환
+        if (!account.getUserId().equals(requesterUserId)) {
+            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+        }
+
         return new AccountResult(
                 account.getAccountId(),
                 account.getAccountNumber(),

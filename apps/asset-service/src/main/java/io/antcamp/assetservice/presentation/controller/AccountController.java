@@ -44,8 +44,11 @@ public class AccountController {
     }
 
     @GetMapping("/{accountId}")
-    public ResponseEntity<AccountResult> getAccount(@PathVariable UUID accountId) {
-        AccountResult result = accountService.getAccount(accountId);
+    public ResponseEntity<AccountResult> getAccount(
+            @PathVariable UUID accountId,
+            @RequestHeader("X-User-Id") UUID userId
+    ) {
+        AccountResult result = accountService.getAccount(accountId, userId);
         return ResponseEntity.ok(result);
     }
 
