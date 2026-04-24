@@ -32,6 +32,9 @@ dependencies {
 
     // websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // PostgreSQL
+    runtimeOnly 'org.postgresql:postgresql'
 }
 
 tasks.named('test') {
