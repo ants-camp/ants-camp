@@ -27,6 +27,12 @@ public class AssetExceptionHandler {
         return createErrorResponse(HttpStatus.CONFLICT, e.getMessage());
     }
 
+    //남의 계좌 접근 차단
+    @ExceptionHandler(UnauthorizedAccountAccessException.class)
+    public ResponseEntity<Map<String, String>> handleUnauthorizedAccountAccessException(UnauthorizedAccountAccessException e) {
+        return createErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
+    }
+
     //공통 에러 응답
     private ResponseEntity<Map<String, String>> createErrorResponse(HttpStatus status, String message) {
         Map<String, String> response = new HashMap<>();
