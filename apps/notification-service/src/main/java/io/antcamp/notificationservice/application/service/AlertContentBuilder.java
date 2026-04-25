@@ -9,6 +9,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.List;
+import java.util.Map;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -49,17 +52,21 @@ public class AlertContentBuilder {
     }
 
     private String buildExploreJson(String job) {
-        String queries = String.format(
-                "[" +
-                "{\"expr\":\"process_cpu_usage{job=\\\"%s\\\"}\",\"refId\":\"A\"}," +
-                "{\"expr\":\"jvm_memory_used_bytes{job=\\\"%s\\\",area=\\\"heap\\\"} / jvm_memory_max_bytes{job=\\\"%s\\\",area=\\\"heap\\\"}\",\"refId\":\"B\"}," +
-                "{\"expr\":\"sum(rate(http_server_requests_seconds_count{job=\\\"%s\\\",status=~\\\"[45]..\\\"}[5m]))\",\"refId\":\"C\"}" +
-                "]",
-                job, job, job, job
+        List<Map<String, String>> queries = List.of(
+                Map.of("expr", String.format("process_cpu_usage{job=\"%s\"}", job), "refId", "A"),
+                Map.of("expr", String.format("jvm_memory_used_bytes{job=\"%s\",area=\"heap\"} / jvm_memory_max_bytes{job=\"%s\",area=\"heap\"}", job, job), "refId", "B"),
+                Map.of("expr", String.format("sum(rate(http_server_requests_seconds_count{job=\"%s\",status=~\"[45]..\"}[5m]))", job), "refId", "C")
         );
-        return String.format(
-                "{\"datasource\":\"Prometheus\",\"queries\":%s,\"range\":{\"from\":\"now-1h\",\"to\":\"now\"}}",
-                queries
+        Map<String, Object> payload = Map.of(
+                "datasource", "Prometheus",
+                "queries", queries,
+                "range", Map.of("from", "now-1h", "to", "now")
         );
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            log.warn("Explore JSON 직렬화 실패: {}", e.getMessage());
+            return "{}";
+        }
     }
 }

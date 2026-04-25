@@ -1,12 +1,13 @@
 package io.antcamp.notificationservice.domain.model;
 
+import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.util.UUID;
 
 @Getter
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 public class Notification {
 
     private UUID notificationId;
@@ -23,6 +24,40 @@ public class Notification {
     private String slackMessageTs;
     private ResolutionAction actionButton;
     private String actionUserEmail;
+
+    public static Notification restore(
+            UUID notificationId,
+            String channelId,
+            String job,
+            AlertSource source,
+            String deduplicationKey,
+            AlertSeverity severity,
+            String title,
+            String content,
+            String rawPayload,
+            String aiAnalysis,
+            AlertStatus status,
+            String slackMessageTs,
+            ResolutionAction actionButton,
+            String actionUserEmail
+    ) {
+        return Notification.builder()
+                .notificationId(notificationId)
+                .channelId(channelId)
+                .job(job)
+                .source(source)
+                .deduplicationKey(deduplicationKey)
+                .severity(severity)
+                .title(title)
+                .content(content)
+                .rawPayload(rawPayload)
+                .aiAnalysis(aiAnalysis)
+                .status(status)
+                .slackMessageTs(slackMessageTs)
+                .actionButton(actionButton)
+                .actionUserEmail(actionUserEmail)
+                .build();
+    }
 
     public static Notification create(
             String channelId,
@@ -89,7 +124,8 @@ public class Notification {
     }
 
     private static void validateDeduplicationKey(String deduplicationKey) {
-        if (deduplicationKey == null || deduplicationKey.isBlank()) throw new IllegalArgumentException("중복 억제 키는 비어있을 수 없습니다.");
+        if (deduplicationKey == null || deduplicationKey.isBlank())
+            throw new IllegalArgumentException("중복 억제 키는 비어있을 수 없습니다.");
         if (deduplicationKey.length() > 255) throw new IllegalArgumentException("중복 억제 키는 255자를 초과할 수 없습니다.");
     }
 

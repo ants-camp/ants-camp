@@ -120,7 +120,7 @@ public class NotificationApplicationService {
 
         try {
             alertPort.postThreadReply(notification.getChannelId(), notification.getSlackMessageTs(),
-                    command.action().threadReplyText(command.slackUserId()));
+                    command.action(), command.slackUserId());
         } catch (Exception e) {
             log.error("스레드 답글 전송 실패: {}", e.getMessage());
         }

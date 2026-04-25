@@ -15,6 +15,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -40,7 +41,23 @@ public class NotificationController {
             log.warn("Prometheus webhook 인증 실패");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        notificationApplicationService.handlePrometheusAlert(PrometheusAlertCommand.from(request));
+        List<PrometheusAlertCommand.AlertItem> items = request.alerts().stream()
+                .map(alert -> new PrometheusAlertCommand.AlertItem(
+                        alert.getLabel("alertname"),
+                        alert.getLabel("severity"),
+                        alert.getLabel("job"),
+                        alert.getLabel("instance"),
+                        alert.getLabel("uri"),
+                        alert.getLabel("exception"),
+                        alert.getLabel("status"),
+                        alert.getAnnotation("summary"),
+                        alert.getAnnotation("description"),
+                        alert.fingerprint(),
+                        alert.isFiring()
+                ))
+                .toList();
+        notificationApplicationService.handlePrometheusAlert(
+                new PrometheusAlertCommand(request.receiver(), request.status(), items));
         return ResponseEntity.ok().build();
     }
 

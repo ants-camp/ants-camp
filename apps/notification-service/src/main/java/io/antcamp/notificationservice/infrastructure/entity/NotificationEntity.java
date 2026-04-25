@@ -88,21 +88,21 @@ public class NotificationEntity extends BaseEntity {
     }
 
     public Notification toDomain() {
-        return Notification.builder()
-                .notificationId(this.notificationId)
-                .channelId(this.channelId)
-                .job(this.job)
-                .source(this.source)
-                .deduplicationKey(this.deduplicationKey)
-                .severity(this.severity)
-                .title(this.title)
-                .content(this.content)
-                .rawPayload(this.payload)
-                .aiAnalysis(this.aiAnalysis)
-                .status(this.status)
-                .slackMessageTs(this.slackMessageTs)
-                .actionButton(this.resolutionAction)
-                .actionUserEmail(this.actionUserEmail)
-                .build();
+        return Notification.restore(
+                this.notificationId,
+                this.channelId,
+                this.job,
+                this.source,
+                this.deduplicationKey,
+                this.severity,
+                this.title,
+                this.content,
+                this.payload,
+                this.aiAnalysis,
+                this.status,
+                this.slackMessageTs,
+                this.resolutionAction,
+                this.actionUserEmail
+        );
     }
 }
