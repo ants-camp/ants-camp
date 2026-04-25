@@ -2,6 +2,7 @@ package io.antcamp.notificationservice.presentation.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -10,6 +11,9 @@ public record PrometheusWebhookRequest(
         String status,              //상태
         List<Alert> alerts          //알림 내용
 ) {
+    public List<Alert> alerts() {
+        return alerts != null ? alerts : Collections.emptyList();
+    }
     public record Alert(
             String status,
             Map<String, String> labels,
