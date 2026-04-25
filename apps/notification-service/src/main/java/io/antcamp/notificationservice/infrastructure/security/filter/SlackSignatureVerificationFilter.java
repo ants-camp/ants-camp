@@ -45,7 +45,6 @@ public class SlackSignatureVerificationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        log.warn("필터 확인");
         // 헤더 확인
         String timestamp = request.getHeader(TIMESTAMP_HEADER);
         String slackSignature = request.getHeader(SIGNATURE_HEADER);

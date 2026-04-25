@@ -11,6 +11,7 @@ public record SlackInteractivePayload(
         User user,
         List<Action> actions
 ) {
+    private static final String BLOCK_ID_PREFIX = "alert_actions_";
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record User(String id, String name) {}
 
@@ -33,7 +34,7 @@ public record SlackInteractivePayload(
         Action action = firstAction();
         if (action == null || action.block_id() == null) return null;
         try {
-            return UUID.fromString(action.block_id().replace("alert_actions_", ""));
+            return UUID.fromString(action.block_id().replace(BLOCK_ID_PREFIX, ""));
         } catch (IllegalArgumentException e) {
             return null;
         }

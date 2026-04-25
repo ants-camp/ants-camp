@@ -67,15 +67,7 @@ public class NotificationController {
     @PostMapping(value = "/interactions", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
     public ResponseEntity<Void> receiveSlackAction(jakarta.servlet.http.HttpServletRequest request) {
         try {
-            String body = new String(request.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-            String payload = null;
-            for (String pair : body.split("&")) {
-                String[] parts = pair.split("=", 2);
-                if (parts.length == 2 && "payload".equals(java.net.URLDecoder.decode(parts[0], java.nio.charset.StandardCharsets.UTF_8))) {
-                    payload = java.net.URLDecoder.decode(parts[1], java.nio.charset.StandardCharsets.UTF_8);
-                    break;
-                }
-            }
+            String payload = request.getParameter("payload");
             if (payload == null) {
                 log.warn("Slack 액션 payload 없음");
                 return ResponseEntity.ok().build();
@@ -103,6 +95,7 @@ public class NotificationController {
     }
 
     /**
+     * todo : 지울예정
      * 의도적 예외 발생 (테스트용)
      */
     @GetMapping("/test")

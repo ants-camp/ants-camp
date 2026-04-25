@@ -3,7 +3,7 @@ groups:
     rules:
       - alert: HttpErrorOccurred
         expr: |
-          sum by (application, status) (increase(http_server_requests_seconds_count{status=~"[45].."}[5m])) > 0
+          sum by (application, job, status) (increase(http_server_requests_seconds_count{status=~"[45].."}[5m])) > 0
         for: 0m
         labels:
           severity: warning
