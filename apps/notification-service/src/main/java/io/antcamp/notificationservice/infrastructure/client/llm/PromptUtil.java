@@ -27,7 +27,7 @@ public class PromptUtil {
 
     public String buildPromptPublic(PrometheusAlertCommand.AlertItem alert, MonitoringMetrics metrics, String recentLogs) {
         String template = loadTemplate();
-        String firedAt = alert.startsAt();
+        String firedAt = nullSafe(alert.startsAt());
         return render(template, Map.ofEntries(
                 entry("alertName",       nullSafe(alert.alertName())),
                 entry("firedAt",         firedAt),
@@ -52,7 +52,7 @@ public class PromptUtil {
             return promptResource.getContentAsString(StandardCharsets.UTF_8);
         } catch (IOException e) {
             log.error("프롬프트 템플릿 로드 실패: {}", e.getMessage());
-            return "";
+            throw new IllegalStateException("프롬프트 템플릿 로드 실패", e);
         }
     }
 
