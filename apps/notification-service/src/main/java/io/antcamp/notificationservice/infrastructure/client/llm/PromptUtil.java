@@ -6,7 +6,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -45,7 +44,7 @@ public class PromptUtil {
                 entry("heap",            metrics.formatHeap()),
                 entry("errorCount",      metrics.formatErrorCount()),
                 entry("avgResponseTime", metrics.formatAvgResponseTime()),
-                entry("recentLogs",      recentLogs != null ? recentLogs : "수집된 로그 없음")
+                entry("recentLogs", recentLogs != null ? recentLogs : "수집된 로그 없음")
         ));
     }
 

@@ -22,9 +22,6 @@ slack:
 webhook:
   secret: ${WEBHOOK_SHARED_SECRET}
 
-gemini:
-  api-key: ${GEMINI_API_KEY}
-
 anthropic:
   api-key: ${ANTHROPIC_API_KEY}
 
