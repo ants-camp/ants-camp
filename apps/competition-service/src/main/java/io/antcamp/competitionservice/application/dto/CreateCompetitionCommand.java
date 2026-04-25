@@ -1,6 +1,6 @@
 package io.antcamp.competitionservice.application.dto;
 
-import io.antcamp.competitionservice.domain.CompetitionType;
+import io.antcamp.competitionservice.domain.model.CompetitionType;
 import java.time.LocalDateTime;
 
 public record CreateCompetitionCommand(

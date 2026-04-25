@@ -1,7 +1,7 @@
 package io.antcamp.competitionservice.infrastructure.entity;
 
 import common.entity.BaseEntity;
-import io.antcamp.competitionservice.domain.JoinHistory;
+import io.antcamp.competitionservice.domain.model.JoinHistory;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

@@ -1,8 +1,8 @@
 package io.antcamp.competitionservice.presentation.dto;
 
-import io.antcamp.competitionservice.domain.Competition;
-import io.antcamp.competitionservice.domain.CompetitionStatus;
-import io.antcamp.competitionservice.domain.CompetitionType;
+import io.antcamp.competitionservice.domain.model.Competition;
+import io.antcamp.competitionservice.domain.model.CompetitionStatus;
+import io.antcamp.competitionservice.domain.model.CompetitionType;
 import java.time.LocalDateTime;
 import java.util.UUID;
 

@@ -2,12 +2,16 @@ package io.antcamp.competitionservice.presentation;
 
 import io.antcamp.competitionservice.application.CompetitionService;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
-import io.antcamp.competitionservice.domain.Competition;
-import io.antcamp.competitionservice.domain.CompetitionStatus;
+import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
+import io.antcamp.competitionservice.domain.model.Competition;
+import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.presentation.dto.CreateCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.CreateCompetitionResponse;
+import io.antcamp.competitionservice.presentation.dto.FindCompetitionChangeNoticeResponse;
 import io.antcamp.competitionservice.presentation.dto.FindCompetitionResponse;
+import io.antcamp.competitionservice.presentation.dto.UpdateCompetitionRequest;
 import jakarta.validation.Valid;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -15,7 +19,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -67,5 +73,56 @@ public class CompetitionController {
             competitions = competitionService.findAll(pageable);
         }
         return competitions.map(FindCompetitionResponse::from);
+    }
+
+    @PatchMapping("/{id}/publish")
+    public FindCompetitionResponse publish(@PathVariable UUID id) {
+        Competition competition = competitionService.publish(id);
+        return FindCompetitionResponse.from(competition);
+    }
+
+    @PatchMapping("/{id}")
+    public FindCompetitionResponse updateInfo(
+            @PathVariable UUID id,
+            @RequestBody @Valid UpdateCompetitionRequest request) {
+        UpdateCompetitionCommand command = new UpdateCompetitionCommand(
+                id,
+                request.name(),
+                request.description(),
+                request.registerStartAt(),
+                request.registerEndAt(),
+                request.competitionStartAt(),
+                request.competitionEndAt(),
+                request.minParticipants(),
+                request.maxParticipants(),
+                request.beforeContents(),
+                request.afterContents(),
+                request.reason(),
+                request.updatedBy()
+        );
+        Competition competition = competitionService.updateInfo(command);
+        return FindCompetitionResponse.from(competition);
+    }
+
+    @PatchMapping("/{id}/cancel")
+    public FindCompetitionResponse cancel(@PathVariable UUID id) {
+        Competition competition = competitionService.cancel(id);
+        return FindCompetitionResponse.from(competition);
+    }
+
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void delete(
+            @PathVariable UUID id,
+            @RequestParam String deletedBy) {
+        competitionService.delete(id, deletedBy);
+    }
+
+    @GetMapping("/{id}/change-notices")
+    public List<FindCompetitionChangeNoticeResponse> findChangeNotices(@PathVariable UUID id) {
+        return competitionService.findChangeNotices(id)
+                .stream()
+                .map(FindCompetitionChangeNoticeResponse::from)
+                .toList();
     }
 }
