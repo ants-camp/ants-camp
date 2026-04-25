@@ -1,3 +1,47 @@
+server:
+  port: 8098
+
 spring:
   application:
     name: notification-service
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  datasource:
+    url: jdbc:postgresql://localhost:${POSTGRES_PORT:5432}/${POSTGRES_DB}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+slack:
+  bot-token: ${SLACK_BOT_TOKEN}
+  channel-id: ${SLACK_CHANNEL_ID}
+  signing-secret: ${SLACK_SIGNING_SECRET}
+
+webhook:
+  secret: ${WEBHOOK_SHARED_SECRET}
+
+gemini:
+  api-key: ${GEMINI_API_KEY}
+
+anthropic:
+  api-key: ${ANTHROPIC_API_KEY}
+
+prometheus:
+  url: http://localhost:9090
+
+grafana:
+  url: http://localhost:3000
+
+loki:
+  url: http://localhost:3100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
