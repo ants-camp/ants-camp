@@ -1,5 +1,7 @@
 package io.antcamp.competitionservice.domain.model;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -45,8 +47,7 @@ public class Competition {
         this.registerPeriod = registerPeriod;
         this.competitionPeriod = competitionPeriod;
         this.participantCount = participantCount;
-        // 객체가 생성되기 직전에 검증한다. ( 검증위치를 생성자 내부로 이동 )
-        validate(name, type, description, firstSeed, registerPeriod, competitionPeriod, participantCount);
+        validate();
     }
 
     /**
@@ -74,8 +75,7 @@ public class Competition {
         this.registerPeriod = registerPeriod;
         this.competitionPeriod = competitionPeriod;
         this.participantCount = participantCount;
-        // 객체가 생성되기 직전에 검증한다. ( 검증위치를 생성자 내부로 이동 )
-        validate(name, type, description, firstSeed, registerPeriod, competitionPeriod, participantCount);
+        validate();
     }
 
     // ─── 정적 팩토리 메서드 ───────────────────────────────────────────────
@@ -89,7 +89,6 @@ public class Competition {
             CompetitionPeriod competitionPeriod,
             ParticipantCount participantCount
     ) {
-        // 빌더 호출 전에는 검증하지 않는다.
         return Competition.builder()
                 .name(name)
                 .type(type)
@@ -113,7 +112,6 @@ public class Competition {
             CompetitionPeriod competitionPeriod,
             ParticipantCount participantCount
     ) {
-        // 생성자 내부에서 검증을 하기에 from메서드에서는 검증할 필요가 없다.
         return new Competition(
                 competitionId,
                 name,
@@ -129,60 +127,59 @@ public class Competition {
     }
 
     // ─── 도메인 행위 ─────────────────────────────────────────────────────
+    // 도메인 상태 위반은 INVALID_INPUT 으로 일괄 처리.
+    // 추후 도메인별 ErrorCode 분리 시 세분화 예정.
 
     public void register() {
         if (!isRegisterable()) {
-            throw new IllegalStateException("현재 참가 신청이 불가능한 대회입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.participantCount = participantCount.increment();
     }
 
     public void cancelRegister() {
         if (status != CompetitionStatus.PREPARING) {
-            throw new IllegalStateException("대회가 시작된 이후에는 참가 취소가 불가능합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.participantCount = participantCount.decrement();
     }
 
     public void startCompetition() {
         if (status != CompetitionStatus.PREPARING) {
-            throw new IllegalStateException("준비 중인 대회만 시작할 수 있습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (!competitionPeriod.isOngoing()) {
-            throw new IllegalStateException("대회 진행 기간이 아닙니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (!participantCount.isMetMinimum()) {
-            throw new IllegalStateException(
-                    String.format("최소 참가 인원(%d명)을 충족하지 못했습니다. 현재: %d명",
-                            participantCount.getMin(), participantCount.getCurrent())
-            );
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.status = CompetitionStatus.ONGOING;
     }
 
     public void finishCompetition() {
         if (status != CompetitionStatus.ONGOING) {
-            throw new IllegalStateException("진행 중인 대회만 종료할 수 있습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (competitionPeriod.isOngoing()) {
-            throw new IllegalStateException("대회 진행 기간 중에는 종료할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.status = CompetitionStatus.FINISHED;
     }
 
     public void cancelCompetition() {
         if (status == CompetitionStatus.FINISHED) {
-            throw new IllegalStateException("이미 종료된 대회는 취소할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.status = CompetitionStatus.CANCELED;
     }
 
     public void publish() {
         if (this.isReadable) {
-            throw new IllegalStateException("이미 게시된 대회입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (this.status != CompetitionStatus.PREPARING) {
-            throw new IllegalStateException("준비 중인 대회만 게시할 수 있습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.isReadable = true;
     }
@@ -195,7 +192,7 @@ public class Competition {
             ParticipantCount participantCount
     ) {
         if (this.status == CompetitionStatus.FINISHED || this.status == CompetitionStatus.CANCELED) {
-            throw new IllegalStateException("종료되거나 취소된 대회는 수정할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.name = name;
         this.description = description;
@@ -211,38 +208,33 @@ public class Competition {
                 && !participantCount.isFull();
     }
 
-    private static void validate(
-            String name,
-            CompetitionType type,
-            String description,
-            int firstSeed,
-            RegisterPeriod registerPeriod,
-            CompetitionPeriod competitionPeriod,
-            ParticipantCount participantCount
-    ) {
+    /**
+     * 객체 생성 시점에 필수 필드 및 도메인 규칙을 검증한다. 빌더 방식의 단점(필수값 누락 시에도 객체가 생성되는 문제)을 보완.
+     */
+    private void validate() {
         if (name == null || name.isBlank()) {
-            throw new IllegalArgumentException("대회명은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (type == null) {
-            throw new IllegalArgumentException("대회 타입은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (description == null || description.isBlank()) {
-            throw new IllegalArgumentException("대회 설명은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (firstSeed <= 0) {
-            throw new IllegalArgumentException("초기 시드머니는 0보다 커야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (registerPeriod == null) {
-            throw new IllegalArgumentException("신청 기간은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (competitionPeriod == null) {
-            throw new IllegalArgumentException("대회 기간은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (registerPeriod.getEndAt().isAfter(competitionPeriod.getStartAt())) {
-            throw new IllegalArgumentException("신청 종료일은 대회 시작일 이전(또는 동일)이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (participantCount == null) {
-            throw new IllegalArgumentException("참가 인원 정보는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
     }
 }

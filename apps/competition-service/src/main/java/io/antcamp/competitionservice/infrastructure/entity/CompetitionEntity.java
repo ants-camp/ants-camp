@@ -1,6 +1,8 @@
 package io.antcamp.competitionservice.infrastructure.entity;
 
 import common.entity.BaseEntity;
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionPeriod;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
@@ -112,11 +114,11 @@ public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
         this.minParticipants = minParticipants;
         this.maxParticipants = maxParticipants;
         this.currentRegisters = currentRegisters;
-        validate(); // 객체가 생성되기 직전에 검증한다.
+        validate();
     }
 
     /**
-     * 도메인 객체로부터 엔티티를 생성한다. 빌더로 모든 필드를 채운 뒤, 생성 시점에 validate()로 누락 여부를 검증한다.
+     * 도메인 객체로부터 엔티티를 생성한다.
      */
     public static CompetitionEntity from(Competition domain) {
         return CompetitionEntity.builder()
@@ -176,25 +178,25 @@ public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
      */
     private void validate() {
         if (competitionId == null) {
-            throw new IllegalStateException("competitionId는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (name == null || name.isBlank()) {
-            throw new IllegalStateException("name은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (type == null) {
-            throw new IllegalStateException("type은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (status == null) {
-            throw new IllegalStateException("status는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (description == null) {
-            throw new IllegalStateException("description은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (registerStartAt == null || registerEndAt == null) {
-            throw new IllegalStateException("registerPeriod는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (competitionStartAt == null || competitionEndAt == null) {
-            throw new IllegalStateException("competitionPeriod는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
     }
 

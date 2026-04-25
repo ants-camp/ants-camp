@@ -1,5 +1,7 @@
 package io.antcamp.competitionservice.application;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.domain.model.Competition;
@@ -44,7 +46,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Transactional(readOnly = true)
     public Competition findById(UUID id) {
         return competitionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대회입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
     }
 
     @Override
@@ -63,7 +65,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Transactional
     public Competition publish(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대회입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         competition.publish();
         return competitionRepository.save(competition);
     }
@@ -72,7 +74,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Transactional
     public Competition updateInfo(UpdateCompetitionCommand command) {
         Competition competition = competitionRepository.findById(command.competitionId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대회입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
 
         competition.updateInfo(
                 command.name(),
@@ -101,7 +103,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Transactional
     public Competition cancel(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대회입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         competition.cancelCompetition();
         return competitionRepository.save(competition);
     }
@@ -110,7 +112,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Transactional
     public void delete(UUID competitionId, String deletedBy) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대회입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         competitionRepository.delete(competition, deletedBy);
     }
 
@@ -118,7 +120,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Transactional(readOnly = true)
     public List<CompetitionChangeNotice> findChangeNotices(UUID competitionId) {
         competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대회입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         return competitionChangeNoticeRepository.findAllByCompetitionId(competitionId);
     }
 }
