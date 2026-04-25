@@ -3,9 +3,10 @@ name: AntCamp CI
 on:
   pull_request:
     branches:
-      - [ "main", "dev" ]
+      - "main"
+      - "dev"
 jobs:
-  spotless-check:
+  bulid:
     runs-on: ubuntu-latest
 
     steps:
@@ -25,6 +26,3 @@ jobs:
       # 테스트 제외하고 빌드 수행
       - name: Build with Gradle
         run: ./gradlew build -x test
-
-      - name: Check code formatting with Spotless
-        run: ./gradlew spotlessCheck

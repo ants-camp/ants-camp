@@ -51,7 +51,7 @@ project(':common') {
     jar.enabled = true
 }
 
-project(':apps:account-service') {
+project(':apps:asset-service') {
     apply plugin: 'org.springframework.boot'
 }
 
