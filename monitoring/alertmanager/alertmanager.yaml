@@ -15,7 +15,7 @@ receivers:
   - name: 'slack'
     slack_configs:
       - api_url: '${SLACK_ALERTMANAGER_WEBHOOK_URL}'
-        channel: '#alerts'
+        channel: '#grafana'
         title: '🚨 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
         text: |
           {{ range .Alerts }}

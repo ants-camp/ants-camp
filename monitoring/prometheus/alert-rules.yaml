@@ -3,14 +3,13 @@ groups:
     rules:
       - alert: HttpErrorOccurred
         expr: |
-          increase(http_server_requests_seconds_count{status=~"[45].."}[5m]) > 0
+          sum by (application, status) (increase(http_server_requests_seconds_count{status=~"[45].."}[5m])) > 0
         for: 0m
         labels:
           severity: warning
         annotations:
-          summary: "{{ $labels.job }} HTTP 에러 ({{ $labels.status }})"
-          description: "{{ $labels.application }} 서비스에서 {{ $labels.method }} {{ $labels.uri }} 요청 시 
-          {{ $labels.status }} 에러가 발생했습니다. 예외: {{ $labels.exception }}"
+          summary: "{{ $labels.application }} HTTP {{ $labels.status }} 에러 발생"
+          description: "최근 5분간 {{ $labels.application }} 서비스에서 {{ $labels.status }} 에러가 {{ $value | printf \"%.0f\" }}건 발생했습니다."
 
 # 운영 기준
       # todo : 개발중엔 ServiceDown 비활성화 함.
