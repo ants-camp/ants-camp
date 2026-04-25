@@ -23,7 +23,7 @@ dependencies {
     implementation project(':common')
 
     // spring
-    implementation 'org.springframework.boot:spring-boot-starter'
+//    implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
@@ -32,6 +32,9 @@ dependencies {
 
     // websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // PostgreSQL
+    runtimeOnly 'org.postgresql:postgresql'
 }
 
 tasks.named('test') {
