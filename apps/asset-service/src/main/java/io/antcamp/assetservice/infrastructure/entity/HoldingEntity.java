@@ -9,7 +9,15 @@ import lombok.NoArgsConstructor;
 import java.util.UUID;
 
 @Entity
-@Table(name = "p_holdings")
+@Table(
+        name = "p_holdings",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_holdings_account_stock",
+                        columnNames = {"account_id", "stock_code"}
+                )
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class HoldingEntity {
@@ -17,10 +25,10 @@ public class HoldingEntity {
     @Id
     private UUID holdingId;
 
-    @Column(nullable = false)
+    @Column(name = "account_id", nullable = false)
     private UUID accountId;
 
-    @Column(nullable = false, length = 20)
+    @Column(name = "stock_code", nullable = false, length = 20)
     private String stockCode;
 
     @Column(nullable = false)

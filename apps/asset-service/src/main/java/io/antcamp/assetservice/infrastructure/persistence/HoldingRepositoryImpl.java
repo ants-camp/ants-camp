@@ -36,6 +36,12 @@ public class HoldingRepositoryImpl implements HoldingRepository {
     }
 
     @Override
+    public Optional<Holding> findByAccountIdAndStockCodeWithLock(UUID accountId, String stockCode) {
+        return jpaHoldingRepository.findByAccountIdAndStockCodeWithLock(accountId, stockCode)
+                .map(HoldingEntity::toDomain);
+    }
+
+    @Override
     public void delete(Holding holding) {
         jpaHoldingRepository.delete(HoldingEntity.from(holding));
     }

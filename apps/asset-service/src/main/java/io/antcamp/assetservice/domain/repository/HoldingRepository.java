@@ -14,5 +14,9 @@ public interface HoldingRepository {
 
     List<Holding> findAllByAccountId(UUID accountId);
 
+    Optional<Holding> findByAccountIdAndStockCodeWithLock(UUID accountId, String stockCode);
+
     void delete(Holding holding);
+
+
 }
