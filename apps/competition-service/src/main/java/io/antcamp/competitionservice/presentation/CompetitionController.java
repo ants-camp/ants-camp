@@ -148,4 +148,16 @@ public class CompetitionController {
     ) {
         joinHistoryService.cancel(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
     }
+
+    @PatchMapping("/{id}/start")
+    public FindCompetitionResponse start(@PathVariable UUID id) {
+        Competition competition = competitionService.start(id);
+        return FindCompetitionResponse.from(competition);
+    }
+
+    @PatchMapping("/{id}/finish")
+    public FindCompetitionResponse finish(@PathVariable UUID id) {
+        Competition competition = competitionService.finish(id);
+        return FindCompetitionResponse.from(competition);
+    }
 }

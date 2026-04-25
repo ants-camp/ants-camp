@@ -123,4 +123,20 @@ public class CompetitionServiceImpl implements CompetitionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         return competitionChangeNoticeRepository.findAllByCompetitionId(competitionId);
     }
+
+    @Transactional
+    public Competition start(UUID competitionId) {
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+        competition.startCompetition();
+        return competitionRepository.save(competition);
+    }
+
+    @Transactional
+    public Competition finish(UUID competitionId) {
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+        competition.finishCompetition();
+        return competitionRepository.save(competition);
+    }
 }
