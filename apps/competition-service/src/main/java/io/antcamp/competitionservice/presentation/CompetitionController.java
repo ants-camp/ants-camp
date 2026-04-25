@@ -1,7 +1,9 @@
 package io.antcamp.competitionservice.presentation;
 
 import io.antcamp.competitionservice.application.CompetitionService;
+import io.antcamp.competitionservice.application.JoinHistoryService;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
+import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
@@ -9,6 +11,7 @@ import io.antcamp.competitionservice.presentation.dto.CreateCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.CreateCompetitionResponse;
 import io.antcamp.competitionservice.presentation.dto.FindCompetitionChangeNoticeResponse;
 import io.antcamp.competitionservice.presentation.dto.FindCompetitionResponse;
+import io.antcamp.competitionservice.presentation.dto.JoinCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.UpdateCompetitionRequest;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -36,6 +39,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CompetitionController {
 
     private final CompetitionService competitionService;
+    private final JoinHistoryService joinHistoryService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -124,5 +128,24 @@ public class CompetitionController {
                 .stream()
                 .map(FindCompetitionChangeNoticeResponse::from)
                 .toList();
+    }
+
+    // JoinHistory 엔드포인트
+    @PostMapping("/{competitionId}/join")
+    @ResponseStatus(HttpStatus.CREATED)
+    public void join(
+            @PathVariable UUID competitionId,
+            @RequestBody @Valid JoinCompetitionRequest request
+    ) {
+        joinHistoryService.join(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+    }
+
+    @DeleteMapping("/{competitionId}/join")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void cancel(
+            @PathVariable UUID competitionId,
+            @RequestBody @Valid JoinCompetitionRequest request
+    ) {
+        joinHistoryService.cancel(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
     }
 }
