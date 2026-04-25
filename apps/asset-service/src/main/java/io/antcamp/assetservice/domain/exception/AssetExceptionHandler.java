@@ -33,6 +33,12 @@ public class AssetExceptionHandler {
         return createErrorResponse(HttpStatus.FORBIDDEN, e.getMessage());
     }
 
+    // 보유 주식 확인 불가
+    @ExceptionHandler(HoldingNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleHoldingNotFoundException(HoldingNotFoundException e) {
+        return createErrorResponse(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
     //공통 에러 응답
     private ResponseEntity<Map<String, String>> createErrorResponse(HttpStatus status, String message) {
         Map<String, String> response = new HashMap<>();
