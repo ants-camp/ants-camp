@@ -53,7 +53,8 @@ public class NotificationController {
                         alert.getAnnotation("summary"),
                         alert.getAnnotation("description"),
                         alert.fingerprint(),
-                        alert.isFiring()
+                        alert.isFiring(),
+                        alert.startsAt()
                 ))
                 .toList();
         notificationApplicationService.handlePrometheusAlert(
