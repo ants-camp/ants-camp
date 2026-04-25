@@ -27,8 +27,7 @@ public class PromptUtil {
 
     public String buildPromptPublic(PrometheusAlertCommand.AlertItem alert, MonitoringMetrics metrics, String recentLogs) {
         String template = loadTemplate();
-        String firedAt = java.time.LocalDateTime.now()
-                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        String firedAt = alert.startsAt();
         return render(template, Map.ofEntries(
                 entry("alertName",       nullSafe(alert.alertName())),
                 entry("firedAt",         firedAt),

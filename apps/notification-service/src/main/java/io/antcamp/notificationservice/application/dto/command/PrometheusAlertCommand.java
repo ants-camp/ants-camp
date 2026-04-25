@@ -19,6 +19,7 @@ public record PrometheusAlertCommand(
             String summary,
             String description,
             String fingerprint,
-            boolean firing
+            boolean firing,
+            String startsAt
     ) {}
 }
