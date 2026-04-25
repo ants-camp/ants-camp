@@ -19,6 +19,7 @@ import jakarta.persistence.Transient;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.SQLRestriction;
 import org.springframework.data.domain.Persistable;
@@ -30,7 +31,7 @@ import org.springframework.data.domain.Persistable;
 public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
 
     @Transient
-    private boolean isNew = true;  // 추가
+    private boolean isNew = true;
 
     @Id
     @Column(name = "competition_id", nullable = false, updatable = false)
@@ -77,23 +78,63 @@ public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
     @Column(name = "current_registers", nullable = false)
     private int currentRegisters;
 
+    /**
+     * 빌더로 모든 필드를 한 번에 받아 객체를 생성한다. 빌더 호출 후 validate()로 누락된 필수값을 즉시 검증한다.
+     */
+    @Builder(access = AccessLevel.PRIVATE)
+    private CompetitionEntity(
+            UUID competitionId,
+            String name,
+            CompetitionType type,
+            CompetitionStatus status,
+            String description,
+            int firstSeed,
+            boolean isReadable,
+            LocalDateTime registerStartAt,
+            LocalDateTime registerEndAt,
+            LocalDateTime competitionStartAt,
+            LocalDateTime competitionEndAt,
+            int minParticipants,
+            int maxParticipants,
+            int currentRegisters
+    ) {
+        this.competitionId = competitionId;
+        this.name = name;
+        this.type = type;
+        this.status = status;
+        this.description = description;
+        this.firstSeed = firstSeed;
+        this.isReadable = isReadable;
+        this.registerStartAt = registerStartAt;
+        this.registerEndAt = registerEndAt;
+        this.competitionStartAt = competitionStartAt;
+        this.competitionEndAt = competitionEndAt;
+        this.minParticipants = minParticipants;
+        this.maxParticipants = maxParticipants;
+        this.currentRegisters = currentRegisters;
+        validate(); // 객체가 생성되기 직전에 검증한다.
+    }
+
+    /**
+     * 도메인 객체로부터 엔티티를 생성한다. 빌더로 모든 필드를 채운 뒤, 생성 시점에 validate()로 누락 여부를 검증한다.
+     */
     public static CompetitionEntity from(Competition domain) {
-        CompetitionEntity entity = new CompetitionEntity();
-        entity.competitionId = domain.getCompetitionId();
-        entity.name = domain.getName();
-        entity.type = domain.getType();
-        entity.status = domain.getStatus();
-        entity.description = domain.getDescription();
-        entity.firstSeed = domain.getFirstSeed();
-        entity.isReadable = domain.isReadable();
-        entity.registerStartAt = domain.getRegisterPeriod().getStartAt();
-        entity.registerEndAt = domain.getRegisterPeriod().getEndAt();
-        entity.competitionStartAt = domain.getCompetitionPeriod().getStartAt();
-        entity.competitionEndAt = domain.getCompetitionPeriod().getEndAt();
-        entity.minParticipants = domain.getParticipantCount().getMin();
-        entity.maxParticipants = domain.getParticipantCount().getMax();
-        entity.currentRegisters = domain.getParticipantCount().getCurrent();
-        return entity;
+        return CompetitionEntity.builder()
+                .competitionId(domain.getCompetitionId())
+                .name(domain.getName())
+                .type(domain.getType())
+                .status(domain.getStatus())
+                .description(domain.getDescription())
+                .firstSeed(domain.getFirstSeed())
+                .isReadable(domain.isReadable())
+                .registerStartAt(domain.getRegisterPeriod().getStartAt())
+                .registerEndAt(domain.getRegisterPeriod().getEndAt())
+                .competitionStartAt(domain.getCompetitionPeriod().getStartAt())
+                .competitionEndAt(domain.getCompetitionPeriod().getEndAt())
+                .minParticipants(domain.getParticipantCount().getMin())
+                .maxParticipants(domain.getParticipantCount().getMax())
+                .currentRegisters(domain.getParticipantCount().getCurrent())
+                .build();
     }
 
     public Competition toDomain() {
@@ -111,6 +152,9 @@ public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
         );
     }
 
+    /**
+     * 영속 상태에서 도메인 변경분을 반영한다. 식별자(competitionId)는 변경하지 않는다.
+     */
     public void update(Competition domain) {
         this.name = domain.getName();
         this.type = domain.getType();
@@ -127,19 +171,46 @@ public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
         this.currentRegisters = domain.getParticipantCount().getCurrent();
     }
 
+    /**
+     * 빌더 방식의 단점(필수값 누락 시에도 객체가 생성되는 문제)을 보완하기 위해 생성 시점에 필수 참조 타입 값들의 null 여부를 검증한다.
+     */
+    private void validate() {
+        if (competitionId == null) {
+            throw new IllegalStateException("competitionId는 필수입니다.");
+        }
+        if (name == null || name.isBlank()) {
+            throw new IllegalStateException("name은 필수입니다.");
+        }
+        if (type == null) {
+            throw new IllegalStateException("type은 필수입니다.");
+        }
+        if (status == null) {
+            throw new IllegalStateException("status는 필수입니다.");
+        }
+        if (description == null) {
+            throw new IllegalStateException("description은 필수입니다.");
+        }
+        if (registerStartAt == null || registerEndAt == null) {
+            throw new IllegalStateException("registerPeriod는 필수입니다.");
+        }
+        if (competitionStartAt == null || competitionEndAt == null) {
+            throw new IllegalStateException("competitionPeriod는 필수입니다.");
+        }
+    }
+
     @Override
     public UUID getId() {
-        return competitionId;  // null 말고 실제 id 반환
+        return competitionId;
     }
 
     @Override
     public boolean isNew() {
-        return isNew;  // false 말고 isNew 필드 반환
+        return isNew;
     }
 
     @PostLoad
     @PostPersist
     void markNotNew() {
-        this.isNew = false;  // DB에서 조회하거나 저장 후엔 false로
+        this.isNew = false;
     }
 }

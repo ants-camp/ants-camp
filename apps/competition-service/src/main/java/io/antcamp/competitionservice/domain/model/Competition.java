@@ -22,7 +22,10 @@ public class Competition {
     private CompetitionPeriod competitionPeriod;
     private ParticipantCount participantCount;
 
-    @Builder(builderMethodName = "createBuilder", access = AccessLevel.PRIVATE)
+    /**
+     * 신규 대회 생성용 빌더 생성자. 외부에서는 createCompetition() 정적 팩토리 메서드를 통해서만 호출 가능.
+     */
+    @Builder(access = AccessLevel.PRIVATE)
     private Competition(
             String name,
             CompetitionType type,
@@ -42,9 +45,13 @@ public class Competition {
         this.registerPeriod = registerPeriod;
         this.competitionPeriod = competitionPeriod;
         this.participantCount = participantCount;
+        // 객체가 생성되기 직전에 검증한다. ( 검증위치를 생성자 내부로 이동 )
+        validate(name, type, description, firstSeed, registerPeriod, competitionPeriod, participantCount);
     }
 
-    // @Builder 제거 - 일반 생성자로 변경
+    /**
+     * 영속 데이터로부터 도메인 객체를 복원할 때 사용하는 생성자. 외부에서는 from() 정적 팩토리 메서드를 통해서만 호출 가능.
+     */
     private Competition(
             UUID competitionId,
             String name,
@@ -67,6 +74,8 @@ public class Competition {
         this.registerPeriod = registerPeriod;
         this.competitionPeriod = competitionPeriod;
         this.participantCount = participantCount;
+        // 객체가 생성되기 직전에 검증한다. ( 검증위치를 생성자 내부로 이동 )
+        validate(name, type, description, firstSeed, registerPeriod, competitionPeriod, participantCount);
     }
 
     // ─── 정적 팩토리 메서드 ───────────────────────────────────────────────
@@ -80,9 +89,8 @@ public class Competition {
             CompetitionPeriod competitionPeriod,
             ParticipantCount participantCount
     ) {
-        validate(name, type, description, firstSeed, registerPeriod, competitionPeriod, participantCount);
-
-        return Competition.createBuilder()
+        // 빌더 호출 전에는 검증하지 않는다.
+        return Competition.builder()
                 .name(name)
                 .type(type)
                 .description(description)
@@ -93,7 +101,6 @@ public class Competition {
                 .build();
     }
 
-    // fromBuilder 제거 - 직접 생성자 호출
     public static Competition from(
             UUID competitionId,
             String name,
@@ -106,6 +113,7 @@ public class Competition {
             CompetitionPeriod competitionPeriod,
             ParticipantCount participantCount
     ) {
+        // 생성자 내부에서 검증을 하기에 from메서드에서는 검증할 필요가 없다.
         return new Competition(
                 competitionId,
                 name,
