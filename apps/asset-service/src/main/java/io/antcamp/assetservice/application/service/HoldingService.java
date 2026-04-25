@@ -22,9 +22,15 @@ public class HoldingService {
     @Transactional
     public void buy(BuyHoldingCommand command) {
         Holding holding = holdingRepository
-                .findByAccountIdAndStockCode(command.getAccountId(), command.getStockCode())
+                .findByAccountIdAndStockCodeWithLock(
+                        command.getAccountId(),
+                        command.getStockCode()
+                )
                 .map(existingHolding -> {
-                    existingHolding.buy(command.getStockAmount(), command.getBuyPrice());
+                    existingHolding.buy(
+                            command.getStockAmount(),
+                            command.getBuyPrice()
+                    );
                     return existingHolding;
                 })
                 .orElseGet(() -> Holding.create(
@@ -40,7 +46,10 @@ public class HoldingService {
     @Transactional
     public void sell(SellHoldingCommand command) {
         Holding holding = holdingRepository
-                .findByAccountIdAndStockCode(command.getAccountId(), command.getStockCode())
+                .findByAccountIdAndStockCodeWithLock(
+                        command.getAccountId(),
+                        command.getStockCode()
+                )
                 .orElseThrow(() -> new HoldingNotFoundException("보유 주식을 찾을 수 없습니다."));
 
         holding.sell(command.getStockAmount());
