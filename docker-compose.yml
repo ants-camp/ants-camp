@@ -317,10 +317,14 @@ services:
       - "${NOTIFICATION_SERVER_PORT}:8098"
     environment:
       SERVER_PORT: ${NOTIFICATION_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${NOTIFICATION_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      PROMETHEUS_URL: http://prometheus:${PROMETHEUS_PORT}
+      #todo : GRAFANA_URL 배포 전 변경예정
+      GRAFANA_URL: http://localhost:${GRAFANA_PORT}
+      LOKI_URL: http://loki:${LOKI_PORT}
     env_file:
       - .env
     volumes:
