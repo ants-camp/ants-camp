@@ -46,11 +46,11 @@ public class SlackApiClient implements AlertPort {
     }
 
     @Override
-    public void postThreadReply(String channelId, String threadTs, String text) {
+    public void postThreadReply(String channelId, String threadTs, ResolutionAction action, String slackUserId) {
         Map<String, Object> body = new HashMap<>();
         body.put("channel", channelId);
         body.put("thread_ts", threadTs);
-        body.put("text", text);
+        body.put("text", SlackMessageFormatter.threadReplyText(action, slackUserId));
 
         SlackResponse response = post(CHAT_POST_MESSAGE_URL, body);
         if (response == null || !response.ok()) {
