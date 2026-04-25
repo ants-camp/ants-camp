@@ -5,6 +5,7 @@ import io.antcamp.assetservice.application.dto.command.BuyHoldingCommand;
 import io.antcamp.assetservice.application.dto.command.SellHoldingCommand;
 import io.antcamp.assetservice.application.dto.query.HoldingResult;
 import io.antcamp.assetservice.application.service.HoldingService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,13 +21,13 @@ public class HoldingController {
     private final HoldingService holdingService;
 
     @PostMapping("/buy")
-    public ResponseEntity<Void> buy(@RequestBody BuyHoldingCommand command) {
+    public ResponseEntity<Void> buy(@Valid @RequestBody BuyHoldingCommand command) {
         holdingService.buy(command);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/sell")
-    public ResponseEntity<Void> sell(@RequestBody SellHoldingCommand command) {
+    public ResponseEntity<Void> sell(@Valid @RequestBody SellHoldingCommand command) {
         holdingService.sell(command);
         return ResponseEntity.ok().build();
     }
