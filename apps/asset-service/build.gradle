@@ -6,7 +6,7 @@ plugins {
 
 group = 'io.antcamp'
 version = '0.0.1-SNAPSHOT'
-description = 'trade-service'
+description = 'asset-service'
 
 java {
     toolchain {
@@ -19,22 +19,10 @@ repositories {
 }
 
 dependencies {
-    // common
-    implementation project(':common')
-
-    // spring
-//    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-
-    // lombok
-    implementation 'org.projectlombok:lombok:1.18.42'
-
-    // websocket
-    implementation 'org.springframework.boot:spring-boot-starter-websocket'
-
-    // PostgreSQL
-    runtimeOnly 'org.postgresql:postgresql'
+    testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
 tasks.named('test') {

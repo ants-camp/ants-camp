@@ -1,0 +1,59 @@
+-- =========================
+-- 1. Schema 생성
+-- =========================
+CREATE SCHEMA IF NOT EXISTS user;
+CREATE SCHEMA IF NOT EXISTS trade;
+CREATE SCHEMA IF NOT EXISTS asset;
+CREATE SCHEMA IF NOT EXISTS stock;
+CREATE SCHEMA IF NOT EXISTS portfolio;
+CREATE SCHEMA IF NOT EXISTS competition;
+CREATE SCHEMA IF NOT EXISTS ranking;
+CREATE SCHEMA IF NOT EXISTS ai;
+CREATE SCHEMA IF NOT EXISTS notification;
+
+-- =========================
+-- 2. 사용자 생성
+-- =========================
+DO
+$$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'antcamp') THEN
+        CREATE ROLE antcamp LOGIN PASSWORD 'p@ssw0rd';
+    END IF;
+END
+$$;
+
+-- =========================
+-- 3. Schema 권한 부여
+-- =========================
+GRANT USAGE ON SCHEMA user TO antcamp;
+GRANT USAGE ON SCHEMA trade TO antcamp;
+GRANT USAGE ON SCHEMA asset TO antcamp;
+GRANT USAGE ON SCHEMA stock TO antcamp;
+GRANT USAGE ON SCHEMA portfolio TO antcamp;
+GRANT USAGE ON SCHEMA competition TO antcamp;
+GRANT USAGE ON SCHEMA ranking TO antcamp;
+GRANT USAGE ON SCHEMA ai TO antcamp;
+GRANT USAGE ON SCHEMA notification TO antcamp;
+
+-- =========================
+-- 4. 기본 권한 설정 (테이블 자동 권한)
+-- =========================
+ALTER DEFAULT PRIVILEGES IN SCHEMA user
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA trade
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA asset
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA stock
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA portfolio
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA competition
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA ranking
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA ai
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
+ALTER DEFAULT PRIVILEGES IN SCHEMA notification
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
