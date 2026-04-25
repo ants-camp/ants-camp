@@ -6,7 +6,7 @@ plugins {
 
 group = 'io.antcamp'
 version = '0.0.1-SNAPSHOT'
-description = 'ai-service'
+description = 'assistant-service'
 
 java {
     toolchain {

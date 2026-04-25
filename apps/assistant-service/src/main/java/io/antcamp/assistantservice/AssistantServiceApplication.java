@@ -1,13 +1,13 @@
-package io.antcamp.aiservice;
+package io.antcamp.assistantservice;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class AiServiceApplication {
+public class AssistantServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(AiServiceApplication.class, args);
+        SpringApplication.run(AssistantServiceApplication.class, args);
     }
 
 }
