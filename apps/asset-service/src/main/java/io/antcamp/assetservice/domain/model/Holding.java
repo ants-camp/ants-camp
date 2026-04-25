@@ -26,6 +26,8 @@ public class Holding {
     }
 
     public static Holding create(UUID accountId, String stockCode, Integer stockAmount, Long buyPrice) {
+        validateAccountId(accountId);
+        validateStockCode(stockCode);
         validateStockAmount(stockAmount);
         validatePrice(buyPrice);
 
@@ -37,6 +39,18 @@ public class Holding {
                 buyPrice,
                 0L
         );
+    }
+
+    private static void validateAccountId(UUID accountId) {
+        if (accountId == null) {
+            throw new IllegalArgumentException("accountId는 필수입니다.");
+        }
+    }
+
+    private static void validateStockCode(String stockCode) {
+        if (stockCode == null || stockCode.isBlank()) {
+            throw new IllegalArgumentException("stockCode는 필수입니다.");
+        }
     }
 
     public void buy(Integer quantity, Long price) {
