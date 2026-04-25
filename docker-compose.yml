@@ -1,3 +1,7 @@
+x-java-tz: &java-tz
+  TZ: Asia/Seoul
+  JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.4.0
@@ -48,6 +52,7 @@ services:
     ports:
       - "${EUREKA_SERVER_PORT}:8761"
     environment:
+      <<: *java-tz
       SERVER_PORT: 8761
     networks:
       - kafka-network
@@ -60,6 +65,7 @@ services:
     ports:
       - "${CONFIG_SERVER_PORT}:8888"
     environment:
+      <<: *java-tz
       SERVER_PORT: 8888
     networks:
       - kafka-network
@@ -72,6 +78,7 @@ services:
     ports:
       - "${GATEWAY_SERVER_PORT}:8080"
     environment:
+      <<: *java-tz
       SERVER_PORT: 8080
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       JWT_SECRET: ${JWT_SECRET}
@@ -93,6 +100,7 @@ services:
     ports:
       - "${USER_SERVER_PORT}:8082"
     environment:
+      <<: *java-tz
       SERVER_PORT: 8082
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${USER_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -121,6 +129,7 @@ services:
     ports:
       - "${TRADE_SERVER_PORT}:8084"
     environment:
+      <<: *java-tz
       SERVER_PORT: ${TRADE_SERVER_PORT}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -154,6 +163,7 @@ services:
     ports:
       - "${ASSET_SERVER_PORT}:8086"
     environment:
+      <<: *java-tz
       SERVER_PORT: ${TRADE_SERVER_PORT}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -181,6 +191,7 @@ services:
     ports:
       - "${STOCK_SERVER_PORT}:8088"
     environment:
+      <<: *java-tz
       SERVER_PORT: ${STOCK_SERVER_PORT}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -208,6 +219,7 @@ services:
     ports:
       - "${PORTFOLIO_SERVER_PORT}:8090"
     environment:
+      <<: *java-tz
       SERVER_PORT: ${PORTFOLIO_SERVER_PORT}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -235,6 +247,7 @@ services:
     ports:
       - "${COMPETITION_SERVER_PORT}:8092"
     environment:
+      <<: *java-tz
       SERVER_PORT: ${COMPETITION_SERVER_PORT}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -262,6 +275,7 @@ services:
     ports:
       - "${RANKING_SERVER_PORT}:8094"
     environment:
+      <<: *java-tz
       SERVER_PORT: ${RANKING_SERVER_PORT}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -289,6 +303,7 @@ services:
     ports:
       - "${ASSISTANT_SERVER_PORT}:8096"
     environment:
+      <<: *java-tz
       SERVER_PORT: ${ASSISTANT_SERVER_PORT}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -316,6 +331,7 @@ services:
     ports:
       - "${NOTIFICATION_SERVER_PORT}:8098"
     environment:
+      <<: *java-tz
       SERVER_PORT: ${NOTIFICATION_SERVER_PORT}
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${NOTIFICATION_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
@@ -400,6 +416,8 @@ services:
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: prometheus
+    environment:
+      - TZ=Asia/Seoul
     ports:
       - "${PROMETHEUS_PORT}:9090"
     volumes:
@@ -419,6 +437,7 @@ services:
     ports:
       - "${ALERTMANAGER_PORT}:9093"
     environment:
+      - TZ=Asia/Seoul
       - SLACK_ALERTMANAGER_WEBHOOK_URL=${SLACK_ALERTMANAGER_WEBHOOK_URL}
       - WEBHOOK_SHARED_SECRET=${WEBHOOK_SHARED_SECRET}
     volumes:
@@ -436,9 +455,12 @@ services:
     ports:
       - "${GRAFANA_PORT}:3000"
     environment:
+      - TZ=Asia/Seoul
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
+    env_file:
+      - .env
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
       - grafana-data:/var/lib/grafana
@@ -451,6 +473,8 @@ services:
   loki:
     image: grafana/loki:2.9.8
     container_name: loki
+    environment:
+      - TZ=Asia/Seoul
     ports:
       - "${LOKI_PORT}:3100"
     volumes:
@@ -465,6 +489,7 @@ services:
     image: grafana/promtail:3.1.0
     container_name: promtail
     environment:
+      - TZ=Asia/Seoul
       - DOCKER_API_VERSION=1.44
     volumes:
       - ./monitoring/promtail/promtail.yaml:/etc/promtail/promtail.yaml
