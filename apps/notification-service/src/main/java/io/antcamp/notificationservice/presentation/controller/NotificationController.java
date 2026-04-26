@@ -35,7 +35,7 @@ public class NotificationController {
      */
     @PostMapping("/prometheus")
     public ResponseEntity<Void> receivePrometheusAlert(
-            @RequestParam(value = "secret", required = false) String secret,
+            @RequestHeader(value = "X-Webhook-Secret", required = false) String secret,
             @RequestBody PrometheusWebhookRequest request) {
         if (!webhookSecret.isBlank() && !webhookSecret.equals(secret)) {
             log.warn("Prometheus webhook 인증 실패");
@@ -95,12 +95,4 @@ public class NotificationController {
         return ResponseEntity.ok().build();
     }
 
-    /**
-     * todo : 지울예정
-     * 의도적 예외 발생 (테스트용)
-     */
-    @GetMapping("/test")
-    public String test() {
-        throw new RuntimeException("테스트용 의도적 예외 발생");
-    }
 }

@@ -3,6 +3,7 @@ package io.antcamp.notificationservice.application.service;
 import io.antcamp.notificationservice.application.dto.command.PrometheusAlertCommand;
 import io.antcamp.notificationservice.application.dto.command.SlackActionCommand;
 import io.antcamp.notificationservice.application.port.ActionResult;
+import io.antcamp.notificationservice.domain.exception.AlreadyHandledException;
 import io.antcamp.notificationservice.application.port.AlertPort;
 import io.antcamp.notificationservice.application.port.CachePort;
 import io.antcamp.notificationservice.application.port.DeduplicationPort;
@@ -109,7 +110,7 @@ public class NotificationApplicationService {
             //슬랙 액션 저장
             notificationCommandHandler.recordAction(command.notificationId(), command.action(), userEmail);
             return true;
-        } catch (IllegalStateException e) {
+        } catch (AlreadyHandledException e) {
             log.info("이미 처리된 알림 버튼 클릭 무시: notificationId={}, userId={}", command.notificationId(), command.slackUserId());
             return false;
         }
