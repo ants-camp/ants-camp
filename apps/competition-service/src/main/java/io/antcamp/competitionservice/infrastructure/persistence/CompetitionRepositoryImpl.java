@@ -39,6 +39,12 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     }
 
     @Override
+    public Optional<Competition> findByIdForUpdate(UUID id) {
+        return competitionJpaRepository.findByIdForUpdate(id)
+                .map(CompetitionEntity::toDomain);
+    }
+
+    @Override
     public Page<Competition> findAll(Pageable pageable) {
         return competitionJpaRepository.findAll(pageable)
                 .map(CompetitionEntity::toDomain);

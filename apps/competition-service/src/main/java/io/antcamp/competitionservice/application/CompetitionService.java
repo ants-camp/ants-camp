@@ -33,4 +33,8 @@ public interface CompetitionService {
     void delete(UUID competitionId, String deletedBy);
 
     List<CompetitionChangeNotice> findChangeNotices(UUID competitionId);
+
+    Competition start(UUID competitionId);
+
+    Competition finish(UUID competitionId);
 }
