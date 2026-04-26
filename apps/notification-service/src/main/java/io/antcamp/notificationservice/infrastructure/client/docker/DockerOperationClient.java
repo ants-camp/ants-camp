@@ -9,6 +9,8 @@ import com.github.dockerjava.api.model.ContainerNetwork;
 import com.github.dockerjava.api.model.ExposedPort;
 import io.antcamp.notificationservice.application.port.RestartPort;
 import io.antcamp.notificationservice.application.port.RollbackPort;
+import io.antcamp.notificationservice.domain.exception.ContainerNotFoundException;
+import io.antcamp.notificationservice.domain.exception.InfrastructureServiceException;
 import io.antcamp.notificationservice.infrastructure.config.NotificationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -142,7 +144,7 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
                 .stream()
                 .findFirst()
                 .map(Container::getId)
-                .orElseThrow(() -> new IllegalArgumentException("컨테이너를 찾을 수 없습니다: " + containerName));
+                .orElseThrow(() -> new ContainerNotFoundException("컨테이너를 찾을 수 없습니다: " + containerName));
     }
 
     private String getRollbackImage(String job) {
@@ -175,7 +177,7 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
 
     private void validateJobAllowed(String job) {
         if (properties.infrastructureJobs().contains(job)) {
-            throw new SecurityException("인프라 서비스는 조작할 수 없습니다: " + job);
+            throw new InfrastructureServiceException("인프라 서비스는 조작할 수 없습니다: " + job);
         }
     }
 

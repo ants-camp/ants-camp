@@ -1,5 +1,6 @@
 package io.antcamp.notificationservice.application.service;
 
+import io.antcamp.notificationservice.domain.exception.NotificationNotFoundException;
 import io.antcamp.notificationservice.domain.model.Notification;
 import io.antcamp.notificationservice.domain.model.ResolutionAction;
 import io.antcamp.notificationservice.domain.repository.NotificationRepository;
@@ -20,7 +21,7 @@ public class NotificationCommandHandler {
     @Transactional
     public Notification recordAction(UUID notificationId, ResolutionAction action, String userEmail) {
         Notification notification = notificationRepository.findByIdForUpdate(notificationId)
-                .orElseThrow(() -> new IllegalArgumentException("해당 알림을 찾을 수 없습니다: " + notificationId));
+                .orElseThrow(() -> new NotificationNotFoundException("해당 알림을 찾을 수 없습니다: " + notificationId));
         notification.recordAction(action, userEmail);
         Notification saved = notificationRepository.save(notification);
         log.info("액션 기록 완료: notificationId={}, action={}", notificationId, action);
