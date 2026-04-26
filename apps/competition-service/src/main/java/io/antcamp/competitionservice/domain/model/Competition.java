@@ -144,13 +144,16 @@ public class Competition {
         this.participantCount = participantCount.decrement();
     }
 
+    // Competition.java 의 startCompetition, finishCompetition 두 메서드만 변경
+
     public void startCompetition() {
         if (status != CompetitionStatus.PREPARING) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        if (!competitionPeriod.isOngoing()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
+        // [변경] 시간 검증 제거 - 운영자 수동 트리거 정책
+        // if (!competitionPeriod.isOngoing()) {
+        //     throw new BusinessException(ErrorCode.INVALID_INPUT);
+        // }
         if (!participantCount.isMetMinimum()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
@@ -161,9 +164,10 @@ public class Competition {
         if (status != CompetitionStatus.ONGOING) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        if (competitionPeriod.isOngoing()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
+        // [변경] 시간 검증 제거 - 운영자 수동 트리거 정책
+        // if (competitionPeriod.isOngoing()) {
+        //     throw new BusinessException(ErrorCode.INVALID_INPUT);
+        // }
         this.status = CompetitionStatus.FINISHED;
     }
 

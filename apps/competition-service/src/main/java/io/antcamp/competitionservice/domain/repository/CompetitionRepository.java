@@ -13,6 +13,11 @@ public interface CompetitionRepository {
     Optional<Competition> findById(UUID id);
 
     /**
+     * 비관적 락으로 Competition 조회. 참가자 수 변경 시(register/cancelRegister) 동시성 제어를 위해 사용.
+     */
+    Optional<Competition> findByIdForUpdate(UUID id);   // ← 추가
+
+    /**
      * 전체 대회 목록 조회
      */
     Page<Competition> findAll(Pageable pageable);
@@ -23,5 +28,4 @@ public interface CompetitionRepository {
     Page<Competition> findAllByCompetitionStatus(CompetitionStatus status, Pageable pageable);
 
     void delete(Competition competition, String deletedBy);  // 추가
-
 }
