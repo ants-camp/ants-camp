@@ -2,6 +2,7 @@ package io.antcamp.notificationservice.infrastructure.client.slack;
 
 import io.antcamp.notificationservice.domain.model.Notification;
 import io.antcamp.notificationservice.domain.model.ResolutionAction;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -12,17 +13,23 @@ import java.util.Map;
 @Component
 public class SlackBlockBuilder {
 
+    @Value("${notification.infrastructure-jobs}")
+    private List<String> infrastructureJobs;
+
     public List<Map<String, Object>> buildAlertBlocks(Notification notification) {
         List<Map<String, Object>> blocks = buildBaseBlocks(notification);
-        if (hasAiAnalysis(notification)) {
+        if (hasAiAnalysis(notification) && !infrastructureJobs.contains(notification.getJob())) {
             blocks.add(actionsBlock(notification.getNotificationId().toString()));
         }
         return blocks;
     }
 
-    public List<Map<String, Object>> buildHandledBlocks(Notification notification, String handlerSlackUserId, ResolutionAction action) {
+    public List<Map<String, Object>> buildHandledBlocks(Notification notification, String handlerSlackUserId, ResolutionAction action, boolean succeeded) {
         List<Map<String, Object>> blocks = buildBaseBlocks(notification);
-        blocks.add(sectionBlock(String.format("✅ *<@%s>* 님이 *%s* 처리하였습니다.", handlerSlackUserId, action.displayName())));
+        String statusText = succeeded
+                ? String.format("✅ *<@%s>* 님이 *%s* 처리하였습니다.", handlerSlackUserId, action.displayName())
+                : String.format("❌ *<@%s>* 님이 *%s* 시도하였으나 실패하였습니다.", handlerSlackUserId, action.displayName());
+        blocks.add(sectionBlock(statusText));
         return blocks;
     }
 

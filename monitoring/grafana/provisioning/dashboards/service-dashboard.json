@@ -18,17 +18,6 @@
         "sort": 1
       },
       {
-        "name": "loki_job",
-        "label": "Container",
-        "type": "query",
-        "datasource": { "type": "loki", "uid": "loki" },
-        "query": "label_values(job)",
-        "refresh": 2,
-        "includeAll": false,
-        "multi": false,
-        "sort": 1
-      },
-      {
         "name": "search",
         "label": "로그 검색",
         "type": "textbox",
@@ -316,7 +305,7 @@
       },
       "targets": [
         {
-          "expr": "{job=\"$loki_job\"} |~ \"(?i)$search\"",
+          "expr": "{job=\"$job\"} |~ \"(?i)$search\"",
           "legendFormat": ""
         }
       ]

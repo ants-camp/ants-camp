@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: notification-service
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
   jpa:
     hibernate:
       ddl-auto: update
@@ -33,6 +37,12 @@ grafana:
 
 loki:
   url: ${LOKI_URL}
+
+notification:
+  infrastructure-jobs:
+    - antcamp-eureka-server
+    - antcamp-config-server
+    - antcamp-gateway
 
 management:
   endpoints:

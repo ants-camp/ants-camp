@@ -341,10 +341,13 @@ services:
       #todo : GRAFANA_URL 배포 전 변경예정
       GRAFANA_URL: http://localhost:${GRAFANA_PORT}
       LOKI_URL: http://loki:${LOKI_PORT}
+      REDIS_HOST: redis
+      REDIS_PORT: ${SPRING_DATA_REDIS_PORT}
     env_file:
       - .env
     volumes:
       - ./logs:/app/logs
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       postgres:
         condition: service_healthy
