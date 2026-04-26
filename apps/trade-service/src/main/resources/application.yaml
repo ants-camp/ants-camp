@@ -20,8 +20,14 @@ spring:
 
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST:localhost}
-      port: ${SPRING_DATA_REDIS_PORT:6379}
+      url: ${SPRING_DATA_REDIS_URL:redis://localhost:6379}
+      timeout: 36000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
 
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
@@ -54,8 +60,11 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
 
+
 kis:
   app:
+    url: ${KIS_REST_URL}
+    approveUrl: ${KIS_APPROVAL_URL}
     key: ${KIS_APP_KEY}
     secret: ${KIS_APP_SECRET}
     access: ${KIS_APP_ACCESS}
