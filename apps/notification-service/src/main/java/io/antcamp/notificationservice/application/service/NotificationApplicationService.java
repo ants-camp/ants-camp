@@ -5,6 +5,7 @@ import io.antcamp.notificationservice.application.dto.command.SlackActionCommand
 import io.antcamp.notificationservice.application.port.ActionResult;
 import io.antcamp.notificationservice.application.port.AlertPort;
 import io.antcamp.notificationservice.application.port.CachePort;
+import io.antcamp.notificationservice.application.port.DeduplicationPort;
 import io.antcamp.notificationservice.application.port.LlmPort;
 import io.antcamp.notificationservice.application.port.LogPort;
 import io.antcamp.notificationservice.application.port.MonitoringPort;
@@ -15,8 +16,10 @@ import io.antcamp.notificationservice.domain.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Duration;
 
 @Slf4j
 @Service
@@ -32,6 +35,8 @@ public class NotificationApplicationService {
     private final MonitoringPort monitoringPort;
     private final LogPort logPort;
     private final AlertContentBuilder alertContentBuilder;
+    private final DeduplicationPort deduplicationPort;
+    private final NotificationCommandHandler notificationCommandHandler;
 
     @Value("${slack.channel-id}")
     private String channelId;
@@ -42,15 +47,18 @@ public class NotificationApplicationService {
                 log.info("RESOLVED(해결된) 알림 무시: {}", alert.alertName());
                 continue;
             }
-            processAlert(alert);
+            try {
+                processAlert(alert);
+            } catch (Exception e) {
+                log.error("알림 처리 실패, 다음 알림으로 진행: alertName={}, error={}", alert.alertName(), e.getMessage());
+            }
         }
     }
 
     private void processAlert(PrometheusAlertCommand.AlertItem alert) {
         String dedupKey = alert.fingerprint();
-
-        if (notificationRepository.existsSentByDeduplicationKey(dedupKey)) {
-            log.info("이미 전송된 중복 알림 존재 : fingerprint={}", dedupKey);
+        if (!deduplicationPort.tryReserve("alert:dedup:" + dedupKey, Duration.ofHours(1))) {
+            log.info("중복 알림 무시: fingerprint={}", dedupKey);
             return;
         }
 
@@ -86,46 +94,59 @@ public class NotificationApplicationService {
             savedNotification.markAsFailed();
         }
 
-        notificationRepository.save(savedNotification);
+        try {
+            notificationRepository.save(savedNotification);
+        } catch (Exception e) {
+            log.error("알림 상태 저장 실패 — DB/Slack 불일치 가능: notificationId={}, status={}, slackTs={}",
+                    savedNotification.getNotificationId(), savedNotification.getStatus(),
+                    savedNotification.getSlackMessageTs(), e);
+        }
     }
 
-    @Transactional
-    public void handleSlackAction(SlackActionCommand command) {
-        Notification notification = notificationRepository.findById(command.notificationId())
-                .orElseThrow(() -> new IllegalArgumentException("해당 알림을 찾을 수 없습니다: " + command.notificationId()));
-
+    public boolean recordSlackAction(SlackActionCommand command) {
         String userEmail = alertPort.getUserEmail(command.slackUserId());
-
         try {
-            notification.recordAction(command.action(), userEmail);
+            //슬랙 액션 저장
+            notificationCommandHandler.recordAction(command.notificationId(), command.action(), userEmail);
+            return true;
         } catch (IllegalStateException e) {
             log.info("이미 처리된 알림 버튼 클릭 무시: notificationId={}, userId={}", command.notificationId(), command.slackUserId());
-            return;
+            return false;
         }
+    }
 
-        notificationRepository.save(notification);
-        log.info("액션 기록 완료: notificationId={}, action={}, userId={}", command.notificationId(), command.action(), command.slackUserId());
+    /**
+     * 사용자 interaction 비동기처리
+     * - 도커 작업들이 시간소요가 많아 슬랙 응답시간인 3초를 초과하여 슬랙에 오류 표기됨
+     * - 실제로 처리 진행중인 동안 사용자 입장에서 진행중인지, 오류인지 알 방법이 없음
+     */
+    @Async("slackActionExecutor")
+    public void executeAndNotifyAsync(SlackActionCommand command) {
+        Notification notification = notificationRepository.findById(command.notificationId())
+                .orElseThrow(() -> new IllegalStateException("알림을 찾을 수 없습니다: " + command.notificationId()));
+
+        trySlack("처리 중 메시지 갱신", () ->
+                alertPort.markAsProcessing(notification, command.slackUserId(), command.action()));
 
         ActionResult result = executeAction(command.action(), notification.getJob());
 
         if (result instanceof ActionResult.Failure) {
-            notification.markActionFailed();
-            notificationRepository.save(notification);
+            notificationCommandHandler.markActionFailed(command.notificationId());
         }
 
         boolean succeeded = result instanceof ActionResult.Success;
+        trySlack("Slack 메시지 업데이트", () ->
+                alertPort.markAsHandled(notification, command.slackUserId(), command.action(), succeeded));
+        trySlack("스레드 답글 전송", () ->
+                alertPort.notifyActionResult(notification.getChannelId(), notification.getSlackMessageTs(),
+                        command.action(), command.slackUserId(), result));
+    }
 
+    private void trySlack(String taskName, Runnable action) {
         try {
-            alertPort.markAsHandled(notification, command.slackUserId(), command.action(), succeeded);
+            action.run();
         } catch (Exception e) {
-            log.error("Slack 메시지 업데이트 실패: {}", e.getMessage());
-        }
-
-        try {
-            alertPort.notifyActionResult(notification.getChannelId(), notification.getSlackMessageTs(),
-                    command.action(), command.slackUserId(), result);
-        } catch (Exception e) {
-            log.error("스레드 답글 전송 실패: {}", e.getMessage());
+            log.error("Slack 처리 실패 [{}]: {}", taskName, e.getMessage());
         }
     }
 

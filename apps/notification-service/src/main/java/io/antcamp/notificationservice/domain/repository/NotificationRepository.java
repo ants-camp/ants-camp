@@ -10,6 +10,4 @@ public interface NotificationRepository {
     Notification save(Notification notification);
 
     Optional<Notification> findById(UUID notificationId);
-
-    boolean existsSentByDeduplicationKey(String deduplicationKey);
 }

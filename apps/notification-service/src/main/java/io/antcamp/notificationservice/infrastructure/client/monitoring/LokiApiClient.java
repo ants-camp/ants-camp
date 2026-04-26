@@ -40,17 +40,19 @@ public class LokiApiClient implements LogPort {
                     .retrieve()
                     .body(LokiQueryResponse.class);
 
-            if (response == null || response.data() == null
-                    || response.data().result() == null
-                    || response.data().result().isEmpty()) {
+            if (response == null || response.safeResults().isEmpty()) {
                 return null;
             }
 
             StringJoiner joiner = new StringJoiner("\n");
-            for (StreamResult stream : response.data().result()) {
+            for (StreamResult stream : response.safeResults()) {
                 if (stream.values() == null) continue;
                 for (List<String> entry : stream.values()) {
-                    if (entry.size() >= 2) joiner.add(entry.get(1));
+                    if (entry.size() >= 2) {
+                        long ts = Long.parseLong(entry.get(0)) / 1_000_000; // 나노초 → 밀리초
+                        String time = Instant.ofEpochMilli(ts).toString();
+                        joiner.add(time + " " + entry.get(1));
+                    }
                 }
             }
 
@@ -63,7 +65,11 @@ public class LokiApiClient implements LogPort {
         }
     }
 
-    private record LokiQueryResponse(String status, Data data) {}
+    private record LokiQueryResponse(String status, Data data) {
+        List<StreamResult> safeResults() {
+            return data != null && data.result() != null ? data.result() : List.of();
+        }
+    }
     private record Data(String resultType, List<StreamResult> result) {}
     private record StreamResult(Map<String, String> stream, List<List<String>> values) {}
 }
