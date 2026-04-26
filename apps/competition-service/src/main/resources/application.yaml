@@ -10,3 +10,9 @@ spring:
         format_sql: true
 server:
   port: 8092
+
+# [추가] 토픽명 매핑 (CompetitionTopicProperties와 연결)
+topics:
+  competition:
+    started: competition.started
+    finished: competition.finished

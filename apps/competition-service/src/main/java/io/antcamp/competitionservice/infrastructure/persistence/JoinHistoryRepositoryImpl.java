@@ -5,6 +5,7 @@ import common.exception.ErrorCode;
 import io.antcamp.competitionservice.domain.model.JoinHistory;
 import io.antcamp.competitionservice.domain.repository.JoinHistoryRepository;
 import io.antcamp.competitionservice.infrastructure.entity.JoinHistoryEntity;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -34,5 +35,12 @@ public class JoinHistoryRepositoryImpl implements JoinHistoryRepository {
                 .findByUserIdAndCompetitionIdWithLock(joinHistory.getUserId(), joinHistory.getCompetitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         entity.softDelete(deletedBy);
+    }
+
+    @Override
+    public List<JoinHistory> findAllByCompetitionId(UUID competitionId) {
+        return joinHistoryJpaRepository.findAllByCompetitionId(competitionId).stream()
+                .map(JoinHistoryEntity::toDomain)
+                .toList();
     }
 }

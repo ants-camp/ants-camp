@@ -4,14 +4,19 @@ import common.exception.BusinessException;
 import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
+import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
+import io.antcamp.competitionservice.domain.event.payload.CompetitionStartedPayload;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionChangeNotice;
 import io.antcamp.competitionservice.domain.model.CompetitionPeriod;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
+import io.antcamp.competitionservice.domain.model.JoinHistory;
 import io.antcamp.competitionservice.domain.model.ParticipantCount;
 import io.antcamp.competitionservice.domain.model.RegisterPeriod;
 import io.antcamp.competitionservice.domain.repository.CompetitionChangeNoticeRepository;
 import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
+import io.antcamp.competitionservice.domain.repository.JoinHistoryRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +31,9 @@ public class CompetitionServiceImpl implements CompetitionService {
 
     private final CompetitionRepository competitionRepository;
     private final CompetitionChangeNoticeRepository competitionChangeNoticeRepository;
+    private final JoinHistoryRepository joinHistoryRepository;
+    private final CompetitionEventProducer competitionEventProducer;
+
 
     @Override
     @Transactional
@@ -124,12 +132,33 @@ public class CompetitionServiceImpl implements CompetitionService {
         return competitionChangeNoticeRepository.findAllByCompetitionId(competitionId);
     }
 
+    @Override
     @Transactional
     public Competition start(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+
+        // 1. 도메인 상태 변경 (PREPARING -> ONGOING)
         competition.startCompetition();
-        return competitionRepository.save(competition);
+        Competition saved = competitionRepository.save(competition);
+
+        // 2. 참가자 목록 조회
+        List<JoinHistory> joinHistories = joinHistoryRepository.findAllByCompetitionId(competitionId);
+        List<CompetitionStartedPayload.Participant> participants = joinHistories.stream()
+                .map(jh -> new CompetitionStartedPayload.Participant(jh.getUserId(), jh.getNickname()))
+                .toList();
+
+        // 3. 이벤트 발행 (계좌 서비스가 컨슘 -> 참가자별 대회 계좌 생성)
+        CompetitionStartedPayload payload = new CompetitionStartedPayload(
+                saved.getCompetitionId(),
+                saved.getName(),
+                saved.getFirstSeed(),
+                participants,
+                LocalDateTime.now()
+        );
+        competitionEventProducer.publishCompetitionStarted(payload);
+
+        return saved;
     }
 
     @Transactional

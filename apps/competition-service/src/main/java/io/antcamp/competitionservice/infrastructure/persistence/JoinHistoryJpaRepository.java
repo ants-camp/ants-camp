@@ -2,6 +2,7 @@ package io.antcamp.competitionservice.infrastructure.persistence;
 
 import io.antcamp.competitionservice.infrastructure.entity.JoinHistoryEntity;
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -17,4 +18,6 @@ public interface JoinHistoryJpaRepository extends JpaRepository<JoinHistoryEntit
             @Param("userId") UUID userId,
             @Param("competitionId") UUID competitionId
     );
+
+    List<JoinHistoryEntity> findAllByCompetitionId(UUID competitionId);
 }
