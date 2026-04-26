@@ -1,7 +1,7 @@
 package io.antcamp.competitionservice.infrastructure.messaging.kafka.producer;
 
 import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
-import io.antcamp.competitionservice.domain.event.payload.CompetitionStartedPayload;
+import io.antcamp.competitionservice.domain.event.CompetitionStartedPayload;
 import io.antcamp.competitionservice.infrastructure.messaging.kafka.CompetitionTopicProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,6 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
     private final CompetitionTopicProperties topicProperties;
-
 
     // 대회생성이벤트 -> 계좌 서비스
     @Override

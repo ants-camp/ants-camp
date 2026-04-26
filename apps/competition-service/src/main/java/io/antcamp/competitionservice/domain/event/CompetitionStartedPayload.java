@@ -1,4 +1,4 @@
-package io.antcamp.competitionservice.domain.event.payload;
+package io.antcamp.competitionservice.domain.event;
 
 import java.time.LocalDateTime;
 import java.util.List;

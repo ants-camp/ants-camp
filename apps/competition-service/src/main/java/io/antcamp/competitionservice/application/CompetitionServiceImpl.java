@@ -5,7 +5,7 @@ import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
-import io.antcamp.competitionservice.domain.event.payload.CompetitionStartedPayload;
+import io.antcamp.competitionservice.domain.event.CompetitionStartedPayload;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionChangeNotice;
 import io.antcamp.competitionservice.domain.model.CompetitionPeriod;
@@ -162,6 +162,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     }
 
     @Transactional
+    @Override
     public Competition finish(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
