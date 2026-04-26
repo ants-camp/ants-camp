@@ -26,14 +26,17 @@ public class ClaudeApiClient implements LlmPort {
 
     private final RestClient restClient;
     private final PromptUtil promptUtil;
+    private final String apiKey;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @Value("${anthropic.api-key}")
-    private String apiKey;
-
-    public ClaudeApiClient(RestClient restClient, PromptUtil promptUtil) {
+    public ClaudeApiClient(
+            RestClient restClient,
+            PromptUtil promptUtil,
+            @Value("${anthropic.api-key}") String apiKey
+    ) {
         this.restClient = restClient;
         this.promptUtil = promptUtil;
+        this.apiKey = apiKey;
     }
 
     @Override

@@ -43,6 +43,7 @@ notification:
     - antcamp-eureka-server
     - antcamp-config-server
     - antcamp-gateway
+    - antcamp-notification
 
 management:
   endpoints:

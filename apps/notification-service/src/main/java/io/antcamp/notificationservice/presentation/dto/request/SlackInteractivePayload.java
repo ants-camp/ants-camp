@@ -1,6 +1,7 @@
 package io.antcamp.notificationservice.presentation.dto.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.List;
 import java.util.UUID;
@@ -17,8 +18,8 @@ public record SlackInteractivePayload(
 
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record Action(
-            String action_id,
-            String block_id,
+            @JsonProperty("action_id") String actionId,
+            @JsonProperty("block_id") String blockId,
             String value
     ) {}
 
@@ -32,9 +33,9 @@ public record SlackInteractivePayload(
 
     public UUID notificationId() {
         Action action = firstAction();
-        if (action == null || action.block_id() == null) return null;
+        if (action == null || action.blockId() == null) return null;
         try {
-            return UUID.fromString(action.block_id().replace(BLOCK_ID_PREFIX, ""));
+            return UUID.fromString(action.blockId().replace(BLOCK_ID_PREFIX, ""));
         } catch (IllegalArgumentException e) {
             return null;
         }

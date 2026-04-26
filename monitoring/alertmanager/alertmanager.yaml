@@ -7,7 +7,7 @@ route:
     # notification-service 자체 이상 시: 웹훅 호출이 불가하거나 부하를 가중시키므로 Slack 직통 발송
     - match_re:
         alertname: ServiceDown|HighCPU|HighMemory
-        job: notification-service
+        job: antcamp-notification
       receiver: 'slack'
 
 receivers:

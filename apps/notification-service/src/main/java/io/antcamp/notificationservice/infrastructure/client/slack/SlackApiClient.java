@@ -64,6 +64,23 @@ public class SlackApiClient implements AlertPort {
         }
     }
 
+    /**
+     * 진행중
+     */
+    @Override
+    public void markAsProcessing(Notification notification, String handlerSlackUserId, ResolutionAction action) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("channel", notification.getChannelId());
+        body.put("ts", notification.getSlackMessageTs());
+        body.put("text", notification.getTitle());
+        body.put("blocks", blockBuilder.buildProcessingBlocks(notification, handlerSlackUserId, action));
+
+        SlackResponse response = post(CHAT_UPDATE_URL, body);
+        if (response == null || !response.ok()) {
+            log.warn("Slack '처리 중' 메시지 갱신 실패: {}", response != null ? response.error() : "null response");
+        }
+    }
+
     @Override
     public void markAsHandled(Notification notification, String handlerSlackUserId, ResolutionAction action, boolean succeeded) {
         Map<String, Object> body = new HashMap<>();

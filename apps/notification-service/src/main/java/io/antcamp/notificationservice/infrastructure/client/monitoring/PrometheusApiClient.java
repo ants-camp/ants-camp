@@ -1,6 +1,7 @@
 package io.antcamp.notificationservice.infrastructure.client.monitoring;
 
 import io.antcamp.notificationservice.application.port.MonitoringPort;
+import io.antcamp.notificationservice.application.service.PromQLQueries;
 import io.antcamp.notificationservice.domain.model.MonitoringMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,16 +30,10 @@ public class PrometheusApiClient implements MonitoringPort {
           CPU 사용률 / Heap 메모리 / 사용률 최근 5분간 4xx/5xx 에러 건수 / 최근 5분간 평균 응답 시간 메트릭 수집
          */
         try {
-            Double cpu = querySingle(String.format("process_cpu_usage{job=\"%s\"}", job));
-            Double heap = querySingle(String.format(
-                    "jvm_memory_used_bytes{job=\"%s\",area=\"heap\"} / jvm_memory_max_bytes{job=\"%s\",area=\"heap\"} > 0",
-                    job, job));
-            Double errorCount = querySingle(String.format(
-                    "sum(increase(http_server_requests_seconds_count{job=\"%s\",status=~\"[45]..\"}[5m]))",
-                    job));
-            Double avgRt = querySingle(String.format(
-                    "sum(rate(http_server_requests_seconds_sum{job=\"%s\"}[5m])) / sum(rate(http_server_requests_seconds_count{job=\"%s\"}[5m]))",
-                    job, job));
+            Double cpu = querySingle(PromQLQueries.cpu(job));
+            Double heap = querySingle(PromQLQueries.heap(job));
+            Double errorCount = querySingle(PromQLQueries.httpErrorRate(job));
+            Double avgRt = querySingle(PromQLQueries.avgResponseTime(job));
 
             return new MonitoringMetrics(job, cpu, heap, errorCount, avgRt);
         } catch (Exception e) {
