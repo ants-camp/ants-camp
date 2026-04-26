@@ -20,19 +20,19 @@ public class JoinHistoryServiceImpl implements JoinHistoryService {
 
     @Transactional
     public void join(JoinCompetitionCommand command) {
-        // 중복 신청 체크 (비관적 락)
+        // 1. 중복 신청 체크 (JoinHistory 비관적 락 - 같은 사용자 동시 신청 방지)
         joinHistoryRepository.findByUserIdAndCompetitionId(command.userId(), command.competitionId())
                 .ifPresent(h -> {
                     throw new BusinessException(ErrorCode.INVALID_INPUT);
                 });
 
-        // 대회 상태 검증 + 참가자 수 증가
-        Competition competition = competitionRepository.findById(command.competitionId())
+        // 2. 대회 조회 (Competition 비관적 락 - 참가자 수 동시성 제어) ← 변경
+        Competition competition = competitionRepository.findByIdForUpdate(command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         competition.register();
         competitionRepository.save(competition);
 
-        // 신청 이력 저장
+        // 3. 신청 이력 저장
         JoinHistory joinHistory = JoinHistory.createJoinHistory(
                 command.userId(),
                 command.nickname(),
@@ -43,18 +43,18 @@ public class JoinHistoryServiceImpl implements JoinHistoryService {
 
     @Transactional
     public void cancel(JoinCompetitionCommand command) {
-        // 신청 이력 조회 (비관적 락)
+        // 1. 신청 이력 조회 (JoinHistory 비관적 락)
         JoinHistory joinHistory = joinHistoryRepository
                 .findByUserIdAndCompetitionId(command.userId(), command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
 
-        // 대회 상태 검증 + 참가자 수 감소
-        Competition competition = competitionRepository.findById(command.competitionId())
+        // 2. 대회 조회 (Competition 비관적 락 - 참가자 수 동시성 제어) ← 변경
+        Competition competition = competitionRepository.findByIdForUpdate(command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         competition.cancelRegister();
         competitionRepository.save(competition);
 
-        // 신청 이력 소프트 삭제
+        // 3. 신청 이력 소프트 삭제
         // deletedBy는 임시로 userId 사용 (추후 인증 연동 시 교체)
         joinHistoryRepository.delete(joinHistory, command.userId().toString());
     }
