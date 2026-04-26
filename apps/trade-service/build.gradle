@@ -18,17 +18,38 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    set('springCloudVer', "2025.0.1")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVer}"
+    }
+}
+
 dependencies {
     // common
     implementation project(':common')
 
     // spring
-//    implementation 'org.springframework.boot:spring-boot-starter'
+    implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
+    // openfeign
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:5.0.1'
+
     // lombok
-    implementation 'org.projectlombok:lombok:1.18.42'
+    compileOnly 'org.projectlombok:lombok:1.18.42'
+    annotationProcessor 'org.projectlombok:lombok:1.18.42'
+    testCompileOnly 'org.projectlombok:lombok:1.18.42'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.42'
+
+    // redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'com.github.codemonstur:embedded-redis:1.4.3'
+    implementation 'org.redisson:redisson:4.3.1'
 
     // websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
