@@ -5,6 +5,7 @@ import io.antcamp.tradeservice.application.service.TradeService;
 import io.antcamp.tradeservice.presentation.dto.KisAccessToken;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,7 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class TradeController {
     private final TradeService tradeService;
 
+    @PostMapping("/access-token")
     public ResponseEntity<ApiResponse<KisAccessToken>> getKisAccessToken(){
-        return ApiResponse.ok(tradeService.getAccessToken());
+        return ApiResponse.ok(tradeService.requestAccessToken());
     }
 }
