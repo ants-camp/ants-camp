@@ -2,11 +2,14 @@ package io.antcamp.notificationservice.application.service;
 
 import io.antcamp.notificationservice.application.dto.command.PrometheusAlertCommand;
 import io.antcamp.notificationservice.application.dto.command.SlackActionCommand;
+import io.antcamp.notificationservice.application.port.ActionResult;
 import io.antcamp.notificationservice.application.port.AlertPort;
 import io.antcamp.notificationservice.application.port.CachePort;
 import io.antcamp.notificationservice.application.port.LlmPort;
 import io.antcamp.notificationservice.application.port.LogPort;
 import io.antcamp.notificationservice.application.port.MonitoringPort;
+import io.antcamp.notificationservice.application.port.RestartPort;
+import io.antcamp.notificationservice.application.port.RollbackPort;
 import io.antcamp.notificationservice.domain.model.*;
 import io.antcamp.notificationservice.domain.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +26,8 @@ public class NotificationApplicationService {
     private final NotificationRepository notificationRepository;
     private final AlertPort alertPort;
     private final CachePort cachePort;
+    private final RestartPort restartPort;
+    private final RollbackPort rollbackPort;
     private final LlmPort llmPort;
     private final MonitoringPort monitoringPort;
     private final LogPort logPort;
@@ -101,28 +106,62 @@ public class NotificationApplicationService {
         notificationRepository.save(notification);
         log.info("액션 기록 완료: notificationId={}, action={}, userId={}", command.notificationId(), command.action(), command.slackUserId());
 
-        /**
-         * todo : 구현 예정
-         */
-        if (command.action() == ResolutionAction.CACHE_CLEAR) {
-            try {
-                cachePort.clear(notification.getJob());
-            } catch (Exception e) {
-                log.error("캐시 비우기 실패: {}", e.getMessage());
-            }
+        ActionResult result = executeAction(command.action(), notification.getJob());
+
+        if (result instanceof ActionResult.Failure) {
+            notification.markActionFailed();
+            notificationRepository.save(notification);
         }
 
+        boolean succeeded = result instanceof ActionResult.Success;
+
         try {
-            alertPort.markAsHandled(notification, command.slackUserId(), command.action());
+            alertPort.markAsHandled(notification, command.slackUserId(), command.action(), succeeded);
         } catch (Exception e) {
             log.error("Slack 메시지 업데이트 실패: {}", e.getMessage());
         }
 
         try {
-            alertPort.postThreadReply(notification.getChannelId(), notification.getSlackMessageTs(),
-                    command.action(), command.slackUserId());
+            alertPort.notifyActionResult(notification.getChannelId(), notification.getSlackMessageTs(),
+                    command.action(), command.slackUserId(), result);
         } catch (Exception e) {
             log.error("스레드 답글 전송 실패: {}", e.getMessage());
         }
+    }
+
+    private ActionResult executeAction(ResolutionAction action, String job) {
+        return switch (action) {
+            case CACHE_CLEAR -> {
+                try {
+                    cachePort.clear(job);
+                    yield new ActionResult.Success();
+                } catch (Exception e) {
+                    log.error("캐시 비우기 실패: {}", e.getMessage());
+                    yield new ActionResult.Failure(ActionResult.FailureReason.EXECUTION_ERROR);
+                }
+            }
+            case RESTART -> {
+                try {
+                    restartPort.restart(job);
+                    yield new ActionResult.Success();
+                } catch (Exception e) {
+                    log.error("서비스 재시작 실패: {}", e.getMessage());
+                    yield new ActionResult.Failure(ActionResult.FailureReason.EXECUTION_ERROR);
+                }
+            }
+            case ROLLBACK -> {
+                try {
+                    rollbackPort.rollback(job);
+                    yield new ActionResult.Success();
+                } catch (IllegalStateException e) {
+                    log.warn("롤백 이미지 미설정: {}", e.getMessage());
+                    yield new ActionResult.Failure(ActionResult.FailureReason.NOT_CONFIGURED);
+                } catch (Exception e) {
+                    log.error("코드 롤백 실패: {}", e.getMessage());
+                    yield new ActionResult.Failure(ActionResult.FailureReason.EXECUTION_ERROR);
+                }
+            }
+            case FALSE_ALARM -> new ActionResult.Success();
+        };
     }
 }

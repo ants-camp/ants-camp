@@ -118,6 +118,10 @@ public class Notification {
         this.actionUserEmail = userEmail;
     }
 
+    public void markActionFailed() {
+        this.status = AlertStatus.ACTION_FAILED;
+    }
+
     private static void validateChannelId(String channelId) {
         if (channelId == null || channelId.isBlank()) throw new IllegalArgumentException("채널 ID는 비어있을 수 없습니다.");
         if (channelId.length() > 100) throw new IllegalArgumentException("채널 ID는 100자를 초과할 수 없습니다.");
