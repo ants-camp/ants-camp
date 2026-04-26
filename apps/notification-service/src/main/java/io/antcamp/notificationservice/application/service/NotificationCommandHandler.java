@@ -17,13 +17,9 @@ public class NotificationCommandHandler {
 
     private final NotificationRepository notificationRepository;
 
-    /**
-     * PESSIMISTIC_WRITE 락 획득 → 액션 기록 → 커밋 순서로 짧게 유지.
-     * 중복 처리 시 IllegalStateException, 유효하지 않은 입력 시 IllegalArgumentException.
-     */
     @Transactional
     public Notification recordAction(UUID notificationId, ResolutionAction action, String userEmail) {
-        Notification notification = notificationRepository.findById(notificationId)
+        Notification notification = notificationRepository.findByIdForUpdate(notificationId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 알림을 찾을 수 없습니다: " + notificationId));
         notification.recordAction(action, userEmail);
         Notification saved = notificationRepository.save(notification);

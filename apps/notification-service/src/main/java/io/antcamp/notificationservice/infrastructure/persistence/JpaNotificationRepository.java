@@ -6,13 +6,19 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 import java.util.UUID;
 
 public interface JpaNotificationRepository extends JpaRepository<NotificationEntity, UUID> {
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT n FROM NotificationEntity n WHERE n.notificationId = :id")
-    Optional<NotificationEntity> findById(@Param("id") UUID id);
+    Optional<NotificationEntity> findByIdReadOnly(@Param("id") UUID id);
+
+    // 중복 액션 방지용 비관적 락 조회
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Transactional
+    @Query("SELECT n FROM NotificationEntity n WHERE n.notificationId = :id")
+    Optional<NotificationEntity> findByIdForUpdate(@Param("id") UUID id);
 }
