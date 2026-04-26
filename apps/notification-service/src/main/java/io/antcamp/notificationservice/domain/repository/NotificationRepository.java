@@ -10,4 +10,6 @@ public interface NotificationRepository {
     Notification save(Notification notification);
 
     Optional<Notification> findById(UUID notificationId);
+
+    Optional<Notification> findByIdForUpdate(UUID notificationId);
 }

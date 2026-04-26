@@ -24,7 +24,13 @@ public class NotificationRepositoryImpl implements NotificationRepository {
 
     @Override
     public Optional<Notification> findById(UUID notificationId) {
-        return jpaNotificationRepository.findById(notificationId)
+        return jpaNotificationRepository.findByIdReadOnly(notificationId)
+                .map(NotificationEntity::toDomain);
+    }
+
+    @Override
+    public Optional<Notification> findByIdForUpdate(UUID notificationId) {
+        return jpaNotificationRepository.findByIdForUpdate(notificationId)
                 .map(NotificationEntity::toDomain);
     }
 
