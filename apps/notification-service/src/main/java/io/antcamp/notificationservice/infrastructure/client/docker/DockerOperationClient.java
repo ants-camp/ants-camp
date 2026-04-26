@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -61,7 +62,7 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
             if (!"bridge".equals(entry.getKey())) {
                 dockerClient.connectToNetworkCmd()
                         .withContainerId(newContainerId)
-                        .withNetworkId(entry.getValue().getNetworkID())
+                        .withNetworkId(Objects.requireNonNull(entry.getValue().getNetworkID()))
                         .exec();
             }
         }
