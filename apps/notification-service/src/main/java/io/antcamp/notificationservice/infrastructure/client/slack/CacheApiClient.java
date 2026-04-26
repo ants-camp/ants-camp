@@ -19,7 +19,7 @@ public class CacheApiClient implements CachePort {
     public void clear(String job) {
         String pattern = job.replace("antcamp-", "") + "*";
         Set<String> keys = redisTemplate.keys(pattern);
-        if (keys == null || keys.isEmpty()) {
+        if (keys.isEmpty()) {
             log.info("삭제할 캐시 키 없음: pattern={}", pattern);
             return;
         }
