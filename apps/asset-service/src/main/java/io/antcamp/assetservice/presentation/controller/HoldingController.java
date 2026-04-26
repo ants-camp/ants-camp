@@ -5,6 +5,7 @@ import io.antcamp.assetservice.application.dto.command.BuyHoldingCommand;
 import io.antcamp.assetservice.application.dto.command.SellHoldingCommand;
 import io.antcamp.assetservice.application.dto.query.HoldingResult;
 import io.antcamp.assetservice.application.service.HoldingService;
+import io.antcamp.assetservice.presentation.dto.response.HoldingResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,10 +34,13 @@ public class HoldingController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<HoldingResult>>> getHoldings(
+    public ResponseEntity<ApiResponse<List<HoldingResponse>>> getHoldings(
             @RequestParam UUID accountId
     ) {
-        List<HoldingResult> result = holdingService.getHoldings(accountId);
-        return ApiResponse.ok(result);
+        List<HoldingResponse> response = holdingService.getHoldings(accountId)
+                .stream()
+                .map(HoldingResponse::from)
+                .toList();
+        return ApiResponse.ok(response);
     }
 }
