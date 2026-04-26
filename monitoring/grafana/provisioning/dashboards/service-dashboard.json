@@ -305,7 +305,7 @@
       },
       "targets": [
         {
-          "expr": "{job=\"$job\"} |~ \"(?i)$search\"",
+          "expr": "{job=\"$loki_job\"} |~ \"(?i)$search\"",
           "legendFormat": ""
         }
       ]
