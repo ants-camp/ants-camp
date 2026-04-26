@@ -13,7 +13,6 @@ ROLLBACK_CONTAINERS=(
   antcamp-competition
   antcamp-ranking
   antcamp-assistant
-  antcamp-notification
 )
 
 # 로컬 테스트용 서비스 (notification 스택만)
