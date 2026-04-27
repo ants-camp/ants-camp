@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/api/trades")
 public class TradeController {
+
     private final TradeService tradeService;
 
     @PostMapping("/access-token")
