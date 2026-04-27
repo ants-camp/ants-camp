@@ -7,7 +7,7 @@ route:
     # notification-service 자체 이상 시: 웹훅 호출이 불가하거나 부하를 가중시키므로 Slack 직통 발송
     - match_re:
         alertname: ServiceDown|HighCPU|HighMemory
-        job: notification-service
+        job: antcamp-notification
       receiver: 'slack'
 
 receivers:
@@ -15,7 +15,7 @@ receivers:
   - name: 'slack'
     slack_configs:
       - api_url: '${SLACK_ALERTMANAGER_WEBHOOK_URL}'
-        channel: '#alerts'
+        channel: '#grafana'
         title: '🚨 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
         text: |
           {{ range .Alerts }}
@@ -27,4 +27,7 @@ receivers:
   # notification-service 웹훅 — AI 분석 후 Slack 발송 (기본 경로)
   - name: 'notification-webhook'
     webhook_configs:
-      - url: 'http://notification-service:8098/api/notifications/prometheus?secret=${WEBHOOK_SHARED_SECRET}'
+      - url: 'http://notification-service:8098/api/notifications/prometheus'
+        http_config:
+          headers:
+            X-Webhook-Secret: '${WEBHOOK_SHARED_SECRET}'
