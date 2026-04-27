@@ -11,5 +11,5 @@ public interface NotificationRepository {
 
     Optional<Notification> findById(UUID notificationId);
 
-    boolean existsSentByDeduplicationKey(String deduplicationKey);
+    Optional<Notification> findByIdForUpdate(UUID notificationId);
 }

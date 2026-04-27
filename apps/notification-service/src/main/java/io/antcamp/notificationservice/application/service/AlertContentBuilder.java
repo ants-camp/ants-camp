@@ -18,7 +18,7 @@ import java.util.Map;
 public class AlertContentBuilder {
 
     @Value("${grafana.url}")
-    private String monitoringBaseUrl;
+    private String grafanaUrl;
 
     private final ObjectMapper objectMapper;
 
@@ -44,21 +44,42 @@ public class AlertContentBuilder {
     }
 
     private String buildMonitoringUrl(String job) {
-        return UriComponentsBuilder.fromUriString(monitoringBaseUrl + "/explore")
+        return UriComponentsBuilder.fromUriString(grafanaUrl + "/explore")
                 .queryParam("orgId", "1")
                 .queryParam("left", buildExploreJson(job))
                 .build()
                 .toUriString();
     }
 
+    private static String grafanaCpuExpr(String job) {
+        return String.format("process_cpu_usage{job=\"%s\"}", job);
+    }
+
+    private static String grafanaHeapExpr(String job) {
+        return String.format(
+                "jvm_memory_used_bytes{job=\"%s\",area=\"heap\"} / jvm_memory_max_bytes{job=\"%s\",area=\"heap\"} > 0",
+                job, job);
+    }
+
+    private static String grafanaHttpErrorExpr(String job) {
+        return String.format(
+                "sum(rate(http_server_requests_seconds_count{job=\"%s\",status=~\"[45]..\"}[5m]))",
+                job);
+    }
+
     private String buildExploreJson(String job) {
-        List<Map<String, String>> queries = List.of(
-                Map.of("expr", String.format("process_cpu_usage{job=\"%s\"}", job), "refId", "A"),
-                Map.of("expr", String.format("jvm_memory_used_bytes{job=\"%s\",area=\"heap\"} / jvm_memory_max_bytes{job=\"%s\",area=\"heap\"}", job, job), "refId", "B"),
-                Map.of("expr", String.format("sum(rate(http_server_requests_seconds_count{job=\"%s\",status=~\"[45]..\"}[5m]))", job), "refId", "C")
+        Map<String, Object> datasource = Map.of("type", "prometheus", "uid", "prometheus");
+
+        List<Map<String, Object>> queries = List.of(
+                Map.of("refId", "A", "expr", grafanaCpuExpr(job),
+                        "instant", false, "range", true, "datasource", datasource),
+                Map.of("refId", "B", "expr", grafanaHeapExpr(job),
+                        "instant", false, "range", true, "datasource", datasource),
+                Map.of("refId", "C", "expr", grafanaHttpErrorExpr(job),
+                        "instant", false, "range", true, "datasource", datasource)
         );
         Map<String, Object> payload = Map.of(
-                "datasource", "Prometheus",
+                "datasource", "prometheus",
                 "queries", queries,
                 "range", Map.of("from", "now-1h", "to", "now")
         );

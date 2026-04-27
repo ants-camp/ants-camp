@@ -21,5 +21,11 @@ public record PrometheusAlertCommand(
             String fingerprint,
             boolean firing,
             String startsAt
-    ) {}
+    ) {
+        public AlertItem {
+            if (alertName == null || alertName.isBlank()) throw new IllegalArgumentException("alertName은 필수입니다.");
+            if (fingerprint == null || fingerprint.isBlank()) throw new IllegalArgumentException("fingerprint는 필수입니다.");
+            if (job == null || job.isBlank()) throw new IllegalArgumentException("job은 필수입니다.");
+        }
+    }
 }

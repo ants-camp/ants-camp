@@ -2,6 +2,7 @@ package io.antcamp.notificationservice.infrastructure.client.slack;
 
 import io.antcamp.notificationservice.domain.model.Notification;
 import io.antcamp.notificationservice.domain.model.ResolutionAction;
+import io.antcamp.notificationservice.infrastructure.config.NotificationProperties;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -12,17 +13,32 @@ import java.util.Map;
 @Component
 public class SlackBlockBuilder {
 
+    private final NotificationProperties properties;
+
+    public SlackBlockBuilder(NotificationProperties properties) {
+        this.properties = properties;
+    }
+
     public List<Map<String, Object>> buildAlertBlocks(Notification notification) {
         List<Map<String, Object>> blocks = buildBaseBlocks(notification);
-        if (hasAiAnalysis(notification)) {
+        if (hasAiAnalysis(notification) && !properties.infrastructureJobs().contains(notification.getJob())) {
             blocks.add(actionsBlock(notification.getNotificationId().toString()));
         }
         return blocks;
     }
 
-    public List<Map<String, Object>> buildHandledBlocks(Notification notification, String handlerSlackUserId, ResolutionAction action) {
+    public List<Map<String, Object>> buildProcessingBlocks(Notification notification, String handlerSlackUserId, ResolutionAction action) {
         List<Map<String, Object>> blocks = buildBaseBlocks(notification);
-        blocks.add(sectionBlock(String.format("✅ *<@%s>* 님이 *%s* 처리하였습니다.", handlerSlackUserId, action.displayName())));
+        blocks.add(sectionBlock(String.format("⏳ *<@%s>* 님이 *%s* 처리를 진행 중입니다…", handlerSlackUserId, action.displayName())));
+        return blocks;
+    }
+
+    public List<Map<String, Object>> buildHandledBlocks(Notification notification, String handlerSlackUserId, ResolutionAction action, boolean succeeded) {
+        List<Map<String, Object>> blocks = buildBaseBlocks(notification);
+        String statusText = succeeded
+                ? String.format("✅ *<@%s>* 님이 *%s* 처리하였습니다.", handlerSlackUserId, action.displayName())
+                : String.format("❌ *<@%s>* 님이 *%s* 시도하였으나 실패하였습니다.", handlerSlackUserId, action.displayName());
+        blocks.add(sectionBlock(statusText));
         return blocks;
     }
 
