@@ -1,7 +1,6 @@
 package io.antcamp.notificationservice.infrastructure.client.monitoring;
 
 import io.antcamp.notificationservice.application.port.MonitoringPort;
-import io.antcamp.notificationservice.application.service.PromQLQueries;
 import io.antcamp.notificationservice.domain.model.MonitoringMetrics;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

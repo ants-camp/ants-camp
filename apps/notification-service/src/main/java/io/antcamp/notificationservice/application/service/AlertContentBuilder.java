@@ -51,15 +51,31 @@ public class AlertContentBuilder {
                 .toUriString();
     }
 
+    private static String grafanaCpuExpr(String job) {
+        return String.format("process_cpu_usage{job=\"%s\"}", job);
+    }
+
+    private static String grafanaHeapExpr(String job) {
+        return String.format(
+                "jvm_memory_used_bytes{job=\"%s\",area=\"heap\"} / jvm_memory_max_bytes{job=\"%s\",area=\"heap\"} > 0",
+                job, job);
+    }
+
+    private static String grafanaHttpErrorExpr(String job) {
+        return String.format(
+                "sum(rate(http_server_requests_seconds_count{job=\"%s\",status=~\"[45]..\"}[5m]))",
+                job);
+    }
+
     private String buildExploreJson(String job) {
         Map<String, Object> datasource = Map.of("type", "prometheus", "uid", "prometheus");
 
         List<Map<String, Object>> queries = List.of(
-                Map.of("refId", "A", "expr", PromQLQueries.cpu(job),
+                Map.of("refId", "A", "expr", grafanaCpuExpr(job),
                         "instant", false, "range", true, "datasource", datasource),
-                Map.of("refId", "B", "expr", PromQLQueries.heap(job),
+                Map.of("refId", "B", "expr", grafanaHeapExpr(job),
                         "instant", false, "range", true, "datasource", datasource),
-                Map.of("refId", "C", "expr", PromQLQueries.httpErrorRate(job),
+                Map.of("refId", "C", "expr", grafanaHttpErrorExpr(job),
                         "instant", false, "range", true, "datasource", datasource)
         );
         Map<String, Object> payload = Map.of(
