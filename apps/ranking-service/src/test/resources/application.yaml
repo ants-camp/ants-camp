@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: ranking-service
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+topics:
+  ranking:
+    asset-updated: asset-updated-test
