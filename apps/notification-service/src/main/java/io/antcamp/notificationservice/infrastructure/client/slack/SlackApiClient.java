@@ -1,5 +1,6 @@
 package io.antcamp.notificationservice.infrastructure.client.slack;
 
+import io.antcamp.notificationservice.application.port.ActionResult;
 import io.antcamp.notificationservice.application.port.AlertPort;
 import io.antcamp.notificationservice.domain.model.Notification;
 import io.antcamp.notificationservice.domain.model.ResolutionAction;
@@ -46,27 +47,47 @@ public class SlackApiClient implements AlertPort {
     }
 
     @Override
-    public void postThreadReply(String channelId, String threadTs, ResolutionAction action, String slackUserId) {
+    public void notifyActionResult(String channelId, String threadTs, ResolutionAction action, String slackUserId, ActionResult result) {
+        sendThreadMessage(channelId, threadTs, SlackMessageFormatter.threadReplyText(action, slackUserId, result));
+        log.info("스레드 답글 전송 완료: threadTs={}, succeeded={}", threadTs, result instanceof ActionResult.Success);
+    }
+
+    private void sendThreadMessage(String channelId, String threadTs, String text) {
         Map<String, Object> body = new HashMap<>();
         body.put("channel", channelId);
         body.put("thread_ts", threadTs);
-        body.put("text", SlackMessageFormatter.threadReplyText(action, slackUserId));
+        body.put("text", text);
 
         SlackResponse response = post(CHAT_POST_MESSAGE_URL, body);
         if (response == null || !response.ok()) {
             throw new RuntimeException("스레드 답글 전송 실패: " + (response != null ? response.error() : "null response"));
         }
-
-        log.info("스레드 답글 전송 완료: threadTs={}", threadTs);
     }
 
+    /**
+     * 진행중
+     */
     @Override
-    public void markAsHandled(Notification notification, String handlerSlackUserId, ResolutionAction action) {
+    public void markAsProcessing(Notification notification, String handlerSlackUserId, ResolutionAction action) {
         Map<String, Object> body = new HashMap<>();
         body.put("channel", notification.getChannelId());
         body.put("ts", notification.getSlackMessageTs());
         body.put("text", notification.getTitle());
-        body.put("blocks", blockBuilder.buildHandledBlocks(notification, handlerSlackUserId, action));
+        body.put("blocks", blockBuilder.buildProcessingBlocks(notification, handlerSlackUserId, action));
+
+        SlackResponse response = post(CHAT_UPDATE_URL, body);
+        if (response == null || !response.ok()) {
+            log.warn("Slack '처리 중' 메시지 갱신 실패: {}", response != null ? response.error() : "null response");
+        }
+    }
+
+    @Override
+    public void markAsHandled(Notification notification, String handlerSlackUserId, ResolutionAction action, boolean succeeded) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("channel", notification.getChannelId());
+        body.put("ts", notification.getSlackMessageTs());
+        body.put("text", notification.getTitle());
+        body.put("blocks", blockBuilder.buildHandledBlocks(notification, handlerSlackUserId, action, succeeded));
 
         SlackResponse response = post(CHAT_UPDATE_URL, body);
         if (response == null || !response.ok()) {

@@ -12,73 +12,73 @@ rule_files:
   - alert-rules.yaml
 
 scrape_configs:
-  - job_name: 'eureka-service'
+  - job_name: 'antcamp-eureka-server'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - eureka-server:8761
 
-  - job_name: 'config-service'
+  - job_name: 'antcamp-config-server'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - config-server:8888
 
-  - job_name: 'gateway-service'
+  - job_name: 'antcamp-gateway'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - gateway-service:8080
 
-  - job_name: 'user-service'
+  - job_name: 'antcamp-user'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - user-service:8082
 
-  - job_name: 'trade-service'
+  - job_name: 'antcamp-trade'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - trade-service:8084
 
-  - job_name: 'asset-service'
+  - job_name: 'antcamp-asset'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - asset-service:8086
 
-  - job_name: 'stock-service'
+  - job_name: 'antcamp-stock'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - stock-service:8088
 
-  - job_name: 'portfolio-service'
+  - job_name: 'antcamp-portfolio'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - portfolio-service:8090
 
-  - job_name: 'competition-service'
+  - job_name: 'antcamp-competition'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - competition-service:8092
 
-  - job_name: 'ranking-service'
+  - job_name: 'antcamp-ranking'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - ranking-service:8094
 
-  - job_name: 'assistant-service'
+  - job_name: 'antcamp-assistant'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
           - assistant-service:8096
 
-  - job_name: 'notification-service'
+  - job_name: 'antcamp-notification'
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
