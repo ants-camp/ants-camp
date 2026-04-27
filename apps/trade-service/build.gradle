@@ -36,6 +36,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+    implementation 'org.springframework:spring-web:7.0.7'
 
     // openfeign
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:5.0.1'
@@ -50,9 +51,18 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'com.github.codemonstur:embedded-redis:1.4.3'
     implementation 'org.redisson:redisson:4.3.1'
+    implementation 'org.projectlombok:lombok:1.18.42'
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // jpa
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
     // websocket
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
+
+    // resilience4j
+    implementation 'io.github.resilience4j:resilience4j-spring-boot3:2.1.0'
 
     // PostgreSQL
     runtimeOnly 'org.postgresql:postgresql'
