@@ -2,24 +2,28 @@ spring:
   application:
     name: trade-service
 
-  # 테스트에서 DB/Redis/Kafka 자동 구성을 비활성화해 컨텍스트 로딩 속도를 높임
+  # 테스트에서 DB/Kafka 자동 구성을 비활성화해 컨텍스트 로딩 속도를 높임
+  # Redis 는 RedisConfig 에서 수동으로 설정하므로 자동 구성만 exclude
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+
+  data:
+    redis:
+      host: localhost
+      port: 6370
 
 # ─── KIS 설정 (테스트용 더미값) ─────────────────────────────────────────
 # 실제 API 를 호출하는 테스트가 아니므로 더미값으로 채움.
 # 실전 통합 테스트 시에는 환경변수로 실제 키 주입.
 kis:
   app:
-    approveUrl: http://localhost:0/oauth2/tokenP   # @FeignClient url — 필수
-    url: http://localhost:0                         # TradeServiceImpl @Value("${kis.app.url}")
-    approveUri: /oauth2/tokenP                      # TradeServiceImpl @Value("${kis.app.approveUri}")
-    key: PS-test-app-key                            # ${kis.app.key}
-    secret: test-secret-key                      # ${kis.app.secretKey}  ← yaml 키명 주의: secret → secretKey
+    approveUrl: http://localhost:0/oauth2/tokenP
+    url: http://localhost:0
+    key: PS-test-app-key
+    secret: test-secret-key      # application.yaml 의 kis.app.secret 오버라이드
     access: test-access-token
   ws:
     url: ws://localhost:0
