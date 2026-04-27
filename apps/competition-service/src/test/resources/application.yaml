@@ -1,8 +1,6 @@
 spring:
   application:
     name: competition-service
-  profiles:
-    active: ${SPRING_PROFILES_ACTIVE}
   jpa:
     properties:
       hibernate:
@@ -11,7 +9,6 @@ spring:
 server:
   port: 8092
 
-# [추가] 토픽명 매핑 (CompetitionTopicProperties와 연결)
 topics:
   competition:
     started: competition.started
