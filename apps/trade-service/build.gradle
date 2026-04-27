@@ -18,6 +18,12 @@ repositories {
     mavenCentral()
 }
 
+// org.json.JSONObject 클래스 중복 방지
+// android-json (com.vaadin.external.google) 은 json-20250107 과 같은 클래스를 제공해 충돌 발생
+configurations.all {
+    exclude group: 'com.vaadin.external.google', module: 'android-json'
+}
+
 ext {
     set('springCloudVer', "2025.0.1")
 }
@@ -36,7 +42,6 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-    implementation 'org.springframework:spring-web:7.0.7'
 
     // openfeign
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:5.0.1'
