@@ -120,6 +120,9 @@ public class Notification {
     }
 
     public void markActionFailed() {
+        if (this.status != AlertStatus.SENT || this.actionButton == null) {
+            throw new IllegalStateException("액션이 기록된 SENT 상태에서만 실패 처리할 수 있습니다.");
+        }
         this.status = AlertStatus.ACTION_FAILED;
     }
 

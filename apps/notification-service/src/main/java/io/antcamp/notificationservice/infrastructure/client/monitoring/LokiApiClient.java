@@ -48,10 +48,13 @@ public class LokiApiClient implements LogPort {
             for (StreamResult stream : response.safeResults()) {
                 if (stream.values() == null) continue;
                 for (List<String> entry : stream.values()) {
-                    if (entry.size() >= 2) {
+                    if (entry.size() < 2) continue;
+                    try {
                         long ts = Long.parseLong(entry.get(0)) / 1_000_000; // 나노초 → 밀리초
-                        String time = Instant.ofEpochMilli(ts).toString();
-                        joiner.add(time + " " + entry.get(1));
+                        joiner.add(Instant.ofEpochMilli(ts) + " " + entry.get(1));
+                    } catch (NumberFormatException ex) {
+                        // timestamp 파싱 실패해도 message는 보존
+                        joiner.add(entry.get(1));
                     }
                 }
             }

@@ -22,7 +22,11 @@ public class CacheApiClient implements CachePort {
 
     @Override
     public void clear(String job) {
-        String pattern = job.replace("antcamp-", "") + "*";
+        String suffix = stripJobPrefix(job);
+        if (suffix.isBlank()) {
+            throw new IllegalArgumentException("캐시 패턴 생성 실패 (빈 suffix): job=" + job);
+        }
+        String pattern = suffix + "*";
 
         List<String> keys = redisTemplate.execute((RedisCallback<List<String>>) connection -> {
             List<String> result = new ArrayList<>();
@@ -40,5 +44,10 @@ public class CacheApiClient implements CachePort {
 
         Long deleted = redisTemplate.delete(keys);
         log.info("캐시 삭제 완료: pattern={}, deleted={}건", pattern, deleted);
+    }
+
+    private String stripJobPrefix(String job) {
+        if (job == null) return "";
+        return job.startsWith("antcamp-") ? job.substring("antcamp-".length()) : job;
     }
 }
