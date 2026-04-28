@@ -3,7 +3,7 @@ package io.antcamp.assistantservice;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"io.antcamp.assistantservice", "common"})
 public class AssistantServiceApplication {
 
     public static void main(String[] args) {
