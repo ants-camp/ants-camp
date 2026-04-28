@@ -73,12 +73,12 @@ public class KnowledgeDocumentQueryRepository {
     }
 
     private BooleanExpression titleContains(QKnowledgeDocumentEntity doc, String title) {
-        return (title != null && !title.isBlank()) ? doc.title.contains(title) : null;
+        return (title != null && !title.isBlank()) ? doc.title.containsIgnoreCase(title) : null;
     }
 
     private BooleanExpression keywordContains(QKnowledgeDocumentEntity doc, String keyword) {
         return (keyword != null && !keyword.isBlank())
-                ? doc.title.contains(keyword).or(doc.content.contains(keyword))
+                ? doc.title.containsIgnoreCase(keyword).or(doc.content.containsIgnoreCase(keyword))
                 : null;
     }
 

@@ -34,7 +34,6 @@ public class DocumentChunkEntity {
 
     public static DocumentChunkEntity from(DocumentChunk domain) {
         return DocumentChunkEntity.builder()
-                .documentChunkId(domain.getDocumentChunkId())
                 .knowledgeDocumentId(domain.getKnowledgeDocumentId())
                 .seq(domain.getSeq())
                 .content(domain.getContent())

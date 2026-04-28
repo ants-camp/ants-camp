@@ -17,10 +17,11 @@ public class CleanupReconciler {
 
     private final KnowledgeDocumentRepository documentRepository;
     private final VectorStorePort vectorStorePort;
+    private final CleanupExecutor cleanupExecutor;
 
     /**
      * CLEANUP_PENDING 문서의 벡터 + 청크 + 문서 레코드를 순차적으로 정리.
-     * 각 문서를 독립적으로 처리하여 한 건 실패가 다른 건에 영향을 주지 않음.
+     * 벡터 삭제 후 청크·문서 삭제를 하나의 트랜잭션으로 처리.
      */
     @Scheduled(fixedDelay = 60_000)
     public void reconcile() {
@@ -33,8 +34,7 @@ public class CleanupReconciler {
         for (UUID documentId : targets) {
             try {
                 vectorStorePort.deleteByDocumentId(documentId);
-                documentRepository.deleteChunksByDocumentId(documentId);
-                documentRepository.deleteById(documentId);
+                cleanupExecutor.deleteDbRecords(documentId);
                 log.info("문서 정리 완료: documentId={}", documentId);
             } catch (Exception e) {
                 log.error("문서 정리 실패, 다음 주기 재시도: documentId={}", documentId, e);
