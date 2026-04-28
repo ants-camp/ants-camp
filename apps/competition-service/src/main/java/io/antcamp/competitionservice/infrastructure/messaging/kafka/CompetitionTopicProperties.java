@@ -10,7 +10,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "topics.competition")
 public record CompetitionTopicProperties(
-        @NotBlank String started,
+        @NotBlank String registered,
         @NotBlank String finished
 ) {
 }

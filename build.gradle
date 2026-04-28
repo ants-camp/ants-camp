@@ -55,7 +55,7 @@ project(':apps:asset-service') {
     apply plugin: 'org.springframework.boot'
 }
 
-project(':apps:ai-service') {
+project(':apps:assistant-service') {
     apply plugin: 'org.springframework.boot'
 }
 

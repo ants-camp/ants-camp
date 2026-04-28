@@ -14,5 +14,5 @@ server:
 # [추가] 토픽명 매핑 (CompetitionTopicProperties와 연결)
 topics:
   competition:
-    started: competition.started
-    finished: competition.finished
+    registered: competition.registered   # 대회 신청 시 발행 → 자산 서비스 컨슘 (개인 계좌 생성)
+    finished: competition.finished       # 대회 종료 시 발행 → 자산 서비스 컨슘 (최종 총자산 계산)

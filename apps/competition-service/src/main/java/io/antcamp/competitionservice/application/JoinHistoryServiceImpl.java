@@ -3,6 +3,8 @@ package io.antcamp.competitionservice.application;
 import common.exception.BusinessException;
 import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
+import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
+import io.antcamp.competitionservice.domain.event.CompetitionRegisteredPayload;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.JoinHistory;
 import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
@@ -17,6 +19,7 @@ public class JoinHistoryServiceImpl implements JoinHistoryService {
 
     private final CompetitionRepository competitionRepository;
     private final JoinHistoryRepository joinHistoryRepository;
+    private final CompetitionEventProducer competitionEventProducer;
 
     @Transactional
     public void join(JoinCompetitionCommand command) {
@@ -39,6 +42,15 @@ public class JoinHistoryServiceImpl implements JoinHistoryService {
                 command.competitionId()
         );
         joinHistoryRepository.save(joinHistory);
+
+        // 4. 대회 신청 이벤트 발행 (자산 서비스가 컨슘 → 해당 유저의 대회 전용 계좌 생성)
+        CompetitionRegisteredPayload payload = new CompetitionRegisteredPayload(
+                competition.getCompetitionId(),
+                competition.getName(),
+                competition.getFirstSeed(),
+                command.userId()
+        );
+        competitionEventProducer.publishCompetitionRegistered(payload);
     }
 
     @Transactional
