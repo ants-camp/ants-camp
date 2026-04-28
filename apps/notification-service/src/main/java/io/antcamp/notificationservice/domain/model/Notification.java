@@ -1,5 +1,6 @@
 package io.antcamp.notificationservice.domain.model;
 
+import io.antcamp.notificationservice.domain.exception.AlreadyHandledException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -109,13 +110,20 @@ public class Notification {
             throw new IllegalStateException("전송 완료된 메시지에만 액션을 기록할 수 있습니다.");
         }
         if (this.actionButton != null) {
-            throw new IllegalStateException("이미 처리된 알림입니다.");
+            throw new AlreadyHandledException("이미 처리된 알림입니다.");
         }
         if (userEmail == null || userEmail.isBlank()) {
             throw new IllegalArgumentException("액션을 수행한 유저 이메일은 비어있을 수 없습니다.");
         }
         this.actionButton = button;
         this.actionUserEmail = userEmail;
+    }
+
+    public void markActionFailed() {
+        if (this.status != AlertStatus.SENT || this.actionButton == null) {
+            throw new IllegalStateException("액션이 기록된 SENT 상태에서만 실패 처리할 수 있습니다.");
+        }
+        this.status = AlertStatus.ACTION_FAILED;
     }
 
     private static void validateChannelId(String channelId) {
