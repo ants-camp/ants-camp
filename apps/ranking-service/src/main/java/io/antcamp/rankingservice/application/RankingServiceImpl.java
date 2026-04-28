@@ -3,6 +3,7 @@ package io.antcamp.rankingservice.application;
 import common.exception.BusinessException;
 import common.exception.ErrorCode;
 import io.antcamp.rankingservice.application.dto.RankingResult;
+import io.antcamp.rankingservice.domain.event.ParticipantsValuatedPayload;
 import io.antcamp.rankingservice.domain.model.RankTier;
 import io.antcamp.rankingservice.domain.model.Ranking;
 import io.antcamp.rankingservice.domain.repository.RankingRedisRepository;
@@ -68,5 +69,24 @@ public class RankingServiceImpl implements RankingService {
             ranking.finalize(RankTier.from(entry.rank(), total));
             rankingRepository.save(ranking);
         });
+    }
+
+    @Override
+    @Transactional
+    public void finalizeRankingsWithValuations(
+            UUID competitionId,
+            List<ParticipantsValuatedPayload.ParticipantValuation> valuations
+    ) {
+        // 1. 최종 총자산을 Redis에 upsert (자산 서비스가 계산한 최종값으로 덮어쓰기)
+        valuations.forEach(v ->
+                rankingRedisRepository.upsertScore(
+                        competitionId,
+                        v.userId(),
+                        java.math.BigDecimal.valueOf(v.totalAsset())
+                )
+        );
+
+        // 2. Redis 기반으로 최종 순위 계산 후 DB에 저장
+        finalizeRankings(competitionId);
     }
 }

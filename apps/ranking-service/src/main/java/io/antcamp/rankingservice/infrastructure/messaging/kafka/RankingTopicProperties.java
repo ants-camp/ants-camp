@@ -10,6 +10,7 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "topics.ranking")
 public record RankingTopicProperties(
-        @NotBlank String assetUpdated
+        @NotBlank String assetUpdated,
+        @NotBlank String participantsValuated
 ) {
 }
