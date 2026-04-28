@@ -10,6 +10,7 @@ import java.util.UUID;
 public record CompetitionRegisteredPayload(
         UUID competitionId,
         String competitionName,
+        String competitionType, //PERSONAL, COMPETITION
         int firstSeed,
         UUID userId
 ) {
