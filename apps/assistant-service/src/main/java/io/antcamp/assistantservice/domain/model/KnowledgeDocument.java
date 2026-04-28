@@ -83,6 +83,10 @@ public class KnowledgeDocument {
         this.ingestStatus = IngestStatus.CLEANUP_PENDING;
     }
 
+    public void markDeleted() {
+        this.ingestStatus = IngestStatus.DELETED;
+    }
+
 
     public boolean isReconcilable(int maxRetry) {
         return retryCount < maxRetry && !isPermanentFailure();
