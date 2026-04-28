@@ -47,6 +47,7 @@ public class JoinHistoryServiceImpl implements JoinHistoryService {
         CompetitionRegisteredPayload payload = new CompetitionRegisteredPayload(
                 competition.getCompetitionId(),
                 competition.getName(),
+                competition.getType().name(),
                 competition.getFirstSeed(),
                 command.userId()
         );
