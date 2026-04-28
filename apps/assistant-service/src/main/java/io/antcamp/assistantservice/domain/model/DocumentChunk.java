@@ -17,7 +17,6 @@ public class DocumentChunk {
 
     public static DocumentChunk create(UUID knowledgeDocumentId, int seq, String content) {
         return DocumentChunk.builder()
-                .documentChunkId(UUID.randomUUID())
                 .knowledgeDocumentId(knowledgeDocumentId)
                 .seq(seq)
                 .content(content)
