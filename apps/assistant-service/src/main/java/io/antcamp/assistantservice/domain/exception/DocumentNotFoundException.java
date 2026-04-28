@@ -6,6 +6,6 @@ import common.exception.ErrorCode;
 public class DocumentNotFoundException extends BusinessException {
 
     public DocumentNotFoundException() {
-        super(ErrorCode.INVALID_INPUT);
+        super(ErrorCode.DOCUMENT_NOT_FOUND);
     }
 }

@@ -58,6 +58,7 @@ public class KnowledgeDocumentRepositoryImpl implements KnowledgeDocumentReposit
     public void deleteById(UUID documentId) {
         KnowledgeDocumentEntity entity = jpaRepository.findById(documentId)
                 .orElseThrow(DocumentNotFoundException::new);
+        entity.markDeleted();
         entity.softDelete("SYSTEM");
         jpaRepository.save(entity);
     }

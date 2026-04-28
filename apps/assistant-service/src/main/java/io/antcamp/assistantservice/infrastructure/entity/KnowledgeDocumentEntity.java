@@ -50,6 +50,10 @@ public class KnowledgeDocumentEntity extends BaseEntity {
     @Column(name = "last_attempt_at")
     private LocalDateTime lastAttemptAt;
 
+    public void markDeleted() {
+        this.ingestStatus = IngestStatus.DELETED;
+    }
+
     public static KnowledgeDocumentEntity from(KnowledgeDocument domain) {
         return KnowledgeDocumentEntity.builder()
                 .documentId(domain.getDocumentId())
