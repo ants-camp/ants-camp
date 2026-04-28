@@ -11,5 +11,5 @@ server:
 
 topics:
   competition:
-    started: competition.started
+    registered: competition.registered
     finished: competition.finished

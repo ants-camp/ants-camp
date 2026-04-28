@@ -10,3 +10,4 @@ spring:
 topics:
   ranking:
     asset-updated: asset-updated-test
+    participants-valuated: participants-valuated-test
