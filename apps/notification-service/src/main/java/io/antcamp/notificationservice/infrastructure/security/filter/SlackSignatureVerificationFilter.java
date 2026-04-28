@@ -136,7 +136,9 @@ public class SlackSignatureVerificationFilter extends OncePerRequestFilter {
                             String key = URLDecoder.decode(parts[0], StandardCharsets.UTF_8);
                             String value = URLDecoder.decode(parts[1], StandardCharsets.UTF_8);
                             params.put(key, new String[]{value});
-                        } catch (Exception ignored) {}
+                        } catch (Exception e) {
+                            log.debug("URL 파라미터 디코딩 실패: {}", pair, e);
+                        }
                     }
                 }
                 return params;
