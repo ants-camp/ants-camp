@@ -1,3 +1,17 @@
 spring:
   application:
     name: ranking-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+server:
+  port: 8094
+
+topics:
+  ranking:
+    asset-updated: asset.updated               # 매매 체결 시 실시간 순위 갱신 (자산팀과 협의 후 확정)
+    participants-valuated: participants.valuated # 대회 종료 후 최종 총자산 수신 → 최종 순위 DB 저장

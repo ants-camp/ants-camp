@@ -1,0 +1,15 @@
+spring:
+  application:
+    name: competition-service
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+server:
+  port: 8092
+
+topics:
+  competition:
+    registered: competition.registered
+    finished: competition.finished

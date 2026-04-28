@@ -1,88 +1,152 @@
 package io.antcamp.tradeservice.infrastructure.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.antcamp.tradeservice.application.service.TradeService;
 import io.antcamp.tradeservice.infrastructure.config.handler.KisWebSocketHandler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
-import org.springframework.web.socket.client.WebSocketClient;
 import org.springframework.web.socket.client.standard.StandardWebSocketClient;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
+/**
+ * KIS WebSocket 연결 관리 클라이언트
+ *
+ * 책임:
+ *  1. 애플리케이션 시작 시 WS 연결 (@PostConstruct)
+ *  2. 종목 구독/해제 메시지 전송
+ *  3. 애플리케이션 종료 시 WS 연결 해제 (@PreDestroy)
+ *
+ * 실시간 데이터 수신·파싱·브로드캐스트는 KisWebSocketHandler 가 담당.
+ */
+@Slf4j
 @Component
+@RequiredArgsConstructor
 public class KisWebSocketClient {
 
-    public static final Logger log = LoggerFactory.getLogger(KisWebSocketClient.class);
-    @Value("${KIS_WS_URL}")
+    @Value("${kis.ws.url}")
     private String wsUrl;
 
-    @Value("${KIS_APP_ACCESS}")
-    private String accessToken;
+    private final TradeService tradeService;
+    private final KisWebSocketHandler kisWebSocketHandler;
+    private final ObjectMapper objectMapper;
 
     private WebSocketSession session;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public void connect(){
-        WebSocketClient client = new StandardWebSocketClient();
-        KisWebSocketHandler handler = new KisWebSocketHandler();
-        CompletableFuture<WebSocketSession> future = client.execute(handler, wsUrl);
+    // ─────────────────────────────────────────────────────────────────────
 
-        future.whenComplete((wsSession, ex)-> {
-            if (ex != null) {
-                log.error("WebSocket 연결 실패: {}", ex.getMessage());
-                return;
-            }
-            this.session = wsSession;
-            log.info("WebSocket 연결 성공: {}", wsUrl);
+    /**
+     * 1단계: REST API 로 WebSocket 접속키(approval_key) 발급
+     * 2단계: WebSocket 연결
+     *
+     * @PostConstruct — Spring 컨텍스트 초기화 완료 후 자동 실행
+     */
+    @PostConstruct
+    public void connect() {
+        try {
+            // KIS: POST /oauth2/Approval → approval_key (REST access_token 과 별개)
+            String approvalKey = tradeService.requestAccessToken().token();
+            log.info("KIS 접속키 발급 완료");
 
-            // 연결 후 실시간 체결가 구독 예시
-            subscribeRealtime("005930"); // 삼성전자
-        });
+            StandardWebSocketClient client = new StandardWebSocketClient();
+            client.execute(kisWebSocketHandler, wsUrl)
+                    .whenComplete((wsSession, ex) -> {
+                        if (ex != null) {
+                            log.error("KIS WebSocket 연결 실패: {}", ex.getMessage(), ex);
+                            return;
+                        }
+                        this.session = wsSession;
+                        log.info("KIS WebSocket 연결 성공: {}", wsUrl);
+
+                        // 연결 직후 관심 종목 자동 구독 예시
+                        // subscribe("005930");
+                    });
+
+        } catch (Exception e) {
+            log.error("KIS WebSocket 초기화 실패: {}", e.getMessage(), e);
+        }
     }
-    // 실시간 국내주식 체결가 구독
-    public void subscribeRealtime(String stockCode) {
-        if (session == null || !session.isOpen()) {
-            log.warn("WebSocket 세션이 없습니다. connect()를 먼저 호출하세요.");
+
+    // ─── 구독 / 해제 ─────────────────────────────────────────────────────
+
+    /** 국내주식 실시간 체결가 구독 (H0STCNT0) */
+    public void subscribe(String stockCode) {
+        sendSubscribeMessage(stockCode, "H0STCNT0", "1");
+    }
+
+    /** 체결가 구독 해제 */
+    public void unsubscribe(String stockCode) {
+        sendSubscribeMessage(stockCode, "H0STCNT0", "2");
+    }
+
+    /** 국내주식 실시간 호가 구독 (H0STASP0) */
+    public void subscribeOrderBook(String stockCode) {
+        sendSubscribeMessage(stockCode, "H0STASP0", "1");
+    }
+
+    /** 호가 구독 해제 */
+    public void unsubscribeOrderBook(String stockCode) {
+        sendSubscribeMessage(stockCode, "H0STASP0", "2");
+    }
+
+    /**
+     * KIS WebSocket 구독 메시지 전송
+     *
+     * @param stockCode 종목코드
+     * @param trId      TR 코드 (H0STCNT0: 체결, H0STASP0: 호가)
+     * @param trType    "1": 등록, "2": 해제
+     */
+    private void sendSubscribeMessage(String stockCode, String trId, String trType) {
+        if (!isConnected()) {
+            log.warn("WebSocket 미연결 — stockCode={}, trId={}", stockCode, trId);
             return;
         }
-
         try {
+            String approvalKey = tradeService.requestAccessToken().token();
+
             Map<String, Object> request = Map.of(
                     "header", Map.of(
-                            "approval_key", accessToken,
-                            "custtype", "P",           // P: 개인, B: 법인
-                            "tr_type", "1",            // 1: 등록, 2: 해제
+                            "approval_key", approvalKey,
+                            "custtype",     "P",
+                            "tr_type",      trType,
                             "content-type", "utf-8"
                     ),
                     "body", Map.of(
                             "input", Map.of(
-                                    "tr_id", "H0STCNT0",   // 국내주식 실시간 체결가
+                                    "tr_id",  trId,
                                     "tr_key", stockCode
                             )
                     )
             );
 
-            String message = objectMapper.writeValueAsString(request);
-            session.sendMessage(new TextMessage(message));
-            log.info("구독 요청 전송: stockCode={}", stockCode);
+            session.sendMessage(new TextMessage(objectMapper.writeValueAsString(request)));
+            log.info("구독 {} 완료: {} ({})", "1".equals(trType) ? "등록" : "해제", stockCode, trId);
 
         } catch (Exception e) {
-            log.error("구독 요청 실패: {}", e.getMessage());
+            log.error("구독 메시지 전송 실패 [stockCode={}, trId={}]: {}", stockCode, trId, e.getMessage(), e);
         }
     }
 
+    // ─────────────────────────────────────────────────────────────────────
+
+    public boolean isConnected() {
+        return session != null && session.isOpen();
+    }
+
+    @PreDestroy
     public void disconnect() {
-        if (session != null && session.isOpen()) {
+        if (isConnected()) {
             try {
                 session.close();
-                log.info("WebSocket 연결 종료");
+                log.info("KIS WebSocket 정상 종료");
             } catch (Exception e) {
-                log.error("연결 종료 실패: {}", e.getMessage());
+                log.error("WebSocket 종료 실패: {}", e.getMessage());
             }
         }
     }

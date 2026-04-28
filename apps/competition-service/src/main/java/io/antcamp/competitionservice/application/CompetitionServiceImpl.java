@@ -5,7 +5,7 @@ import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
-import io.antcamp.competitionservice.domain.event.CompetitionStartedPayload;
+import io.antcamp.competitionservice.domain.event.CompetitionEndedPayload;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionChangeNotice;
 import io.antcamp.competitionservice.domain.model.CompetitionPeriod;
@@ -138,27 +138,10 @@ public class CompetitionServiceImpl implements CompetitionService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
 
-        // 1. 도메인 상태 변경 (PREPARING -> ONGOING)
+        // 도메인 상태 변경 (PREPARING -> ONGOING)
+        // 계좌 생성은 대회 신청 시점에 이미 완료되므로 별도 이벤트 발행 없음
         competition.startCompetition();
-        Competition saved = competitionRepository.save(competition);
-
-        // 2. 참가자 목록 조회
-        List<JoinHistory> joinHistories = joinHistoryRepository.findAllByCompetitionId(competitionId);
-        List<CompetitionStartedPayload.Participant> participants = joinHistories.stream()
-                .map(jh -> new CompetitionStartedPayload.Participant(jh.getUserId(), jh.getNickname()))
-                .toList();
-
-        // 3. 이벤트 발행 (계좌 서비스가 컨슘 -> 참가자별 대회 계좌 생성)
-        CompetitionStartedPayload payload = new CompetitionStartedPayload(
-                saved.getCompetitionId(),
-                saved.getName(),
-                saved.getFirstSeed(),
-                participants,
-                LocalDateTime.now()
-        );
-        competitionEventProducer.publishCompetitionStarted(payload);
-
-        return saved;
+        return competitionRepository.save(competition);
     }
 
     @Transactional
@@ -166,7 +149,25 @@ public class CompetitionServiceImpl implements CompetitionService {
     public Competition finish(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+
+        // 1. 도메인 상태 변경 (ONGOING -> FINISHED)
         competition.finishCompetition();
-        return competitionRepository.save(competition);
+        Competition saved = competitionRepository.save(competition);
+
+        // 2. 참가자 userId 목록 조회
+        List<JoinHistory> joinHistories = joinHistoryRepository.findAllByCompetitionId(competitionId);
+        List<UUID> participantUserIds = joinHistories.stream()
+                .map(JoinHistory::getUserId)
+                .toList();
+
+        // 3. 대회 종료 이벤트 발행 (자산 서비스가 컨슘 → 최종 총자산 계산 후 랭킹 서비스로 전달)
+        CompetitionEndedPayload payload = new CompetitionEndedPayload(
+                saved.getCompetitionId(),
+                participantUserIds,
+                LocalDateTime.now()
+        );
+        competitionEventProducer.publishCompetitionEnded(payload);
+
+        return saved;
     }
 }
