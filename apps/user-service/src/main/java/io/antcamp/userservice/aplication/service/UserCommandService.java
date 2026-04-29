@@ -1,6 +1,6 @@
 package io.antcamp.userservice.aplication.service;
 
-import io.antcamp.userservice.domain.model.User;
+import common.exception.BusinessException;import common.exception.ErrorCode;import io.antcamp.userservice.domain.model.User;
 import io.antcamp.userservice.domain.model.enums.RoleType;
 import io.antcamp.userservice.domain.model.enums.UserStatus;
 import io.antcamp.userservice.domain.repository.UserRepository;
@@ -51,7 +51,7 @@ public class UserCommandService {
 
     private void validateDuplicateEmail(String email) {
         if (userRepository.existsByEmail(email)) {
-            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
     }
 }

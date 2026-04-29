@@ -1,7 +1,7 @@
 package io.antcamp.userservice.aplication.service;
 
-import io.antcamp.userservice.domain.model.User;
-import io.antcamp.userservice.domain.repository.UserRepository;
+import common.exception.BusinessException;import common.exception.ErrorCode;import io.antcamp.userservice.domain.model.User;
+import io.antcamp.userservice.domain.model.enums.UserStatus;import io.antcamp.userservice.domain.repository.UserRepository;
 import io.antcamp.userservice.presentation.dto.response.InternalUserResponse;
 import io.antcamp.userservice.presentation.dto.response.UserResponse;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,14 +31,17 @@ public class UserQueryService {
     }
 
     public InternalUserResponse getInternalUser(UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+        User user = getUserEntity(userId);
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new BusinessException(ErrorCode.USER_NOT_APPROVED);
+        }
 
         return InternalUserResponse.from(user);
     }
 
     private User getUserEntity(UUID userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
     }
 }
