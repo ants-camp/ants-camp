@@ -22,7 +22,7 @@ spring:
       api-key: ${OPENAI_API_KEY}
       chat:
         options:
-          model: gpt-4o-mini
+          model: ${OPENAI_CHAT_MODEL}
       embedding:
         options:
           model: text-embedding-3-small
@@ -32,6 +32,10 @@ spring:
         index-type: HNSW
         distance-type: COSINE_DISTANCE
         dimensions: 1536
+
+assistant:
+  llm:
+    model-name: ${OPENAI_CHAT_MODEL}
 
 management:
   endpoints:

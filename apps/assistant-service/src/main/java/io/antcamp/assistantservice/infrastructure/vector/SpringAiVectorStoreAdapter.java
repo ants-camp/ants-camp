@@ -3,6 +3,7 @@ package io.antcamp.assistantservice.infrastructure.vector;
 import io.antcamp.assistantservice.application.port.VectorStorePort;
 import lombok.RequiredArgsConstructor;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,27 @@ public class SpringAiVectorStoreAdapter implements VectorStorePort {
                 ))
                 .toList();
         vectorStore.add(documents);
+    }
+
+    // OpenAI 임베딩 호출 포함
+    @IngestRetryPolicy.Retry
+    @Override
+    public List<SearchedChunk> search(String query, int topK) {
+        List<Document> results = vectorStore.similaritySearch(
+                SearchRequest.builder().query(query).topK(topK).build()
+        );
+        if (results == null || results.isEmpty()) return List.of();
+
+        return results.stream()
+                .map(doc -> new SearchedChunk(
+                        UUID.fromString((String) doc.getMetadata().get("documentChunkId")),
+                        UUID.fromString((String) doc.getMetadata().get("knowledgeDocumentId")),
+                        (String) doc.getMetadata().get("title"),
+                        (String) doc.getMetadata().get("docType"),
+                        doc.getText(),
+                        doc.getScore()
+                ))
+                .toList();
     }
 
     // pgvector 삭제 전용

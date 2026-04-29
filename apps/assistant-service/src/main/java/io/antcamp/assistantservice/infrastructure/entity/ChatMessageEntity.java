@@ -3,6 +3,7 @@ package io.antcamp.assistantservice.infrastructure.entity;
 import com.fasterxml.jackson.core.type.TypeReference;
 import common.entity.BaseEntity;
 import io.antcamp.assistantservice.domain.model.ChatMessage;
+import io.antcamp.assistantservice.domain.model.MessageStatus;
 import io.antcamp.assistantservice.domain.model.Role;
 import io.antcamp.assistantservice.domain.model.SourceReference;
 import io.antcamp.assistantservice.infrastructure.util.JsonConverter;
@@ -46,6 +47,10 @@ public class ChatMessageEntity extends BaseEntity {
     @Column(name = "sources", nullable = false, columnDefinition = "jsonb")
     private String sources;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
+    private MessageStatus status;
+
     public static ChatMessageEntity from(ChatMessage domain) {
         return ChatMessageEntity.builder()
                 .chatMessageId(domain.getChatMessageId())
@@ -54,6 +59,7 @@ public class ChatMessageEntity extends BaseEntity {
                 .role(domain.getRole())
                 .seq(domain.getSeq())
                 .sources(JsonConverter.toJson(domain.getSources()))
+                .status(domain.getStatus())
                 .build();
     }
 
@@ -63,7 +69,7 @@ public class ChatMessageEntity extends BaseEntity {
         );
         return ChatMessage.restore(
                 this.chatMessageId, this.chatSessionId, this.content,
-                this.role, this.seq, sourceList
+                this.role, this.seq, sourceList, this.status, this.getCreatedAt()
         );
     }
 }

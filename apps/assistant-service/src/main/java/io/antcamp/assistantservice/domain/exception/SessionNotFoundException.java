@@ -6,6 +6,6 @@ import common.exception.ErrorCode;
 public class SessionNotFoundException extends BusinessException {
 
     public SessionNotFoundException() {
-        super(ErrorCode.INVALID_INPUT);
+        super(ErrorCode.SESSION_NOT_FOUND);
     }
 }
