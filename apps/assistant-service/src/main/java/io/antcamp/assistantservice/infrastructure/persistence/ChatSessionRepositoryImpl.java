@@ -3,6 +3,8 @@ package io.antcamp.assistantservice.infrastructure.persistence;
 import io.antcamp.assistantservice.domain.model.ChatMessage;
 import io.antcamp.assistantservice.domain.model.ChatSession;
 import io.antcamp.assistantservice.domain.model.CursorSlice;
+import io.antcamp.assistantservice.domain.model.MessageStatus;
+import io.antcamp.assistantservice.domain.model.Role;
 import io.antcamp.assistantservice.domain.repository.ChatSessionRepository;
 import io.antcamp.assistantservice.infrastructure.entity.ChatMessageEntity;
 import io.antcamp.assistantservice.infrastructure.entity.ChatSessionEntity;
@@ -54,7 +56,7 @@ public class ChatSessionRepositoryImpl implements ChatSessionRepository {
 
     @Override
     public List<ChatMessage> findPendingUserMessages(LocalDateTime createdBefore) {
-        return messageRepository.findPendingUserMessages(createdBefore)
+        return messageRepository.findPendingUserMessages(Role.USER, MessageStatus.PENDING, createdBefore)
                 .stream()
                 .map(ChatMessageEntity::toDomain)
                 .toList();

@@ -1,6 +1,5 @@
 package io.antcamp.assistantservice.domain.model;
 
-import common.exception.ErrorCode;
 import io.antcamp.assistantservice.domain.exception.InvalidDocumentException;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -24,9 +23,9 @@ public class KnowledgeDocument {
     private LocalDateTime lastAttemptAt;
 
     public static KnowledgeDocument create(String title, DocType type, String content) {
-        if (title == null || title.isBlank()) throw new InvalidDocumentException(ErrorCode.DOCUMENT_TITLE_BLANK);
-        if (title.length() > 100) throw new InvalidDocumentException(ErrorCode.DOCUMENT_TITLE_TOO_LONG);
-        if (content == null || content.isBlank()) throw new InvalidDocumentException(ErrorCode.DOCUMENT_CONTENT_BLANK);
+        if (title == null || title.isBlank()) throw InvalidDocumentException.titleBlank();
+        if (title.length() > 100) throw InvalidDocumentException.titleTooLong();
+        if (content == null || content.isBlank()) throw InvalidDocumentException.contentBlank();
         return KnowledgeDocument.builder()
                 .title(title)
                 .type(type)
@@ -54,8 +53,8 @@ public class KnowledgeDocument {
     }
 
     public void update(String title, DocType type, String content) {
-        if (title == null || title.isBlank()) throw new InvalidDocumentException(ErrorCode.DOCUMENT_TITLE_BLANK);
-        if (content == null || content.isBlank()) throw new InvalidDocumentException(ErrorCode.DOCUMENT_CONTENT_BLANK);
+        if (title == null || title.isBlank()) throw InvalidDocumentException.titleBlank();
+        if (content == null || content.isBlank()) throw InvalidDocumentException.contentBlank();
         this.title = title;
         this.type = type;
         this.content = content;

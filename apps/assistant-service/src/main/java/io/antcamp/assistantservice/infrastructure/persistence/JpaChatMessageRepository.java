@@ -1,5 +1,7 @@
 package io.antcamp.assistantservice.infrastructure.persistence;
 
+import io.antcamp.assistantservice.domain.model.MessageStatus;
+import io.antcamp.assistantservice.domain.model.Role;
 import io.antcamp.assistantservice.infrastructure.entity.ChatMessageEntity;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,6 +21,10 @@ public interface JpaChatMessageRepository extends JpaRepository<ChatMessageEntit
     @Query("SELECT COALESCE(MAX(m.seq), 0) FROM ChatMessageEntity m WHERE m.chatSessionId = :chatSessionId")
     int findMaxSeqForUpdate(@Param("chatSessionId") UUID chatSessionId);
 
-    @Query("SELECT m FROM ChatMessageEntity m WHERE m.role = 'USER' AND m.status = 'PENDING' AND m.createdAt < :threshold")
-    List<ChatMessageEntity> findPendingUserMessages(@Param("threshold") LocalDateTime threshold);
+    @Query("SELECT m FROM ChatMessageEntity m WHERE m.role = :role AND m.status = :status AND m.createdAt < :threshold")
+    List<ChatMessageEntity> findPendingUserMessages(
+            @Param("role") Role role,
+            @Param("status") MessageStatus status,
+            @Param("threshold") LocalDateTime threshold
+    );
 }
