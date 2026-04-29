@@ -33,6 +33,12 @@ spring:
       properties:
         spring.json.trusted.packages: "*"
 
+  data:
+    redis:
+      host: localhost
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
 topics:
   competition:
     registered: competition.registered
+    ended: competition.ended
