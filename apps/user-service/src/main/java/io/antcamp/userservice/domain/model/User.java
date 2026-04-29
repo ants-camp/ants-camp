@@ -1,6 +1,6 @@
 package io.antcamp.userservice.domain.model;
 
-import io.antcamp.userservice.domain.model.enums.RoleType;import io.antcamp.userservice.domain.model.enums.UserStatus;import jakarta.persistence.*;import lombok.*;import java.util.UUID;
+import common.entity.BaseEntity;import io.antcamp.userservice.domain.model.enums.RoleType;import io.antcamp.userservice.domain.model.enums.UserStatus;import jakarta.persistence.*;import lombok.*;import java.util.UUID;
 
 @Entity
 @Table(name = "p_user")
@@ -8,7 +8,7 @@ import io.antcamp.userservice.domain.model.enums.RoleType;import io.antcamp.user
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class User {
+public class User extends BaseEntity {
 
     @Id
     @GeneratedValue
