@@ -1,5 +1,7 @@
 package io.antcamp.assistantservice.domain.model;
 
+import common.exception.ErrorCode;
+import io.antcamp.assistantservice.domain.exception.InvalidDocumentException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -22,9 +24,9 @@ public class KnowledgeDocument {
     private LocalDateTime lastAttemptAt;
 
     public static KnowledgeDocument create(String title, DocType type, String content) {
-        if (title == null || title.isBlank()) throw new IllegalArgumentException("문서 제목은 비어있을 수 없습니다.");
-        if (title.length() > 100) throw new IllegalArgumentException("문서 제목은 100자를 초과할 수 없습니다.");
-        if (content == null || content.isBlank()) throw new IllegalArgumentException("문서 내용은 비어있을 수 없습니다.");
+        if (title == null || title.isBlank()) throw new InvalidDocumentException(ErrorCode.DOCUMENT_TITLE_BLANK);
+        if (title.length() > 100) throw new InvalidDocumentException(ErrorCode.DOCUMENT_TITLE_TOO_LONG);
+        if (content == null || content.isBlank()) throw new InvalidDocumentException(ErrorCode.DOCUMENT_CONTENT_BLANK);
         return KnowledgeDocument.builder()
                 .title(title)
                 .type(type)
@@ -52,8 +54,8 @@ public class KnowledgeDocument {
     }
 
     public void update(String title, DocType type, String content) {
-        if (title == null || title.isBlank()) throw new IllegalArgumentException("문서 제목은 비어있을 수 없습니다.");
-        if (content == null || content.isBlank()) throw new IllegalArgumentException("문서 내용은 비어있을 수 없습니다.");
+        if (title == null || title.isBlank()) throw new InvalidDocumentException(ErrorCode.DOCUMENT_TITLE_BLANK);
+        if (content == null || content.isBlank()) throw new InvalidDocumentException(ErrorCode.DOCUMENT_CONTENT_BLANK);
         this.title = title;
         this.type = type;
         this.content = content;
@@ -82,11 +84,6 @@ public class KnowledgeDocument {
     public void markCleanupPending() {
         this.ingestStatus = IngestStatus.CLEANUP_PENDING;
     }
-
-    public void markDeleted() {
-        this.ingestStatus = IngestStatus.DELETED;
-    }
-
 
     public boolean isReconcilable(int maxRetry) {
         return retryCount < maxRetry && !isPermanentFailure();

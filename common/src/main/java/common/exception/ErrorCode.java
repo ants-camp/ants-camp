@@ -36,6 +36,12 @@ public enum ErrorCode {
 
     // ── Assistant ─────────────────────────────────────
     DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOCUMENT_NOT_FOUND", "존재하지 않는 문서입니다."),
+    SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "존재하지 않는 세션입니다."),
+    INVALID_MESSAGE_CONTENT(HttpStatus.BAD_REQUEST, "INVALID_MESSAGE_CONTENT", "메시지 내용은 비어있을 수 없습니다."),
+    MESSAGE_TOO_LONG(HttpStatus.BAD_REQUEST, "MESSAGE_TOO_LONG", "메시지는 2000자를 초과할 수 없습니다."),
+    DOCUMENT_TITLE_BLANK(HttpStatus.BAD_REQUEST, "DOCUMENT_TITLE_BLANK", "문서 제목은 비어있을 수 없습니다."),
+    DOCUMENT_TITLE_TOO_LONG(HttpStatus.BAD_REQUEST, "DOCUMENT_TITLE_TOO_LONG", "문서 제목은 100자를 초과할 수 없습니다."),
+    DOCUMENT_CONTENT_BLANK(HttpStatus.BAD_REQUEST, "DOCUMENT_CONTENT_BLANK", "문서 내용은 비어있을 수 없습니다."),
 
     // ── Common ────────────────────────────────────────
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "입력값이 유효하지 않습니다."),

@@ -52,10 +52,6 @@ public class DocumentController {
         return ApiResponse.ok(DocumentListResponse.from(
                 documentApplicationService.getDocuments(type, title, keyword, lastUpdatedAt)
         ));
-
-
-
-
     }
 
     @PutMapping("/{documentId}")

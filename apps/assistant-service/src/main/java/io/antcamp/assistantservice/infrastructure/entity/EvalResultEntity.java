@@ -1,5 +1,6 @@
 package io.antcamp.assistantservice.infrastructure.entity;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import common.entity.BaseEntity;
 import io.antcamp.assistantservice.domain.model.EvalResult;
 import io.antcamp.assistantservice.domain.model.EvalScores;
@@ -46,8 +47,7 @@ public class EvalResultEntity extends BaseEntity {
     }
 
     public EvalResult toDomain() {
-        EvalScores evalScores = JsonConverter.fromJson(this.scores,
-                new com.fasterxml.jackson.core.type.TypeReference<EvalScores>() {});
+        EvalScores evalScores = JsonConverter.fromJson(this.scores, new TypeReference<>() {});
         return EvalResult.restore(this.evalResultId, this.ragQueryId, this.judgeModel, evalScores);
     }
 }

@@ -56,13 +56,7 @@ public class DocumentIngestor implements IngestPort {
 
     private void storeInVectorStore(List<DocumentChunk> chunks, KnowledgeDocument document) {
         List<VectorStorePort.ChunkToStore> toStore = chunks.stream()
-                .map(c -> new VectorStorePort.ChunkToStore(
-                        c.getDocumentChunkId(),
-                        c.getKnowledgeDocumentId(),
-                        document.getTitle(),
-                        document.getType().name(),
-                        c.getContent()
-                ))
+                .map(chunk -> VectorStorePort.ChunkToStore.from(chunk, document.getTitle(), document.getType().name()))
                 .toList();
         vectorStorePort.store(toStore);
     }

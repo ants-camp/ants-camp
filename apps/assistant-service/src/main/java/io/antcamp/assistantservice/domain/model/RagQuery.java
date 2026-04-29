@@ -26,7 +26,6 @@ public class RagQuery {
                                   String promptUsed, String llmModel, String llmResponse,
                                   Integer latencyMs, Integer promptTokens, Integer completionTokens) {
         return RagQuery.builder()
-                .ragQueryId(UUID.randomUUID())
                 .chatMessageId(chatMessageId)
                 .userQuery(userQuery)
                 .retrievedChunks(retrievedChunks != null ? retrievedChunks : List.of())
