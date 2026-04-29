@@ -65,8 +65,21 @@ kis:
   app:
     url: ${KIS_REST_URL}
     approveUrl: ${KIS_APPROVAL_URL}
+    approveUri: ${KIS_APPROVAL_URI}
     key: ${KIS_APP_KEY}
     secret: ${KIS_APP_SECRET}
     access: ${KIS_APP_ACCESS}
   ws:
     url: ${KIS_WS_URL:}
+resilience4j:
+  retry:
+    instances:
+      kisApi:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2   # 500ms → 1s → 2s
+        retry-exceptions:
+          - feign.RetryableException         # ErrorDecoder 에서 재시도 가능으로 표시한 에러
+        ignore-exceptions:
+          - io.antcamp.tradeservice.infrastructure.exception.KisApiException  # 비즈니스 에러는 재시도 안 함
