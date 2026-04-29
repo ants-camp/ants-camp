@@ -6,7 +6,10 @@ import io.antcamp.assistantservice.application.port.ChatPort;
 import io.antcamp.assistantservice.application.port.LlmPort;
 import io.antcamp.assistantservice.application.port.VectorStorePort;
 import io.antcamp.assistantservice.domain.exception.SessionNotFoundException;
-import io.antcamp.assistantservice.domain.model.*;
+import io.antcamp.assistantservice.domain.model.ChatMessage;
+import io.antcamp.assistantservice.domain.model.ChatSession;
+import io.antcamp.assistantservice.domain.model.RetrievedChunk;
+import io.antcamp.assistantservice.domain.model.SourceReference;
 import io.antcamp.assistantservice.domain.repository.ChatSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,7 +54,8 @@ public class RagApplicationService {
         List<ChatMessage> history = chatSessionRepository.findMessages(command.chatSessionId());
         ChatMessage userMessage = chatPort.saveUserMessage(command.chatSessionId(), command.content());
 
-        SendMessageResult result = generateBotResponse(userMessage, buildLlmHistory(history));
+        SendMessageResult result = generateBotResponse(userMessage,
+                history.stream().map(LlmPort.HistoryMessage::from).toList());
 
         if (history.isEmpty()) {
             String title;
@@ -69,7 +73,8 @@ public class RagApplicationService {
     }
 
     public void retryPendingMessage(ChatMessage pendingUserMessage) {
-        List<LlmPort.HistoryMessage> llmHistory = chatSessionRepository.findMessages(pendingUserMessage.getChatSessionId())
+        List<LlmPort.HistoryMessage> llmHistory = chatSessionRepository
+                .findMessages(pendingUserMessage.getChatSessionId())
                 .stream()
                 .filter(m -> !m.getChatMessageId().equals(pendingUserMessage.getChatMessageId()))
                 .map(LlmPort.HistoryMessage::from)
@@ -115,10 +120,6 @@ public class RagApplicationService {
 
         log.info("RAG 응답 완료: sessionId={}, latencyMs={}", chatSessionId, latencyMs);
         return SendMessageResult.from(savedBotMessage);
-    }
-
-    private List<LlmPort.HistoryMessage> buildLlmHistory(List<ChatMessage> history) {
-        return history.stream().map(LlmPort.HistoryMessage::from).toList();
     }
 
     private String buildChunksText(List<VectorStorePort.SearchedChunk> chunks) {
