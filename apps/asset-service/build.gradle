@@ -28,6 +28,9 @@ dependencies {
 //    runtimeOnly 'org.postgresql:postgresql'
     runtimeOnly 'com.h2database:h2'
 
+    //kafka
+    implementation 'org.springframework.kafka:spring-kafka'
+
     // lombok
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
