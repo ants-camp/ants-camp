@@ -1,5 +1,6 @@
 package io.antcamp.userservice.presentation.controller;
 
+import common.dto.ApiResponse;
 import io.antcamp.userservice.aplication.service.UserCommandService;
 import io.antcamp.userservice.aplication.service.UserQueryService;
 import io.antcamp.userservice.presentation.dto.request.UserRegisterRequest;
@@ -20,14 +21,16 @@ public class AdminUserController {
     private final UserQueryService userQueryService;
 
     @PostMapping("/manager")
-    public ResponseEntity<UserResponse> createManager(
+    public ResponseEntity<ApiResponse<UserResponse>> createManager(
             @Valid @RequestBody UserRegisterRequest request
     ) {
-        return ResponseEntity.ok(userCommandService.createManager(request));
+        UserResponse response = userCommandService.createManager(request);
+        return ApiResponse.created("매니저 계정 생성에 성공했습니다.", response);
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> getAllUsers() {
-        return ResponseEntity.ok(userQueryService.getAllUsers());
+    public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
+        List<UserResponse> response = userQueryService.getAllUsers();
+        return ApiResponse.ok("전체 사용자 조회에 성공했습니다.", response);
     }
 }

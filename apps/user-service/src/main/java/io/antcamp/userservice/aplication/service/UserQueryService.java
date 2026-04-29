@@ -31,7 +31,9 @@ public class UserQueryService {
     }
 
     public InternalUserResponse getInternalUser(UUID userId) {
-        User user = getUserEntity(userId);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
         return InternalUserResponse.from(user);
     }
 
