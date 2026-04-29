@@ -26,7 +26,9 @@ public class AccountService {
                 command.getUserId(),
                 accountNumber,
                 command.getType(),
-                command.getInitialAmount()
+                command.getInitialAmount(),
+                command.getCompetitionId(),
+                command.getCompetitionName()
         );
         return accountRepository.save(newAccount).getAccountId();
     }

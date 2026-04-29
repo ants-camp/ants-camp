@@ -2,6 +2,7 @@ package io.antcamp.assetservice.application.service;
 
 import io.antcamp.assetservice.application.dto.command.BuyHoldingCommand;
 import io.antcamp.assetservice.application.dto.command.SellHoldingCommand;
+import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.application.dto.query.HoldingResult;
 import io.antcamp.assetservice.domain.exception.HoldingNotFoundException;
 import io.antcamp.assetservice.domain.model.Holding;
@@ -18,6 +19,7 @@ import java.util.UUID;
 public class HoldingService {
 
     private final HoldingRepository holdingRepository;
+    private final AccountService accountService;
 
     @Transactional
     public void buy(BuyHoldingCommand command) {
@@ -63,8 +65,11 @@ public class HoldingService {
     }
 
     @Transactional(readOnly = true)
-    public List<HoldingResult> getHoldings(UUID accountId) {
-        return holdingRepository.findAllByAccountId(accountId)
+    public List<HoldingResult> getHoldings(UUID accountId, UUID userId) {
+
+        AccountResult account = accountService.getAccount(accountId, userId);
+
+        return holdingRepository.findAllByAccountId(account.getAccountId())
                 .stream()
                 .map(holding -> new HoldingResult(
                         holding.getHoldingId(),

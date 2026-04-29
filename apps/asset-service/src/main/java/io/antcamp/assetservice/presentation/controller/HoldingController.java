@@ -35,12 +35,14 @@ public class HoldingController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<HoldingResponse>>> getHoldings(
-            @RequestParam UUID accountId
+            @RequestParam UUID accountId,
+            @RequestHeader("X-User-Id") UUID userId
     ) {
-        List<HoldingResponse> response = holdingService.getHoldings(accountId)
+        List<HoldingResponse> response = holdingService.getHoldings(accountId, userId)
                 .stream()
                 .map(HoldingResponse::from)
                 .toList();
+
         return ApiResponse.ok(response);
     }
 }
