@@ -1,3 +1,10 @@
+server:
+  port: 8800
+
 spring:
   application:
     name: api-gateway
+
+  config:
+    import: optional:configserv
+    er:http://localhost:8888
