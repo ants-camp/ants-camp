@@ -68,13 +68,13 @@ public class RagApplicationService {
         return result;
     }
 
-    public SendMessageResult retryPendingMessage(ChatMessage pendingUserMessage) {
+    public void retryPendingMessage(ChatMessage pendingUserMessage) {
         List<LlmPort.HistoryMessage> llmHistory = chatSessionRepository.findMessages(pendingUserMessage.getChatSessionId())
                 .stream()
                 .filter(m -> !m.getChatMessageId().equals(pendingUserMessage.getChatMessageId()))
                 .map(LlmPort.HistoryMessage::from)
                 .toList();
-        return generateBotResponse(pendingUserMessage, llmHistory);
+        generateBotResponse(pendingUserMessage, llmHistory);
     }
 
     private SendMessageResult generateBotResponse(ChatMessage userMessage, List<LlmPort.HistoryMessage> llmHistory) {
