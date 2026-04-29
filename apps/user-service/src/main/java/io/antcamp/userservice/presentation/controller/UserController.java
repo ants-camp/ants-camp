@@ -1,5 +1,6 @@
 package io.antcamp.userservice.presentation.controller;
 
+import common.dto.ApiResponse;
 import io.antcamp.userservice.aplication.service.UserCommandService;
 import io.antcamp.userservice.aplication.service.UserQueryService;
 import io.antcamp.userservice.presentation.dto.request.UserRegisterRequest;
@@ -20,16 +21,18 @@ public class UserController {
     private final UserQueryService userQueryService;
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(
+    public ResponseEntity<ApiResponse<UserResponse>> register(
             @Valid @RequestBody UserRegisterRequest request
     ) {
-        return ResponseEntity.ok(userCommandService.register(request));
+        UserResponse response = userCommandService.register(request);
+        return ApiResponse.created("회원가입에 성공했습니다.", response);
     }
 
     @GetMapping("/me")
-    public ResponseEntity<UserResponse> me(
+    public ResponseEntity<ApiResponse<UserResponse>> me(
             @RequestHeader("X-User-Id") UUID userId
     ) {
-        return ResponseEntity.ok(userQueryService.getMyInfo(userId));
+        UserResponse response = userQueryService.getMyInfo(userId);
+        return ApiResponse.ok("내 정보 조회에 성공했습니다.", response);
     }
 }
