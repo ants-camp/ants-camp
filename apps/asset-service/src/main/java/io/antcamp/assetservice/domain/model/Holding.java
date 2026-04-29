@@ -89,4 +89,8 @@ public class Holding {
             throw new InvalidAmountException("주식 가격은 0보다 커야 합니다.");
         }
     }
+
+    public void updateFinalPrice(Long price) {
+        this.finalPrice = price;
+    }
 }

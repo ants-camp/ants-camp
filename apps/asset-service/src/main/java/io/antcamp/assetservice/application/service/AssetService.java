@@ -2,8 +2,13 @@ package io.antcamp.assetservice.application.service;
 
 import io.antcamp.assetservice.application.dto.query.AssetResult;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
+import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
+import io.antcamp.assetservice.domain.repository.AccountRepository;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
+import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
+import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
+import io.antcamp.assetservice.infrastructure.client.StockPriceClient;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,36 +20,31 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AssetService {
 
-    private final AccountService accountService;
+    private final AccountRepository accountRepository;
     private final HoldingRepository holdingRepository;
+    private final StockPriceClient stockPriceClient;
 
     @Transactional(readOnly = true)
     public AssetResult getAsset(UUID accountId, UUID userId) {
 
-        // 계좌 조회 (권한 체크 포함)
-        AccountResult account = accountService.getAccount(accountId, userId);
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
-        // 보유 주식 조회
+        if (!account.getUserId().equals(userId)) {
+            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+        }
+
         List<Holding> holdings = holdingRepository.findAllByAccountId(accountId);
 
         long holdingEvaluationAmount = 0L;
 
-        // 대회 상태 확인 (CompetitionService 등에서 가져와야 함)
-        boolean isCompetitionEnded = false;
-
         for (Holding holding : holdings) {
-
             Long price;
 
-            if (isCompetitionEnded) {
-                // 대회 종료 → finalPrice 사용
+            if (account.isEnded()) {
                 price = holding.getFinalPrice();
             } else {
-                // 현재가 조회
-                // price = stockPriceService.getCurrentPrice(holding.getStockCode());
-
-                // 임시 처리
-                price = holding.getFinalPrice();
+                price = stockPriceClient.getCurrentPrice(holding.getStockCode());
             }
 
             holdingEvaluationAmount += price * holding.getStockAmount();
