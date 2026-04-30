@@ -1,6 +1,8 @@
-package io.antcamp.userservice.aplication.service;
+package io.antcamp.userservice.application.service;
 
-import common.exception.BusinessException;import common.exception.ErrorCode;import io.antcamp.userservice.domain.model.User;
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
+import io.antcamp.userservice.domain.model.User;
 import io.antcamp.userservice.domain.model.enums.RoleType;
 import io.antcamp.userservice.domain.model.enums.UserStatus;
 import io.antcamp.userservice.domain.repository.UserRepository;
@@ -24,7 +26,7 @@ public class UserCommandService {
                 .email(request.email())
                 .name(request.name())
                 .phone(request.phone())
-                .role(RoleType.USER)
+                .role(RoleType.PLAYER)
                 .status(UserStatus.ACTIVE)
                 .build();
 

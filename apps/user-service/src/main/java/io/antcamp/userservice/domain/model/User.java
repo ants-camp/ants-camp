@@ -1,6 +1,13 @@
 package io.antcamp.userservice.domain.model;
 
-import common.entity.BaseEntity;import io.antcamp.userservice.domain.model.enums.RoleType;import io.antcamp.userservice.domain.model.enums.UserStatus;import jakarta.persistence.*;import lombok.*;import java.util.UUID;
+import common.entity.BaseEntity;
+import io.antcamp.userservice.domain.model.enums.RoleType;
+import io.antcamp.userservice.domain.model.enums.UserStatus;
+import jakarta.persistence.*;
+import lombok.*;
+import org.springframework.data.annotation.Id;
+
+import java.util.UUID;
 
 @Entity
 @Table(name = "p_user")
@@ -16,6 +23,9 @@ public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private String email; // 로그인 ID
+
+    @Column(nullable = false)
+    private String password; // 로그인 ID
 
     @Column(nullable = false)
     private String name;

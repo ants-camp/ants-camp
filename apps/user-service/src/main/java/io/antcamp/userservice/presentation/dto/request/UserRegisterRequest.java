@@ -7,6 +7,9 @@ public record UserRegisterRequest(
         @NotBlank
         String email,
         @NotBlank
+        @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,15}$")
+        String password,
+        @NotBlank
         String name,
         @NotBlank
         String phone
