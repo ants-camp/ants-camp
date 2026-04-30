@@ -1,7 +1,7 @@
 package io.antcamp.rankingservice.application;
 
 import io.antcamp.rankingservice.application.dto.RankingResult;
-import io.antcamp.rankingservice.domain.event.ParticipantsValuatedPayload;
+import io.antcamp.rankingservice.domain.event.TotalAssetCalcuatedEvent;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
@@ -22,5 +22,6 @@ public interface RankingService {
     // 대회 종료 이벤트 수신 시 최종 순위 확정 (Kafka - 자산 서비스로부터 최종 총자산 수신)
     // 1) 최종 총자산을 Redis에 upsert
     // 2) Redis 기반으로 최종 순위 계산 후 DB에 저장
-    void finalizeRankingsWithValuations(UUID competitionId, List<ParticipantsValuatedPayload.ParticipantValuation> valuations);
+    void finalizeRankingsWithValuations(UUID competitionId,
+                                        List<TotalAssetCalcuatedEvent.ParticipantTotalAsset> valuations);
 }
