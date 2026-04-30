@@ -2,7 +2,7 @@ package io.antcamp.userservice.presentation.controller;
 
 
 import common.dto.ApiResponse;
-import io.antcamp.userservice.aplication.service.UserQueryService;
+import io.antcamp.userservice.application.service.UserQueryService;
 import io.antcamp.userservice.presentation.dto.response.InternalUserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;

@@ -1,8 +1,8 @@
 package io.antcamp.userservice.presentation.controller;
 
 import common.dto.ApiResponse;
-import io.antcamp.userservice.aplication.service.UserCommandService;
-import io.antcamp.userservice.aplication.service.UserQueryService;
+import io.antcamp.userservice.application.service.UserCommandService;
+import io.antcamp.userservice.application.service.UserQueryService;
 import io.antcamp.userservice.presentation.dto.request.UserRegisterRequest;
 import io.antcamp.userservice.presentation.dto.response.UserResponse;
 import jakarta.validation.Valid;

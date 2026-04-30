@@ -1,7 +1,10 @@
-package io.antcamp.userservice.aplication.service;
+package io.antcamp.userservice.application.service;
 
-import common.exception.BusinessException;import common.exception.ErrorCode;import io.antcamp.userservice.domain.model.User;
-import io.antcamp.userservice.domain.model.enums.UserStatus;import io.antcamp.userservice.domain.repository.UserRepository;
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
+import io.antcamp.userservice.domain.model.User;
+import io.antcamp.userservice.domain.model.enums.UserStatus;
+import io.antcamp.userservice.domain.repository.UserRepository;
 import io.antcamp.userservice.presentation.dto.response.InternalUserResponse;
 import io.antcamp.userservice.presentation.dto.response.UserResponse;
 import org.springframework.transaction.annotation.Transactional;

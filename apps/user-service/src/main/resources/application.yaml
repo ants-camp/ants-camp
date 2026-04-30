@@ -1,5 +1,5 @@
 server:
-  port: 8081
+  port: 8082
 
 spring:
   application:
@@ -12,9 +12,9 @@ spring:
     import: optional:configserver:http://localhost:8888
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/userdb
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://localhost:5432/antcamp
+    username: antcamp
+    password: p@ssw0rd
 
   jpa:
     hibernate:
