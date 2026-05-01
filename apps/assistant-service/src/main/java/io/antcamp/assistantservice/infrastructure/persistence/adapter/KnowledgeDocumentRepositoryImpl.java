@@ -1,7 +1,7 @@
-package io.antcamp.assistantservice.infrastructure.persistence;
+package io.antcamp.assistantservice.infrastructure.persistence.adapter;
 
-import io.antcamp.assistantservice.domain.model.CursorSlice;
 import io.antcamp.assistantservice.domain.exception.DocumentNotFoundException;
+import io.antcamp.assistantservice.domain.model.CursorSlice;
 import io.antcamp.assistantservice.domain.model.DocType;
 import io.antcamp.assistantservice.domain.model.DocumentChunk;
 import io.antcamp.assistantservice.domain.model.IngestStatus;
@@ -9,6 +9,9 @@ import io.antcamp.assistantservice.domain.model.KnowledgeDocument;
 import io.antcamp.assistantservice.domain.repository.KnowledgeDocumentRepository;
 import io.antcamp.assistantservice.infrastructure.entity.DocumentChunkEntity;
 import io.antcamp.assistantservice.infrastructure.entity.KnowledgeDocumentEntity;
+import io.antcamp.assistantservice.infrastructure.persistence.jpa.JpaDocumentChunkRepository;
+import io.antcamp.assistantservice.infrastructure.persistence.jpa.JpaKnowledgeDocumentRepository;
+import io.antcamp.assistantservice.infrastructure.persistence.query.KnowledgeDocumentQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
@@ -91,5 +94,12 @@ public class KnowledgeDocumentRepositoryImpl implements KnowledgeDocumentReposit
     @Override
     public List<UUID> findCleanupPendingIds() {
         return jpaRepository.findIdsByIngestStatus(IngestStatus.CLEANUP_PENDING);
+    }
+
+    @Override
+    public List<DocumentChunk> findRandomChunks(int count) {
+        return jpaChunkRepository.findRandomChunks(count).stream()
+                .map(DocumentChunkEntity::toDomain)
+                .toList();
     }
 }

@@ -21,6 +21,8 @@ public class RagQuery {
     private Integer latencyMs;
     private Integer promptTokens;
     private Integer completionTokens;
+    private Integer topK;
+    private RagQuerySource source;
 
     public static RagQuery create(UUID chatMessageId, String userQuery, List<RetrievedChunk> retrievedChunks,
                                   String promptUsed, String llmModel, String llmResponse,
@@ -35,6 +37,27 @@ public class RagQuery {
                 .latencyMs(latencyMs)
                 .promptTokens(promptTokens)
                 .completionTokens(completionTokens)
+                .source(RagQuerySource.CHAT)
+                .build();
+    }
+
+    // 평가 파이프라인 전용
+    public static RagQuery createForEval(String userQuery, List<RetrievedChunk> retrievedChunks,
+                                         String promptUsed, String llmModel, String llmResponse,
+                                         Integer latencyMs, Integer promptTokens, Integer completionTokens,
+                                         Integer topK) {
+        return RagQuery.builder()
+                .chatMessageId(null)
+                .userQuery(userQuery)
+                .retrievedChunks(retrievedChunks != null ? retrievedChunks : List.of())
+                .promptUsed(promptUsed)
+                .llmModel(llmModel)
+                .llmResponse(llmResponse)
+                .latencyMs(latencyMs)
+                .promptTokens(promptTokens)
+                .completionTokens(completionTokens)
+                .topK(topK)
+                .source(RagQuerySource.EVAL)
                 .build();
     }
 

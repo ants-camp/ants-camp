@@ -25,4 +25,17 @@ public class AsyncConfig {
         executor.initialize();
         return executor;
     }
+
+    @Bean(name = "evalExecutor")
+    public Executor evalExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(3);
+        executor.setQueueCapacity(50);      // 평가 run 단위로 큐잉 — 각 run이 내부에서 순차 처리
+        executor.setThreadNamePrefix("eval-");
+        // 큐 포화 시 호출 스레드에서 직접 실행 — 요청 유실 방지
+        executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        return executor;
+    }
 }

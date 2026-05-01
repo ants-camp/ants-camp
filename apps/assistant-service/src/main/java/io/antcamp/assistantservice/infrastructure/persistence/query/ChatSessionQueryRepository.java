@@ -1,4 +1,4 @@
-package io.antcamp.assistantservice.infrastructure.persistence;
+package io.antcamp.assistantservice.infrastructure.persistence.query;
 
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;

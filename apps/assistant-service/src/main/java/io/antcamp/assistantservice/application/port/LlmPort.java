@@ -18,4 +18,7 @@ public interface LlmPort {
     LlmResult chatAnswer(String systemPrompt, String userMessage, List<HistoryMessage> history);
 
     String generateTitle(String userMessage);
+
+    // 지식 문서 청크로부터 평가용 질문 1개 생성
+    String generateQuestion(String chunkContent);
 }

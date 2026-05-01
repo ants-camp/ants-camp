@@ -3,6 +3,7 @@ package io.antcamp.assistantservice.infrastructure.entity;
 import com.fasterxml.jackson.core.type.TypeReference;
 import common.entity.BaseEntity;
 import io.antcamp.assistantservice.domain.model.RagQuery;
+import io.antcamp.assistantservice.domain.model.RagQuerySource;
 import io.antcamp.assistantservice.domain.model.RetrievedChunk;
 import io.antcamp.assistantservice.infrastructure.util.JsonConverter;
 import jakarta.persistence.*;
@@ -28,7 +29,7 @@ public class RagQueryEntity extends BaseEntity {
     @Column(name = "rag_query_id", updatable = false, nullable = false)
     private UUID ragQueryId;
 
-    @Column(name = "chat_message_id", nullable = false)
+    @Column(name = "chat_message_id")
     private UUID chatMessageId;
 
     @Column(name = "user_query", nullable = false, columnDefinition = "TEXT")
@@ -56,6 +57,13 @@ public class RagQueryEntity extends BaseEntity {
     @Column(name = "completion_tokens")
     private Integer completionTokens;
 
+    @Column(name = "top_k")
+    private Integer topK;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "source", nullable = false, length = 10)
+    private RagQuerySource source;
+
     public static RagQueryEntity from(RagQuery domain) {
         return RagQueryEntity.builder()
                 .ragQueryId(domain.getRagQueryId())
@@ -68,6 +76,8 @@ public class RagQueryEntity extends BaseEntity {
                 .latencyMs(domain.getLatencyMs())
                 .promptTokens(domain.getPromptTokens())
                 .completionTokens(domain.getCompletionTokens())
+                .topK(domain.getTopK())
+                .source(domain.getSource())
                 .build();
     }
 
