@@ -1,27 +1,37 @@
 package io.antcamp.tradeservice.application.service.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.tradeservice.application.service.TradeService;
+import io.antcamp.tradeservice.domain.model.Trade;
+import io.antcamp.tradeservice.domain.model.TradeType;
+import io.antcamp.tradeservice.domain.repository.TradeRepository;
+import io.antcamp.tradeservice.infrastructure.client.AssetClient;
 import io.antcamp.tradeservice.infrastructure.client.KisClient;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenRequest;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
+import io.antcamp.tradeservice.infrastructure.entity.TradeEntity;
+import io.antcamp.tradeservice.infrastructure.event.producer.TradeEventProducer;
+import io.antcamp.tradeservice.infrastructure.event.producer.TradeSucceededEvent;
 import io.antcamp.tradeservice.infrastructure.exception.KisApiException;
-import io.antcamp.tradeservice.presentation.dto.MinutePriceRequestHeader;
-import io.antcamp.tradeservice.presentation.dto.MinutePriceRequestParam;
-import io.antcamp.tradeservice.presentation.dto.MinutePriceResponse;
+import io.antcamp.tradeservice.infrastructure.repository.TradeJpaRepository;
+import io.antcamp.tradeservice.presentation.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.tomcat.util.buf.ByteChunk;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.UUID;
+
+import static org.springframework.data.elasticsearch.annotations.DateFormat.time;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,7 +40,10 @@ public class TradeServiceImpl implements TradeService {
 
     private final StringRedisTemplate redisTemplate;
     private final KisClient kisClient;
+    private final TradeEventProducer kafkaProducer;
+    private final AssetClient assetClient;
     private final ObjectMapper objectMapper;
+    private final TradeRepository tradeRepository;
 
     @Value("${kis.app.key}")
     private String appKey;
@@ -69,7 +82,16 @@ public class TradeServiceImpl implements TradeService {
     // ── 분봉 조회 ──────────────────────────────────────────────────────────
 
     @Override
-    public MinutePriceResponse getMinutePrice(String stockCode, LocalDateTime dateTime)  {
+    public double getMinutePrice(String stockCode, LocalDateTime dateTime)  {
+        try{
+            MinutePriceResponse kisPrice = getKisPrice(stockCode, dateTime);
+            return Double.parseDouble(kisPrice.minutePriceOutput2().get(0).priceNow());
+        } catch (Exception e){
+            throw new BusinessException(ErrorCode.KIS_SERVER_ERROR);
+        }
+    }
+
+    private MinutePriceResponse getKisPrice(String stockCode, LocalDateTime dateTime){
         String date = dateTime.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
         String time = dateTime.format(DateTimeFormatter.ofPattern("HHmmss"));
 
@@ -81,14 +103,61 @@ public class TradeServiceImpl implements TradeService {
         Map<String ,Object> param = MinutePriceRequestParam.create(stockCode, time, date);
 
         String response = kisClient.getMinutePrice(header, param);
-        System.out.println(response);
         try{
-            MinutePriceResponse result = objectMapper.readValue(response, MinutePriceResponse.class);
-            return result;
+            return objectMapper.readValue(response, MinutePriceResponse.class);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public double getNowPrice(String stockCode, LocalDateTime dateTime)  {
+        try{
+            MinutePriceResponse kisPrice = getKisPrice(stockCode, dateTime);
+            return Double.parseDouble(kisPrice.minutePriceOutput1().priceNow());
+        } catch (Exception e){
+            throw new BusinessException(ErrorCode.KIS_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public BuyStockResponse buyStock(LocalDateTime dateTime, String stockCode, int stockAmount, UUID accountId) {
+
+        // 현재 가격 먼저 조회
+        MinutePriceResponse response = getKisPrice(stockCode, dateTime);
+        String stockName = response.minutePriceOutput1().stockName();
+        double nowPrice = Double.parseDouble(response.minutePriceOutput1().priceNow());
+        double totalPrice = nowPrice*stockAmount;
+
+        // 매매 데이터 생성 & 저장
+        UUID newTradeId = UUID.randomUUID();
+        LocalDateTime tradeAt = LocalDateTime.now();
+        Trade newTrade = Trade.create(newTradeId, accountId, TradeType.BUY, tradeAt, stockCode, stockAmount, totalPrice);
+        tradeRepository.save(newTrade);
+
+        // 자산 서비스에 validation 요청 & event publish
+        try{
+            AssetResponse assetResponse = assetClient.getAsset(accountId, totalPrice);
+            if(assetResponse.canTrade()){
+                TradeSucceededEvent event = new TradeSucceededEvent(
+                        totalPrice+assetResponse.account(),
+                        accountId,
+                        newTradeId
+                );
+                kafkaProducer.publishTradeResult(event);
+            }
+        }catch (Exception e){
+            log.error("asset server 응답 실패");
+        }
+        return new BuyStockResponse(
+                stockCode,
+                stockName,
+                totalPrice,
+                stockAmount
+        );
+    }
+
+
 
     /** 3회 재시도 후 최종 실패 시 폴백 */
     private MinutePriceResponse getMinutePriceFallback(String stockCode,

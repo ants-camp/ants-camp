@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -32,15 +32,15 @@ spring:
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
     consumer:
-      group-id: order-service
+      group-id: trade-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-        spring.json.type.mapping: "io.antcamp.tradeservice.application.event.producer.TradeCreatedEvent:
-        io.antcamp.stockservice.infrastructure.event.consumer.TradeCreatedEvent"
     producer:
+      topics:
+        trade-succeeded-info: ${KAFKA_TRADE_SUCCEEDED_INFO}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
@@ -52,6 +52,12 @@ spring:
         hc5:
           enabled: true
 
+  # ── Elasticsearch ──────────────────────────────────────────────────────────
+  elasticsearch:
+    uris: ${SPRING_ELASTICSEARCH_URIS:http://elasticsearch:9200}
+    connection-timeout: 5s
+    socket-timeout: 30s
+
 server:
   port: ${SERVER_PORT:8084}
 
@@ -59,7 +65,8 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
-
+    register-with-eureka: ${EUREKA_ENABLED:true}
+    fetch-registry: ${EUREKA_ENABLED:true}
 
 kis:
   app:
@@ -71,6 +78,11 @@ kis:
     access: ${KIS_APP_ACCESS}
   ws:
     url: ${KIS_WS_URL:}
+
+feign:
+  url:
+    asset: ${ASSET_SERVER_URL}
+
 resilience4j:
   retry:
     instances:
@@ -78,8 +90,8 @@ resilience4j:
         max-attempts: 3
         wait-duration: 500ms
         enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2   # 500ms → 1s → 2s
+        exponential-backoff-multiplier: 2
         retry-exceptions:
-          - feign.RetryableException         # ErrorDecoder 에서 재시도 가능으로 표시한 에러
+          - feign.RetryableException
         ignore-exceptions:
-          - io.antcamp.tradeservice.infrastructure.exception.KisApiException  # 비즈니스 에러는 재시도 안 함
+          - io.antcamp.tradeservice.infrastructure.exception.KisApiException
