@@ -68,7 +68,7 @@ public class AccountService {
     }
 
     @Transactional(readOnly = true)
-    public Account getAccountDomain(UUID accountId) {
+    Account getAccountDomain(UUID accountId) {
         return accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
     }

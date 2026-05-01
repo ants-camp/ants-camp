@@ -2,6 +2,7 @@ package io.antcamp.assetservice.application.service;
 
 import io.antcamp.assetservice.application.dto.query.AssetResult;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
+import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
@@ -61,21 +62,20 @@ public class AssetService {
         );
     }
 
-    public List<TotalAssetCalculatedEvent.ParticipantTotalAsset> calculateTotalAssets(UUID competitionId) {
+    public List<ParticipantTotalAssetResult> calculateTotalAssets(UUID competitionId) {
         List<Account> accounts = accountRepository.findAllByCompetitionId(competitionId);
 
         return accounts.stream()
                 .map(account -> {
                     List<Holding> holdings = holdingRepository.findAllByAccountId(account.getAccountId());
 
-                    //자산 계산
                     long holdingEvaluationAmount = holdings.stream()
                             .mapToLong(h -> h.getFinalPrice() * h.getStockAmount())
                             .sum();
 
                     long totalAsset = account.getAccountAmount() + holdingEvaluationAmount;
 
-                    return new TotalAssetCalculatedEvent.ParticipantTotalAsset(
+                    return new ParticipantTotalAssetResult(
                             account.getUserId(),
                             totalAsset
                     );
