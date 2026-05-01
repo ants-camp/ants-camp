@@ -22,7 +22,7 @@ public interface KnowledgeDocumentRepository {
 
     void deleteById(UUID documentId);
 
-    // 청크 일괄 작업 — Aggregate Root를 통한 단일 진입점
+    // 청크 일괄 작업
     List<DocumentChunk> saveChunks(List<DocumentChunk> chunks);
 
     void deleteChunksByDocumentId(UUID documentId);
@@ -34,4 +34,7 @@ public interface KnowledgeDocumentRepository {
 
     // CleanupReconciler 대상 조회
     List<UUID> findCleanupPendingIds();
+
+    // 질문 자동 생성용 — 인제스트 완료된 청크 중 N개 랜덤 샘플링
+    List<DocumentChunk> findRandomChunks(int count);
 }

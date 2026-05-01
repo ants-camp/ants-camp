@@ -1,4 +1,4 @@
-package io.antcamp.assistantservice.infrastructure.persistence;
+package io.antcamp.assistantservice.infrastructure.persistence.adapter;
 
 import io.antcamp.assistantservice.application.port.ChatPort;
 import io.antcamp.assistantservice.domain.model.ChatMessage;
@@ -6,6 +6,8 @@ import io.antcamp.assistantservice.domain.model.RagQuery;
 import io.antcamp.assistantservice.domain.model.SourceReference;
 import io.antcamp.assistantservice.infrastructure.entity.ChatMessageEntity;
 import io.antcamp.assistantservice.infrastructure.entity.RagQueryEntity;
+import io.antcamp.assistantservice.infrastructure.persistence.jpa.JpaChatMessageRepository;
+import io.antcamp.assistantservice.infrastructure.persistence.jpa.JpaRagQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;

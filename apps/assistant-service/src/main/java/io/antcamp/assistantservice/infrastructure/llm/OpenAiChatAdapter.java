@@ -8,8 +8,8 @@ import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
-import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.retry.annotation.Backoff;
@@ -25,8 +25,32 @@ import java.util.List;
 @RequiredArgsConstructor
 public class OpenAiChatAdapter implements LlmPort {
 
-    private final ChatModel chatModel;
+    private final OpenAiChatModel chatModel;
     private final LlmConfig llmConfig;
+
+    /**
+     *재시도 조건 (retryFor)
+     *   - IOException — 네트워크 단절, 타임아웃 등 I/O 오류
+     *   - HttpServerErrorException — 5xx 응답 (OpenAI 서버 오류)
+     *   - 4xx (잘못된 요청 등)는 재시도 대상이 아님 — 재시도해도 의미 없으므로 제외
+     *   - 1초 > 2초 > 4초 > 8초
+     */
+    @Retryable(
+            retryFor = {IOException.class, HttpServerErrorException.class},
+            backoff = @Backoff(delay = 1000, multiplier = 2.0, maxDelay = 10000)
+    )
+    @Override
+    public String generateQuestion(String chunkContent) {
+        ChatResponse response = chatModel.call(new Prompt(List.of(
+                new SystemMessage("""
+                        당신은 주식 모의 투자 대회 플랫폼의 고객 응대 전문가입니다.
+                        아래 문서 내용을 읽고, 실제 사용자가 고객센터에 물어볼 법한 자연스러운 한국어 질문을 1개만 생성하세요.
+                        질문 텍스트만 반환하세요. 다른 텍스트는 포함하지 마세요.
+                        """),
+                new UserMessage(chunkContent)
+        )));
+        return response.getResult().getOutput().getText().trim();
+    }
 
     @Retryable(
             retryFor = {IOException.class, HttpServerErrorException.class},

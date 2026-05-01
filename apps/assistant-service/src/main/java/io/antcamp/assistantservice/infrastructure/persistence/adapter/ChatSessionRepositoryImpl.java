@@ -1,4 +1,4 @@
-package io.antcamp.assistantservice.infrastructure.persistence;
+package io.antcamp.assistantservice.infrastructure.persistence.adapter;
 
 import io.antcamp.assistantservice.domain.model.ChatMessage;
 import io.antcamp.assistantservice.domain.model.ChatSession;
@@ -8,6 +8,9 @@ import io.antcamp.assistantservice.domain.model.Role;
 import io.antcamp.assistantservice.domain.repository.ChatSessionRepository;
 import io.antcamp.assistantservice.infrastructure.entity.ChatMessageEntity;
 import io.antcamp.assistantservice.infrastructure.entity.ChatSessionEntity;
+import io.antcamp.assistantservice.infrastructure.persistence.jpa.JpaChatMessageRepository;
+import io.antcamp.assistantservice.infrastructure.persistence.jpa.JpaChatSessionRepository;
+import io.antcamp.assistantservice.infrastructure.persistence.query.ChatSessionQueryRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

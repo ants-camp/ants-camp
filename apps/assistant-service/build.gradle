@@ -36,6 +36,10 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-starter-model-openai'
     implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
 
+    // Judge LLM 멀티 프로바이더
+    implementation 'org.springframework.ai:spring-ai-starter-model-anthropic'
+    implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
+
     implementation 'org.springframework.retry:spring-retry'
     implementation 'org.springframework:spring-aspects'
 

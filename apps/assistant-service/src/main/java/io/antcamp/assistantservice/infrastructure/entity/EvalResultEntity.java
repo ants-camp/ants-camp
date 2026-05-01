@@ -27,6 +27,9 @@ public class EvalResultEntity extends BaseEntity {
     @Column(name = "eval_result_id", updatable = false, nullable = false)
     private UUID evalResultId;
 
+    @Column(name = "eval_run_id", nullable = false)
+    private UUID evalRunId;
+
     @Column(name = "rag_query_id", nullable = false)
     private UUID ragQueryId;
 
@@ -37,17 +40,30 @@ public class EvalResultEntity extends BaseEntity {
     @Column(name = "scores", nullable = false, columnDefinition = "jsonb")
     private String scores;
 
+    @Column(name = "judge_latency_ms")
+    private Integer judgeLatencyMs;
+
+    @Column(name = "judge_prompt_tokens")
+    private Integer judgePromptTokens;
+
+    @Column(name = "judge_completion_tokens")
+    private Integer judgeCompletionTokens;
+
     public static EvalResultEntity from(EvalResult domain) {
         return EvalResultEntity.builder()
-                .evalResultId(domain.getEvalResultId())
+                .evalRunId(domain.getEvalRunId())
                 .ragQueryId(domain.getRagQueryId())
                 .judgeModel(domain.getJudgeModel())
                 .scores(JsonConverter.toJson(domain.getScores()))
+                .judgeLatencyMs(domain.getJudgeLatencyMs())
+                .judgePromptTokens(domain.getJudgePromptTokens())
+                .judgeCompletionTokens(domain.getJudgeCompletionTokens())
                 .build();
     }
 
     public EvalResult toDomain() {
         EvalScores evalScores = JsonConverter.fromJson(this.scores, new TypeReference<>() {});
-        return EvalResult.restore(this.evalResultId, this.ragQueryId, this.judgeModel, evalScores);
+        return EvalResult.restore(this.evalResultId, this.evalRunId, this.ragQueryId, this.judgeModel,
+                evalScores, this.judgeLatencyMs, this.judgePromptTokens, this.judgeCompletionTokens);
     }
 }

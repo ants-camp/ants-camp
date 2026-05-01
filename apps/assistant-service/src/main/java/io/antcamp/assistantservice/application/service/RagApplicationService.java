@@ -72,6 +72,48 @@ public class RagApplicationService {
         return result;
     }
 
+    public record EvalRagResult(
+            String userQuery,
+            List<RetrievedChunk> retrievedChunks,
+            String promptUsed,
+            String llmModel,
+            String llmResponse,
+            int latencyMs,
+            int promptTokens,
+            int completionTokens,
+            String contextText,
+            int topK
+    ) {}
+
+    public EvalRagResult runRagForEval(String question, String promptTemplate) {
+        List<VectorStorePort.SearchedChunk> searchedChunks;
+        try {
+            searchedChunks = vectorStorePort.search(question, TOP_K);
+        } catch (Exception e) {
+            log.warn("평가용 벡터 검색 실패, 빈 컨텍스트로 진행: question={}", question, e);
+            searchedChunks = List.of();
+        }
+        String contextText = buildChunksText(searchedChunks);
+        // null이면 기본 프롬프트 템플릿 사용
+        String template = (promptTemplate != null) ? promptTemplate : SYSTEM_PROMPT_TEMPLATE;
+        String systemPrompt = template.formatted(contextText);
+        long start = System.currentTimeMillis();
+        LlmPort.LlmResult llmResult = llmPort.chatAnswer(systemPrompt, question, List.of());
+        int latencyMs = (int) (System.currentTimeMillis() - start);
+        return new EvalRagResult(
+                question,
+                buildRetrievedChunks(searchedChunks),
+                systemPrompt,
+                llmResult.modelName(),
+                llmResult.content(),
+                latencyMs,
+                llmResult.promptTokens(),
+                llmResult.completionTokens(),
+                contextText,
+                TOP_K
+        );
+    }
+
     public void retryPendingMessage(ChatMessage pendingUserMessage) {
         List<LlmPort.HistoryMessage> llmHistory = chatSessionRepository
                 .findMessages(pendingUserMessage.getChatSessionId())

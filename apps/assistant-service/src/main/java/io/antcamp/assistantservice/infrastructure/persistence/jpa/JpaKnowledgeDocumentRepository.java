@@ -1,4 +1,4 @@
-package io.antcamp.assistantservice.infrastructure.persistence;
+package io.antcamp.assistantservice.infrastructure.persistence.jpa;
 
 import io.antcamp.assistantservice.domain.model.IngestStatus;
 import io.antcamp.assistantservice.infrastructure.entity.KnowledgeDocumentEntity;
@@ -13,5 +13,4 @@ public interface JpaKnowledgeDocumentRepository extends JpaRepository<KnowledgeD
 
     @Query("SELECT d.documentId FROM KnowledgeDocumentEntity d WHERE d.ingestStatus = :status")
     List<UUID> findIdsByIngestStatus(@Param("status") IngestStatus status);
-
 }
