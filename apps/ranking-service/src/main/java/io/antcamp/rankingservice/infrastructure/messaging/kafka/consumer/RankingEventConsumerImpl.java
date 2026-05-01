@@ -43,7 +43,7 @@ public class RankingEventConsumerImpl implements RankingEventConsumer {
      */
     @Override
     @KafkaListener(
-            topics = "${topics.trade.ranking-update}",
+            topics = "${topics.trade.ranking-update-requested}",
             groupId = "${spring.kafka.consumer.group-id:ranking-service}"
     )
     public void handleRankingUpdateRequested(RankingUpdateRequestedEvent payload) {
