@@ -50,16 +50,18 @@ public class RankingServiceImpl implements RankingService {
 
     @Override
     public RankingResult getMyRanking(UUID competitionId, UUID userId) {
+        // getRank(), getScore() 모두 userId 기반으로 직접 조회하므로
+        // 다른 참가자의 순위 변경과 무관하게 항상 정확한 값을 반환한다.
         long rank0based = rankingRedisRepository.getRank(competitionId, userId);
         if (rank0based < 0) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        return rankingRedisRepository.getTopRankings(competitionId, rank0based, 1)
-                .stream()
-                .filter(e -> e.userId().equals(userId))
-                .map(e -> new RankingResult(e.userId(), e.totalAsset(), e.rank()))
-                .findFirst()
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+        Double totalAsset = rankingRedisRepository.getScore(competitionId, userId);
+        if (totalAsset == null) {
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        long rank1based = rank0based + 1;
+        return new RankingResult(userId, totalAsset, rank1based);
     }
 
     @Override

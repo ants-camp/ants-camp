@@ -13,6 +13,9 @@ public interface RankingRedisRepository {
     // 랭킹 단건 조회
     long getRank(UUID competitionId, UUID userId);   // 0-based
 
+    // 특정 유저의 총자산 점수 조회 (없으면 null)
+    Double getScore(UUID competitionId, UUID userId);
+
     // 해당 대회의 참가자 수
     long getTotalCount(UUID competitionId);
 

@@ -35,6 +35,12 @@ public class RankingRedisRepositoryImpl implements RankingRedisRepository {
     }
 
     @Override
+    public Double getScore(UUID competitionId, UUID userId) {
+        return redisTemplate.opsForZSet()
+                .score(key(competitionId), userId.toString());
+    }
+
+    @Override
     public long getTotalCount(UUID competitionId) {
         Long count = redisTemplate.opsForZSet().size(key(competitionId));
         return count != null ? count : 0L;
