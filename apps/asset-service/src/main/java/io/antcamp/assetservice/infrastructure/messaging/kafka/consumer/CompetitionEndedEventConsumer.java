@@ -12,12 +12,14 @@ import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.Competitio
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -29,6 +31,7 @@ public class CompetitionEndedEventConsumer {
     private final HoldingRepository holdingRepository;
     private final StockPriceClient stockPriceClient;
     private final RedisTemplate<String, Long> redisTemplate;
+    private final RedisTemplate<String, String> stringRedisTemplate;
     private final AssetService assetService;
     private final TotalAssetEventProducer totalAssetEventProducer;
 
@@ -39,8 +42,10 @@ public class CompetitionEndedEventConsumer {
     public void handleCompetitionEnded(CompetitionEndedEvent payload) {
 
         String lockKey = "lock:competition:ended:" + payload.competitionId();
-        Boolean acquired = redisTemplate.opsForValue()
-                .setIfAbsent(lockKey, 1L, 10, TimeUnit.MINUTES);
+        String lockToken = UUID.randomUUID().toString();
+
+        Boolean acquired = stringRedisTemplate.opsForValue()
+                .setIfAbsent(lockKey, lockToken, 10, TimeUnit.MINUTES);
 
         if (Boolean.FALSE.equals(acquired)) {
             log.warn("이미 처리 중인 대회 종료 이벤트입니다. competitionId={}", payload.competitionId());
@@ -52,12 +57,11 @@ public class CompetitionEndedEventConsumer {
 
             List<Account> accounts = accountRepository.findAllByCompetitionId(payload.competitionId());
 
-            // 멱등성 체크
             if (accounts.isEmpty() || accounts.get(0).isEnded()) {
                 log.warn("이미 종료 처리된 대회입니다. competitionId={}", payload.competitionId());
                 return;
             }
-
+            //캐싱
             Map<String, Long> priceCache = new HashMap<>();
             for (Account account : accounts) {
                 List<Holding> holdings = holdingRepository.findAllByAccountId(account.getAccountId());
@@ -76,18 +80,27 @@ public class CompetitionEndedEventConsumer {
                 assetService.updateHoldingFinalPrices(account.getAccountId(), priceCache);
                 assetService.endAccount(account.getAccountId());
             }
-
+            //redis 캐시 삭제
             priceCache.keySet().forEach(stockCode ->
                     redisTemplate.delete(cachePrefix + stockCode)
             );
-
+            //kafka 이벤트 발행
             List<ParticipantTotalAssetResult> totalAssets =
                     assetService.calculateTotalAssets(payload.competitionId());
 
             totalAssetEventProducer.sendTotalAssetCalculated(payload.competitionId(), totalAssets);
 
         } finally {
-            redisTemplate.delete(lockKey);
+            String luaScript =
+                    "if redis.call('get', KEYS[1]) == ARGV[1] then " +
+                            "return redis.call('del', KEYS[1]) " +
+                            "else return 0 end";
+
+            stringRedisTemplate.execute(
+                    new DefaultRedisScript<>(luaScript, Long.class),
+                    List.of(lockKey),
+                    lockToken
+            );
         }
     }
 }
