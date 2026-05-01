@@ -38,3 +38,4 @@ topics:
     registered: ${COMPETITION_REGISTERED}   # 대회 신청 시 발행 → 자산 서비스 컨슘 (개인 계좌 생성)
     finished: ${COMPETITION_FINISHED}       # 대회 종료 시 발행 → 자산 서비스 컨슘 (최종 총자산 계산)
     cancelled: ${COMPETITION_CANCELLED}     # 대회 취소 시 발행 → 자산 서비스 컨슘 (대회 전용 계좌 정리)
+    ticked: ${COMPETITION_TICKED}           # 매분 00초가 되면 발행, 현재 진행중인 대회id만 담아서 보낸다.

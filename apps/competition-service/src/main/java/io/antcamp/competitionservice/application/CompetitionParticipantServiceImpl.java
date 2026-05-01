@@ -26,15 +26,16 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
 
     @Transactional
     public void competitionRegister(JoinCompetitionCommand command) {
-        // 1. 중복 신청 체크 (비관적 락 - 같은 사용자 동시 신청 방지)
+        // 1. 대회 조회 (Competition 비관적 락 먼저 획득 - 같은 대회 신청 요청을 직렬화)
+        Competition competition = competitionRepository.findByIdForUpdate(command.competitionId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+
+        // 2. 락 획득 후 중복 신청 체크 (이 시점엔 앞선 트랜잭션이 이미 commit된 상태)
         competitionParticipantRepository.findByUserIdAndCompetitionId(command.userId(), command.competitionId())
                 .ifPresent(p -> {
                     throw new BusinessException(ErrorCode.INVALID_INPUT);
                 });
 
-        // 2. 대회 조회 (Competition 비관적 락 - 참가자 수 동시성 제어)
-        Competition competition = competitionRepository.findByIdForUpdate(command.competitionId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         competition.register();
         competitionRepository.save(competition);
 

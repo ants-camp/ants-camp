@@ -4,6 +4,7 @@ import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
 import io.antcamp.competitionservice.domain.event.CompetitionCancelledEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionEndedEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionRegisteredEvent;
+import io.antcamp.competitionservice.domain.event.CompetitionTicked;
 import io.antcamp.competitionservice.infrastructure.messaging.kafka.CompetitionTopicProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +55,26 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
                     } else {
                         log.info("[Kafka] CompetitionCancelledEvent 발행 성공. competitionId={}, userId={}, topic={}, partition={}, offset={}",
                                 key, event.userId(), topic,
+                                result.getRecordMetadata().partition(),
+                                result.getRecordMetadata().offset());
+                    }
+                });
+    }
+
+    // 틱 이벤트 -> 자산 서비스 (1분마다 총자산 계산 후 Redis 랭킹 반영)
+    @Override
+    public void publishCompetitionTicked(CompetitionTicked event) {
+        String key = event.competitionId().toString();
+        String topic = topicProperties.ticked();
+
+        kafkaTemplate.send(topic, key, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("[Kafka] CompetitionTicked 발행 실패. competitionId={}, topic={}",
+                                key, topic, ex);
+                    } else {
+                        log.debug("[Kafka] CompetitionTicked 발행 성공. competitionId={}, topic={}, partition={}, offset={}",
+                                key, topic,
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());
                     }

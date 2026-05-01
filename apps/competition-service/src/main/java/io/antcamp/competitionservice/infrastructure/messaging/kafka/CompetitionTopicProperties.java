@@ -12,6 +12,7 @@ import org.springframework.validation.annotation.Validated;
 public record CompetitionTopicProperties(
         @NotBlank String registered,
         @NotBlank String finished,
-        @NotBlank String cancelled
+        @NotBlank String cancelled,
+        @NotBlank String ticked
 ) {
 }
