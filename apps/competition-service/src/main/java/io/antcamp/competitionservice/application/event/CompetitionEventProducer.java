@@ -1,5 +1,6 @@
 package io.antcamp.competitionservice.application.event;
 
+import io.antcamp.competitionservice.domain.event.CompetitionCancelledEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionEndedEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionRegisteredEvent;
 
@@ -14,4 +15,7 @@ public interface CompetitionEventProducer {
 
     /** 대회가 종료될 때 발행 → 자산 서비스가 컨슘하여 최종 총자산 계산 */
     void publishCompetitionEnded(CompetitionEndedEvent event);
+
+    /** 참가자가 대회 신청을 취소할 때 발행 → 자산 서비스가 컨슘하여 대회 전용 계좌 정리 */
+    void publishCompetitionCancelled(CompetitionCancelledEvent event);
 }

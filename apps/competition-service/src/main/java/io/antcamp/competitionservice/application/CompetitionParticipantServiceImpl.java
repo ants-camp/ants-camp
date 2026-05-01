@@ -4,6 +4,7 @@ import common.exception.BusinessException;
 import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
+import io.antcamp.competitionservice.domain.event.CompetitionCancelledEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionRegisteredEvent;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionParticipant;
@@ -71,6 +72,13 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
 
         // 3. 참여자 소프트 삭제 (deletedBy는 임시로 userId 사용 - 추후 인증 연동 시 교체)
         competitionParticipantRepository.delete(participant, command.userId().toString());
+
+        // 4. 대회 취소 이벤트 발행 (자산 서비스가 컨슘 → 해당 유저의 대회 전용 계좌 정리)
+        CompetitionCancelledEvent event = new CompetitionCancelledEvent(
+                command.competitionId(),
+                command.userId()
+        );
+        competitionEventProducer.publishCompetitionCancelled(event);
     }
 
     @Transactional(readOnly = true)

@@ -11,6 +11,7 @@ import org.springframework.validation.annotation.Validated;
 @ConfigurationProperties(prefix = "topics.competition")
 public record CompetitionTopicProperties(
         @NotBlank String registered,
-        @NotBlank String finished
+        @NotBlank String finished,
+        @NotBlank String cancelled
 ) {
 }

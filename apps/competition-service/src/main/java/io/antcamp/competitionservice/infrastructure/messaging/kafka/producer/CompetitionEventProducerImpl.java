@@ -1,6 +1,7 @@
 package io.antcamp.competitionservice.infrastructure.messaging.kafka.producer;
 
 import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
+import io.antcamp.competitionservice.domain.event.CompetitionCancelledEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionEndedEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionRegisteredEvent;
 import io.antcamp.competitionservice.infrastructure.messaging.kafka.CompetitionTopicProperties;
@@ -32,6 +33,26 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
                                 key, event.userId(), topic, ex);
                     } else {
                         log.info("[Kafka] CompetitionRegisteredEvent 발행 성공. competitionId={}, userId={}, topic={}, partition={}, offset={}",
+                                key, event.userId(), topic,
+                                result.getRecordMetadata().partition(),
+                                result.getRecordMetadata().offset());
+                    }
+                });
+    }
+
+    // 대회 신청 취소 이벤트 -> 자산 서비스 (대회 전용 계좌 정리)
+    @Override
+    public void publishCompetitionCancelled(CompetitionCancelledEvent event) {
+        String key = event.competitionId().toString();
+        String topic = topicProperties.cancelled();
+
+        kafkaTemplate.send(topic, key, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("[Kafka] CompetitionCancelledEvent 발행 실패. competitionId={}, userId={}, topic={}",
+                                key, event.userId(), topic, ex);
+                    } else {
+                        log.info("[Kafka] CompetitionCancelledEvent 발행 성공. competitionId={}, userId={}, topic={}, partition={}, offset={}",
                                 key, event.userId(), topic,
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());

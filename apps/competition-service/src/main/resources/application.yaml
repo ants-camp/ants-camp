@@ -37,3 +37,4 @@ topics:
   competition:
     registered: competition.registered   # 대회 신청 시 발행 → 자산 서비스 컨슘 (개인 계좌 생성)
     finished: competition.finished       # 대회 종료 시 발행 → 자산 서비스 컨슘 (최종 총자산 계산)
+    cancelled: competition.cancelled     # 대회 취소 시 발행 → 자산 서비스 컨슘 (대회 전용 계좌 정리)
