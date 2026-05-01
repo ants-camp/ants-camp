@@ -1,4 +1,4 @@
-package io.antcamp.assetservice.infrastructure.messaging.kafka.payload;
+package io.antcamp.assetservice.domain.event.payload;
 
 import java.time.LocalDateTime;
 import java.util.List;

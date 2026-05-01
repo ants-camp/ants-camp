@@ -3,7 +3,7 @@ package io.antcamp.assetservice.infrastructure.messaging.kafka.consumer;
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.service.AccountService;
 import io.antcamp.assetservice.domain.model.AccountType;
-import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.CompetitionRegisteredEvent;
+import io.antcamp.assetservice.domain.event.payload.CompetitionRegisteredEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;

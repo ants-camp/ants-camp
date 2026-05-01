@@ -1,8 +1,8 @@
 package io.antcamp.assetservice.infrastructure.messaging.kafka.producer;
 
 import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
-import io.antcamp.assetservice.domain.repository.TotalAssetEventProducer;
-import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.TotalAssetCalculatedEvent;
+import io.antcamp.assetservice.application.event.TotalAssetEventProducer;
+import io.antcamp.assetservice.domain.event.payload.TotalAssetCalculatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
