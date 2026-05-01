@@ -1,5 +1,6 @@
 package io.antcamp.assetservice.infrastructure.messaging.kafka.consumer;
 
+import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
 import io.antcamp.assetservice.application.service.AssetService;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
@@ -67,11 +68,9 @@ public class CompetitionEndedEventConsumer {
                         .forEach(holding -> redisTemplate.delete(cachePrefix + holding.getStockCode()))
         );
 
-        List<TotalAssetCalculatedEvent.ParticipantTotalAsset> totalAssets =
+        List<ParticipantTotalAssetResult> totalAssets =
                 assetService.calculateTotalAssets(payload.competitionId());
 
-        totalAssetEventProducer.sendTotalAssetCalculated(
-                new TotalAssetCalculatedEvent(payload.competitionId(), totalAssets)
-        );
+        totalAssetEventProducer.sendTotalAssetCalculated(payload.competitionId(), totalAssets);
     }
 }

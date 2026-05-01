@@ -1,7 +1,10 @@
 package io.antcamp.assetservice.domain.repository;
 
-import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.TotalAssetCalculatedEvent;
+import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
+
+import java.util.List;
+import java.util.UUID;
 
 public interface TotalAssetEventProducer {
-    void sendTotalAssetCalculated(TotalAssetCalculatedEvent event);
+    void sendTotalAssetCalculated(UUID competitionId, List<ParticipantTotalAssetResult> totalAssets);
 }
