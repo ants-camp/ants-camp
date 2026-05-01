@@ -23,22 +23,25 @@ public class HoldingController {
     private final HoldingService holdingService;
 
     @PostMapping("/buy")
-    public ResponseEntity<TradeResult> buy(@Valid @RequestBody BuyHoldingCommand command) {
-        TradeResult result = holdingService.buy(command);
+    public ResponseEntity<TradeResult> buy(
+            @Valid @RequestBody BuyHoldingCommand command,
+            @RequestHeader("X-User-Id") UUID userId) {
+        TradeResult result = holdingService.buy(command, userId);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("/sell")
-    public ResponseEntity<TradeResult> sell(@Valid @RequestBody SellHoldingCommand command) {
-        TradeResult result = holdingService.sell(command);
+    public ResponseEntity<TradeResult> sell(
+            @Valid @RequestBody SellHoldingCommand command,
+            @RequestHeader("X-User-Id") UUID userId) {
+        TradeResult result = holdingService.sell(command, userId);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<HoldingResponse>>> getHoldings(
             @RequestParam UUID accountId,
-            @RequestHeader("X-User-Id") UUID userId
-    ) {
+            @RequestHeader("X-User-Id") UUID userId) {
         List<HoldingResponse> response = holdingService.getHoldings(accountId, userId)
                 .stream()
                 .map(HoldingResponse::from)

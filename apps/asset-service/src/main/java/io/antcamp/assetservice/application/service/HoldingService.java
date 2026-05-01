@@ -6,6 +6,8 @@ import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.application.dto.query.HoldingResult;
 import io.antcamp.assetservice.application.dto.query.TradeResult;
 import io.antcamp.assetservice.domain.exception.HoldingNotFoundException;
+import io.antcamp.assetservice.domain.exception.InvalidAmountException;
+import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
@@ -25,7 +27,17 @@ public class HoldingService {
     private final AccountService accountService;
 
     @Transactional
-    public TradeResult buy(BuyHoldingCommand command) {
+    public TradeResult buy(BuyHoldingCommand command, UUID userId) {
+        Account account = accountService.getAccountDomain(command.getAccountId());
+
+        if (!account.getUserId().equals(userId)) {
+            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+        }
+
+        if (account.isEnded()) {
+            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+        }
+
         accountService.withdraw(command.getAccountId(), command.getBuyPrice() * command.getStockAmount());
 
         Holding holding = holdingRepository
@@ -49,8 +61,6 @@ public class HoldingService {
 
         holdingRepository.save(holding);
 
-        Account account = accountService.getAccountDomain(command.getAccountId());
-
         return new TradeResult(
                 account.getUserId(),
                 "BUY",
@@ -62,7 +72,17 @@ public class HoldingService {
     }
 
     @Transactional
-    public TradeResult sell(SellHoldingCommand command) {
+    public TradeResult sell(SellHoldingCommand command, UUID userId) {
+        Account account = accountService.getAccountDomain(command.getAccountId());
+
+        if (!account.getUserId().equals(userId)) {
+            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+        }
+
+        if (account.isEnded()) {
+            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+        }
+
         Holding holding = holdingRepository
                 .findByAccountIdAndStockCodeWithLock(
                         command.getAccountId(),
@@ -73,8 +93,6 @@ public class HoldingService {
         holding.sell(command.getStockAmount());
 
         accountService.deposit(command.getAccountId(), command.getPrice() * command.getStockAmount());
-
-        Account account = accountService.getAccountDomain(command.getAccountId());
 
         if (holding.isEmpty()) {
             holdingRepository.delete(holding);
