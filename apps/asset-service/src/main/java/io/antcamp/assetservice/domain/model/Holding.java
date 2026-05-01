@@ -91,6 +91,7 @@ public class Holding {
     }
 
     public void updateFinalPrice(Long price) {
+        validatePrice(price);
         this.finalPrice = price;
     }
 }
