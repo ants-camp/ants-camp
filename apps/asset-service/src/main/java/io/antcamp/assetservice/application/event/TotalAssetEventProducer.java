@@ -1,4 +1,4 @@
-package io.antcamp.assetservice.domain.repository;
+package io.antcamp.assetservice.application.event;
 
 import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
 
