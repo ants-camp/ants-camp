@@ -19,8 +19,7 @@ public class CompetitionTickScheduler {
     private final CompetitionEventProducer competitionEventProducer;
 
     /**
-     * 매분 00초마다 진행 중인(ONGOING) 대회들의 틱 이벤트를 발행한다.
-     * 자산 서비스가 컨슘하여 각 대회 계좌들의 총자산을 계산하고 Redis Sorted Set에 랭킹을 반영한다.
+     * 매분 00초마다 진행 중인(ONGOING) 대회들의 틱 이벤트를 발행한다. 자산 서비스가 컨슘하여 각 대회 계좌들의 총자산을 계산하고 Redis Sorted Set에 랭킹을 반영한다.
      */
     @Scheduled(cron = "0 * * * * *")
     public void publishCompetitionTicks() {
@@ -33,7 +32,11 @@ public class CompetitionTickScheduler {
         log.debug("[Scheduler] CompetitionTick 발행 시작. 진행 중인 대회 수={}", ongoingIds.size());
 
         ongoingIds.forEach(competitionId -> {
-            competitionEventProducer.publishCompetitionTicked(new CompetitionTicked(competitionId));
+            try {
+                competitionEventProducer.publishCompetitionTicked(new CompetitionTicked(competitionId));
+            } catch (Exception e) {
+                log.warn("[Scheduler] CompetitionTick 발행 실패. competitionId={}", competitionId, e);
+            }
         });
     }
 }

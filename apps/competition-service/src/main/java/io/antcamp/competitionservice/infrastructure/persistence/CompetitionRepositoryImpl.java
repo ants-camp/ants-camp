@@ -59,7 +59,7 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
 
     @Override
     public List<UUID> findAllOngoingIds() {
-        return competitionJpaRepository.findAllOngoingIds();
+        return competitionJpaRepository.findAllOngoingIds(CompetitionStatus.ONGOING);
     }
 
     @Override

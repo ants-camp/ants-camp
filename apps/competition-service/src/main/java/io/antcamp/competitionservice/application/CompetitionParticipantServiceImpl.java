@@ -59,16 +59,16 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
 
     @Transactional
     public void competitionCancel(JoinCompetitionCommand command) {
-        // 1. 참여자 조회 (비관적 락)
-        CompetitionParticipant participant = competitionParticipantRepository
-                .findByUserIdAndCompetitionId(command.userId(), command.competitionId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
-
-        // 2. 대회 조회 (Competition 비관적 락 - 참가자 수 동시성 제어)
+        // 1. 대회 조회 (Competition 비관적 락 - 참가자 수 동시성 제어)
         Competition competition = competitionRepository.findByIdForUpdate(command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         competition.cancelRegister();
         competitionRepository.save(competition);
+
+        // 2. 참여자 조회 (비관적 락)
+        CompetitionParticipant participant = competitionParticipantRepository
+                .findByUserIdAndCompetitionId(command.userId(), command.competitionId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
 
         // 3. 참여자 소프트 삭제 (deletedBy는 임시로 userId 사용 - 추후 인증 연동 시 교체)
         competitionParticipantRepository.delete(participant, command.userId().toString());
