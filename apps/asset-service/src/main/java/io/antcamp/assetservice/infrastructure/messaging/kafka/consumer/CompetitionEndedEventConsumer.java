@@ -1,5 +1,3 @@
-package io.antcamp.assetservice.infrastructure.messaging.kafka.consumer;
-
 import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
 import io.antcamp.assetservice.application.service.AssetService;
 import io.antcamp.assetservice.domain.model.Account;
@@ -9,13 +7,11 @@ import io.antcamp.assetservice.domain.repository.HoldingRepository;
 import io.antcamp.assetservice.domain.repository.TotalAssetEventProducer;
 import io.antcamp.assetservice.infrastructure.client.StockPriceClient;
 import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.CompetitionEndedEvent;
-import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.TotalAssetCalculatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashMap;
 import java.util.List;
@@ -40,35 +36,55 @@ public class CompetitionEndedEventConsumer {
     )
     public void handleCompetitionEnded(CompetitionEndedEvent payload) {
 
-        String cachePrefix = "stock:price:" + payload.competitionId() + ":";
+        String lockKey = "lock:competition:ended:" + payload.competitionId();
+        Boolean acquired = redisTemplate.opsForValue()
+                .setIfAbsent(lockKey, 1L, 10, TimeUnit.MINUTES);
 
-        List<Account> accounts = accountRepository.findAllByCompetitionId(payload.competitionId());
+        if (Boolean.FALSE.equals(acquired)) {
+            log.warn("이미 처리 중인 대회 종료 이벤트입니다. competitionId={}", payload.competitionId());
+            return;
+        }
 
-        Map<String, Long> priceCache = new HashMap<>();
-        for (Account account : accounts) {
-            List<Holding> holdings = holdingRepository.findAllByAccountId(account.getAccountId());
-            for (Holding holding : holdings) {
-                String cacheKey = cachePrefix + holding.getStockCode();
-                Long price = redisTemplate.opsForValue().get(cacheKey);
-                if (price == null) {
-                    price = stockPriceClient.getPriceAt(holding.getStockCode(), payload.endedAt());
-                    redisTemplate.opsForValue().set(cacheKey, price, 1, TimeUnit.HOURS);
-                }
-                priceCache.put(holding.getStockCode(), price);
+        try {
+            String cachePrefix = "stock:price:" + payload.competitionId() + ":";
+
+            List<Account> accounts = accountRepository.findAllByCompetitionId(payload.competitionId());
+
+            //멱등성
+            if (accounts.isEmpty() || accounts.get(0).isEnded()) {
+                log.warn("이미 종료 처리된 대회입니다. competitionId={}", payload.competitionId());
+                return;
             }
+
+            Map<String, Long> priceCache = new HashMap<>();
+            for (Account account : accounts) {
+                List<Holding> holdings = holdingRepository.findAllByAccountId(account.getAccountId());
+                for (Holding holding : holdings) {
+                    String cacheKey = cachePrefix + holding.getStockCode();
+                    Long price = redisTemplate.opsForValue().get(cacheKey);
+                    if (price == null) {
+                        price = stockPriceClient.getPriceAt(holding.getStockCode(), payload.endedAt());
+                        redisTemplate.opsForValue().set(cacheKey, price, 1, TimeUnit.HOURS);
+                    }
+                    priceCache.put(holding.getStockCode(), price);
+                }
+            }
+
+            for (Account account : accounts) {
+                assetService.finalizeCompetition(account.getAccountId(), priceCache);
+            }
+
+            priceCache.keySet().forEach(stockCode ->
+                    redisTemplate.delete(cachePrefix + stockCode)
+            );
+
+            List<ParticipantTotalAssetResult> totalAssets =
+                    assetService.calculateTotalAssets(payload.competitionId());
+
+            totalAssetEventProducer.sendTotalAssetCalculated(payload.competitionId(), totalAssets);
+
+        } finally {
+            redisTemplate.delete(lockKey);
         }
-
-        for (Account account : accounts) {
-            assetService.finalizeCompetition(account.getAccountId(), priceCache);
-        }
-
-        priceCache.keySet().forEach(stockCode ->
-                redisTemplate.delete(cachePrefix + stockCode)
-        );
-
-        List<ParticipantTotalAssetResult> totalAssets =
-                assetService.calculateTotalAssets(payload.competitionId());
-
-        totalAssetEventProducer.sendTotalAssetCalculated(payload.competitionId(), totalAssets);
     }
 }
