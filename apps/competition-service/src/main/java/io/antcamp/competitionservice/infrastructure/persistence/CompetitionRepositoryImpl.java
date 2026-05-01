@@ -4,6 +4,7 @@ import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
 import io.antcamp.competitionservice.infrastructure.entity.CompetitionEntity;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -54,6 +55,11 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     public Page<Competition> findAllByCompetitionStatus(CompetitionStatus status, Pageable pageable) {
         return competitionJpaRepository.findAllByStatus(status, pageable)
                 .map(CompetitionEntity::toDomain);
+    }
+
+    @Override
+    public List<UUID> findAllOngoingIds() {
+        return competitionJpaRepository.findAllOngoingIds(CompetitionStatus.ONGOING);
     }
 
     @Override

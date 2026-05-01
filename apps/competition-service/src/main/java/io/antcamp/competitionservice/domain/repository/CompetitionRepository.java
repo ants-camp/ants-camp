@@ -2,6 +2,7 @@ package io.antcamp.competitionservice.domain.repository;
 
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,11 @@ public interface CompetitionRepository {
      * 대회 상태별 목록 조회
      */
     Page<Competition> findAllByCompetitionStatus(CompetitionStatus status, Pageable pageable);
+
+    /**
+     * 현재 진행 중인(ONGOING) 대회 ID 목록 조회. 1분마다 틱 이벤트 발행 시 사용.
+     */
+    List<UUID> findAllOngoingIds();
 
     void delete(Competition competition, String deletedBy);  // 추가
 }
