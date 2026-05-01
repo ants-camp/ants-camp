@@ -27,7 +27,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "*"
+        spring.json.trusted.packages: "io.antcamp.rankingservice.domain.event"
 
 server:
   port: ${RANKING_SERVICE_PORT:8094}
