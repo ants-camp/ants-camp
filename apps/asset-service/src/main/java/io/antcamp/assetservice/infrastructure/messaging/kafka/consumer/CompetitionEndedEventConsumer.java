@@ -1,3 +1,5 @@
+package io.antcamp.assetservice.infrastructure.messaging.kafka.consumer;
+
 import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
 import io.antcamp.assetservice.application.service.AssetService;
 import io.antcamp.assetservice.domain.model.Account;
@@ -50,7 +52,7 @@ public class CompetitionEndedEventConsumer {
 
             List<Account> accounts = accountRepository.findAllByCompetitionId(payload.competitionId());
 
-            //멱등성
+            // 멱등성 체크
             if (accounts.isEmpty() || accounts.get(0).isEnded()) {
                 log.warn("이미 종료 처리된 대회입니다. competitionId={}", payload.competitionId());
                 return;
