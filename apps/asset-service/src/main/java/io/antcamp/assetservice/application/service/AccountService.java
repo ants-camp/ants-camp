@@ -3,6 +3,7 @@ package io.antcamp.assetservice.application.service;
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
+import io.antcamp.assetservice.domain.exception.InvalidAmountException;
 import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.AccountType;
@@ -38,6 +39,10 @@ public class AccountService {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
+        if (account.isEnded()) {
+            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+        }
+
         account.deposit(amount);
         accountRepository.save(account);
     }
@@ -46,6 +51,10 @@ public class AccountService {
     public void withdraw(UUID accountId, Long amount) {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+
+        if (account.isEnded()) {
+            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+        }
 
         account.withdraw(amount);
         accountRepository.save(account);

@@ -1,7 +1,6 @@
 package io.antcamp.assetservice.application.service;
 
 import io.antcamp.assetservice.application.dto.query.AssetResult;
-import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
@@ -10,7 +9,6 @@ import io.antcamp.assetservice.domain.repository.HoldingRepository;
 import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
 import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.infrastructure.client.StockPriceClient;
-import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.TotalAssetCalculatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
