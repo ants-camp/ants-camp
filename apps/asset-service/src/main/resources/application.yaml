@@ -40,5 +40,7 @@ spring:
 
 topics:
   competition:
-    registered: competition.registered
-    ended: competition.ended
+    started: competition.started
+    finished: competition.finished
+  asset:
+    total-calculated: asset.total-calculated
