@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -85,5 +86,22 @@ public class AssetService {
                     );
                 })
                 .toList();
+    }
+
+    @Transactional
+    public void finalizeCompetition(UUID accountId, Map<String, Long> priceCache) {
+        Account account = accountRepository.findByIdWithLock(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+
+        List<Holding> holdings = holdingRepository.findAllByAccountId(accountId);
+
+        for (Holding holding : holdings) {
+            Long price = priceCache.get(holding.getStockCode());
+            holding.updateFinalPrice(price);
+            holdingRepository.save(holding);
+        }
+
+        account.end();
+        accountRepository.save(account);
     }
 }
