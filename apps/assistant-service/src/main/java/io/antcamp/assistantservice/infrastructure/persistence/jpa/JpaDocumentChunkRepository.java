@@ -10,12 +10,6 @@ import java.util.List;
 import java.util.UUID;
 
 public interface JpaDocumentChunkRepository extends JpaRepository<DocumentChunkEntity, UUID> {
-
-    List<DocumentChunkEntity> findByKnowledgeDocumentId(UUID knowledgeDocumentId);
-
-    @Query("SELECT d.documentChunkId FROM DocumentChunkEntity d WHERE d.knowledgeDocumentId = :knowledgeDocumentId")
-    List<UUID> findIdsByKnowledgeDocumentId(@Param("knowledgeDocumentId") UUID knowledgeDocumentId);
-
     int countByKnowledgeDocumentId(UUID knowledgeDocumentId);
 
     @Modifying

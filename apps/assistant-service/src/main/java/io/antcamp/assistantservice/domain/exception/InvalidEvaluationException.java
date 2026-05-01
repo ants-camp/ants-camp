@@ -17,7 +17,7 @@ public class InvalidEvaluationException extends BusinessException {
         return new InvalidEvaluationException(ErrorCode.EVAL_JUDGE_MODELS_EMPTY);
     }
 
-    public static InvalidEvaluationException tooManyCombinations(int questions, int judges, int max) {
+    public static InvalidEvaluationException tooManyCombinations() {
         throw new InvalidEvaluationException(ErrorCode.EVAL_TOO_MANY_COMBINATIONS);
     }
 }

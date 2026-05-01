@@ -18,6 +18,6 @@ public record RunEvaluationCommand(
         if (questions == null || questions.isEmpty()) throw InvalidEvaluationException.questionsEmpty();
         if (judgeModels == null || judgeModels.isEmpty()) throw InvalidEvaluationException.judgeModelsEmpty();
         if ((long) questions.size() * judgeModels.size() > MAX_COMBINATIONS)
-            throw InvalidEvaluationException.tooManyCombinations(questions.size(), judgeModels.size(), MAX_COMBINATIONS);
+            throw InvalidEvaluationException.tooManyCombinations();
     }
 }
