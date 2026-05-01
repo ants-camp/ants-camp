@@ -17,7 +17,9 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -32,7 +34,6 @@ public class CompetitionEndedEventConsumer {
     private final AssetService assetService;
     private final TotalAssetEventProducer totalAssetEventProducer;
 
-    @Transactional
     @KafkaListener(
             topics = "${topics.competition.ended}",
             groupId = "${spring.kafka.consumer.group-id}"
@@ -43,29 +44,26 @@ public class CompetitionEndedEventConsumer {
 
         List<Account> accounts = accountRepository.findAllByCompetitionId(payload.competitionId());
 
+        Map<String, Long> priceCache = new HashMap<>();
         for (Account account : accounts) {
             List<Holding> holdings = holdingRepository.findAllByAccountId(account.getAccountId());
-
             for (Holding holding : holdings) {
                 String cacheKey = cachePrefix + holding.getStockCode();
-
                 Long price = redisTemplate.opsForValue().get(cacheKey);
                 if (price == null) {
                     price = stockPriceClient.getPriceAt(holding.getStockCode(), payload.endedAt());
                     redisTemplate.opsForValue().set(cacheKey, price, 1, TimeUnit.HOURS);
                 }
-
-                holding.updateFinalPrice(price);
-                holdingRepository.save(holding);
+                priceCache.put(holding.getStockCode(), price);
             }
-
-            account.end();
-            accountRepository.save(account);
         }
 
-        accounts.forEach(account ->
-                holdingRepository.findAllByAccountId(account.getAccountId())
-                        .forEach(holding -> redisTemplate.delete(cachePrefix + holding.getStockCode()))
+        for (Account account : accounts) {
+            assetService.finalizeCompetition(account.getAccountId(), priceCache);
+        }
+
+        priceCache.keySet().forEach(stockCode ->
+                redisTemplate.delete(cachePrefix + stockCode)
         );
 
         List<ParticipantTotalAssetResult> totalAssets =
