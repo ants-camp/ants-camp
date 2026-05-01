@@ -73,7 +73,8 @@ public class CompetitionEndedEventConsumer {
             }
 
             for (Account account : accounts) {
-                assetService.finalizeCompetition(account.getAccountId(), priceCache);
+                assetService.updateHoldingFinalPrices(account.getAccountId(), priceCache);
+                assetService.endAccount(account.getAccountId());
             }
 
             priceCache.keySet().forEach(stockCode ->
