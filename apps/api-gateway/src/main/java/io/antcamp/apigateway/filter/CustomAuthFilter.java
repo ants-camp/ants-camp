@@ -6,10 +6,13 @@ import io.antcamp.apigateway.dto.User;
 import io.antcamp.apigateway.dto.UserResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilter;
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
@@ -25,19 +28,25 @@ import java.util.List;
 @Component
 public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFilter.Config> {
 
+    /**
+     * 인증 없이 접근 가능한 공개 API prefix
+     */
     private static final List<String> PUBLIC_PREFIXES = List.of(
             "/api/auth/",
             "/api/public/",
             "/api/users/register"
     );
-    private final ObjectMapper objectMapper;
     private final WebClient webClient;
 
-    public CustomAuthFilter(ObjectMapper objectMapper, WebClient.Builder webClientBuilder) {
+    public CustomAuthFilter(WebClient.Builder webClientBuilder) {
         super(Config.class);
-        this.objectMapper = objectMapper;
+        /**
+         * user-service 호출용 WebClient
+         * - @LoadBalanced 적용되어 있으므로 서비스명으로 호출 가능
+         * - Eureka 기반 서비스 디스커버리 사용
+         */
         this.webClient = webClientBuilder
-                .baseUrl("http://user-server")
+                .baseUrl("http://user-service")
                 .build();
     }
 
@@ -59,67 +68,76 @@ public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFil
                     .request(secureRequest)
                     .build();
 
-            String authHeader = secureRequest.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+            return secureExchange.getPrincipal()
+                    .cast(Authentication.class)
+                    .flatMap(authentication -> {
+                        Jwt jwt = (Jwt) authentication.getPrincipal();
 
-            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-                return unauthorizedResponse(secureExchange, "Token not found.");
-            }
+                        String userId = jwt.getSubject();
 
-            String token = authHeader.substring(7);
-            String userId;
-
-            try {
-                userId = extractUserIdFromJwt(token);
-            } catch (Exception e) {
-                return unauthorizedResponse(secureExchange, "Invalid token format.");
-            }
-
-            return webClient.get()
-                    .uri("/internal/users/{userId}", userId)
-                    .retrieve()
-                    .bodyToMono(UserResponse.class)
-                    .timeout(Duration.ofMillis(500))
-                    .switchIfEmpty(Mono.error(new RuntimeException("EMPTY_RESPONSE")))
-                    .flatMap(response -> {
-                        if (response == null || !response.success() || response.data() == null) {
-                            return unauthorizedResponse(secureExchange, "User authentication failed.");
+                        if (userId == null || userId.isBlank()) {
+                            return unauthorizedResponse(secureExchange, "JWT subject is empty.");
                         }
 
-                        User user = response.data();
-
-                        if (!"ACTIVE".equals(user.status())) {
-                            return unauthorizedResponse(secureExchange, "User is not active.");
-                        }
-
-                        ServerHttpRequest authenticatedRequest =
-                                createAuthenticatedRequest(secureExchange.getRequest(), user);
-
-                        log.info(
-                                "[CustomAuthFilter] Authenticated userId={}, email={}, role={}",
-                                user.userId(),
-                                user.email(),
-                                user.role()
-                        );
-
-                        return chain.filter(
-                                secureExchange.mutate()
-                                        .request(authenticatedRequest)
-                                        .build()
-                        );
+                        return authenticateUser(secureExchange, chain, userId);
                     })
+                    .switchIfEmpty(unauthorizedResponse(secureExchange, "Authentication is empty."))
                     .onErrorResume(e -> {
-                        log.error(
-                                "[CustomAuthFilter] User Server error. userId={}, message={}",
-                                userId,
-                                e.getMessage()
-                        );
-
-                        return unauthorizedResponse(
-                                secureExchange,
-                                "Authentication server did not respond."
-                        );
+                        log.error("[CustomAuthFilter] Authentication error: {}", e.getMessage());
+                        return unauthorizedResponse(secureExchange, "Invalid token.");
                     });
         };
+    }
+
+    private Mono<Void> authenticateUser(
+            ServerWebExchange exchange,
+            GatewayFilterChain chain,
+            String userId
+    ) {
+        return webClient.get()
+                .uri("/internal/users/{userId}", userId)
+                .retrieve()
+                .bodyToMono(UserResponse.class)
+                .timeout(Duration.ofMillis(500))
+                .flatMap(response -> {
+                    if (response == null || !response.success() || response.data() == null) {
+                        return unauthorizedResponse(exchange, "User authentication failed.");
+                    }
+
+                    User user = response.data();
+
+                    if (!"ACTIVE".equals(user.status())) {
+                        return unauthorizedResponse(exchange, "User is not active.");
+                    }
+
+                    ServerHttpRequest authenticatedRequest =
+                            createAuthenticatedRequest(exchange.getRequest(), user);
+
+                    log.info(
+                            "[CustomAuthFilter] Authenticated userId={}, email={}, role={}",
+                            user.userId(),
+                            user.email(),
+                            user.role()
+                    );
+
+                    return chain.filter(
+                            exchange.mutate()
+                                    .request(authenticatedRequest)
+                                    .build()
+                    );
+                })
+                .onErrorResume(e -> {
+                    log.error(
+                            "[CustomAuthFilter] User Server error. userId={}, message={}",
+                            userId,
+                            e.getMessage()
+                    );
+
+                    return unauthorizedResponse(
+                            exchange,
+                            "Authentication server did not respond."
+                    );
+                });
     }
 
     private boolean isPublicPath(String path) {
@@ -136,28 +154,6 @@ public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFil
                     headers.remove("X-User-Phone");
                 })
                 .build();
-    }
-
-    private String extractUserIdFromJwt(String token) throws Exception {
-        String[] parts = token.split("\\.");
-
-        if (parts.length < 2) {
-            throw new IllegalArgumentException("Invalid JWT");
-        }
-
-        String payload = new String(
-                Base64.getUrlDecoder().decode(parts[1]),
-                StandardCharsets.UTF_8
-        );
-
-        JsonNode jsonNode = objectMapper.readTree(payload);
-        String userId = jsonNode.path("sub").asText();
-
-        if (userId == null || userId.isBlank()) {
-            throw new IllegalArgumentException("JWT subject is empty");
-        }
-
-        return userId;
     }
 
     private ServerHttpRequest createAuthenticatedRequest(
