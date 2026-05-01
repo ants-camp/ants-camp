@@ -7,6 +7,7 @@ import io.antcamp.tradeservice.infrastructure.annotation.LoginUser;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
 import io.antcamp.tradeservice.presentation.dto.*;
 import lombok.RequiredArgsConstructor;
+import org.apache.kafka.shaded.com.google.protobuf.Api;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -53,5 +54,14 @@ public class TradeController {
             LocalDateTime dateTime
     ){
         return ApiResponse.ok(tradeService.stockPriceList(stockList, dateTime));
+    }
+
+    @PostMapping("/sell")
+    public ResponseEntity<ApiResponse<SellStockResponse>> sellStock(
+            @RequestBody String stockCode,
+            @RequestBody int stockAmount,
+            @LoginAccount UUID accountId
+    ){
+        return ApiResponse.ok(tradeService.sellStock(LocalDateTime.now(), stockCode, stockAmount, accountId));
     }
 }

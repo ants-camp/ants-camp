@@ -41,6 +41,7 @@ spring:
     producer:
       topics:
         trade-succeeded-info: ${KAFKA_TRADE_SUCCEEDED_INFO}
+        trade-refreshed-info: ${KAFKA_TRADE_REFRESHED_INFO}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:

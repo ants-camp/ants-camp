@@ -15,4 +15,6 @@ public interface TradeService {
     BuyStockResponse buyStock(LocalDateTime time, String stockCode, int stockAmount, UUID accountId);
 
     StockPriceList stockPriceList(StockList stockList, LocalDateTime dateTime);
+
+    SellStockResponse sellStock(LocalDateTime now, String stockCode, int stockAmount, UUID accountId);
 }

@@ -142,7 +142,7 @@ public class TradeServiceImpl implements TradeService {
             AssetResponse assetResponse = assetClient.getAsset(accountId, totalPrice);
             if(assetResponse.canTrade()){
                 TradeSucceededEvent event = new TradeSucceededEvent(
-                        totalPrice+assetResponse.account(),
+                        assetResponse.account()-totalPrice,
                         accountId,
                         newTradeId
                 );
@@ -176,6 +176,43 @@ public class TradeServiceImpl implements TradeService {
         }
 
         return new StockPriceList(stockMap);
+    }
+
+    @Override
+    public SellStockResponse sellStock(LocalDateTime dateTime, String stockCode, int stockAmount, UUID accountId) {
+
+        // 현재 가격 먼저 조회
+        MinutePriceResponse response = getKisPrice(stockCode, dateTime);
+        String stockName = response.minutePriceOutput1().stockName();
+        double nowPrice = Double.parseDouble(response.minutePriceOutput1().priceNow());
+        double totalPrice = nowPrice*stockAmount;
+
+        // 매매 데이터 생성 & 저장
+        UUID newTradeId = UUID.randomUUID();
+        LocalDateTime tradeAt = LocalDateTime.now();
+        Trade newTrade = Trade.create(newTradeId, accountId, TradeType.SELL, tradeAt, stockCode, stockAmount, totalPrice);
+        tradeRepository.save(newTrade);
+
+        // 자산 서비스에 validation 요청 & event publish
+        try{
+            AssetResponse assetResponse = assetClient.getStock(accountId, stockCode, stockAmount);
+            if(assetResponse.canTrade()){
+                TradeSucceededEvent event = new TradeSucceededEvent(
+                        totalPrice+assetResponse.account(),
+                        accountId,
+                        newTradeId
+                );
+                kafkaProducer.publishTradeResult(event);
+            }
+        }catch (Exception e){
+            log.error("asset server 응답 실패");
+        }
+        return new SellStockResponse(
+                stockCode,
+                stockName,
+                totalPrice,
+                stockAmount
+        );
     }
 
 
