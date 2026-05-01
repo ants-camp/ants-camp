@@ -42,15 +42,4 @@ public class EvalRun {
                 .build();
     }
 
-    public EvalRun start() {
-        return restore(evalRunId, questions, judgeModels, promptVersionId, memo, EvalRunStatus.RUNNING);
-    }
-
-    public EvalRun complete() {
-        return restore(evalRunId, questions, judgeModels, promptVersionId, memo, EvalRunStatus.COMPLETED);
-    }
-
-    public EvalRun fail() {
-        return restore(evalRunId, questions, judgeModels, promptVersionId, memo, EvalRunStatus.FAILED);
-    }
 }

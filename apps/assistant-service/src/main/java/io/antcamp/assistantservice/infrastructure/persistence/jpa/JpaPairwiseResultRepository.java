@@ -1,6 +1,5 @@
 package io.antcamp.assistantservice.infrastructure.persistence.jpa;
 
-import io.antcamp.assistantservice.domain.model.Verdict;
 import io.antcamp.assistantservice.infrastructure.entity.PairwiseResultEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -24,7 +23,7 @@ public interface JpaPairwiseResultRepository extends JpaRepository<PairwiseResul
             GROUP BY judge_model
             """, nativeQuery = true)
     List<Object[]> findSummaryRaw(@Param("evalRunIdA") UUID evalRunIdA,
-                                   @Param("evalRunIdB") UUID evalRunIdB);
+                                  @Param("evalRunIdB") UUID evalRunIdB);
 
     // evalRunId에 속한 고유 RagQuery 조회 (pairwise 매칭용)
     @Query(value = """
