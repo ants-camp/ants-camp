@@ -1,14 +1,17 @@
 package io.antcamp.rankingservice.application;
 
 import io.antcamp.rankingservice.application.dto.RankingResult;
+import io.antcamp.rankingservice.domain.event.RankingUpdateRequestedEvent;
 import io.antcamp.rankingservice.domain.event.TotalAssetCalcuatedEvent;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 public interface RankingService {
-    // 매매 체결 시 Redis만 갱신 (실시간 순위, DB 저장 없음)
-    void upsertRanking(UUID competitionId, UUID userId, BigDecimal totalAsset);
+    // 매매 체결 시 단건 Redis 갱신 (실시간 순위, DB 저장 없음)
+    void upsertRanking(UUID competitionId, UUID userId, Double totalAsset);
+
+    // 1분마다 대회 참가자 전체 총자산을 Redis에 일괄 갱신 (DB 저장 없음)
+    void batchUpsertRankings(UUID competitionId, List<RankingUpdateRequestedEvent.ParticipantAsset> participants);
 
     // 대회 전체 랭킹 조회 (진행 중)
     List<RankingResult> getTopRankings(UUID competitionId, int page, int size);

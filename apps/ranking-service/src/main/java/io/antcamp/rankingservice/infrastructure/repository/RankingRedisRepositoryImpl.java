@@ -1,7 +1,6 @@
 package io.antcamp.rankingservice.infrastructure.repository;
 
 import io.antcamp.rankingservice.domain.repository.RankingRedisRepository;
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -23,9 +22,9 @@ public class RankingRedisRepositoryImpl implements RankingRedisRepository {
     }
 
     @Override
-    public void upsertScore(UUID competitionId, UUID userId, BigDecimal totalAsset) {
+    public void upsertScore(UUID competitionId, UUID userId, Double totalAsset) {
         redisTemplate.opsForZSet()
-                .add(key(competitionId), userId.toString(), totalAsset.doubleValue());
+                .add(key(competitionId), userId.toString(), totalAsset);
     }
 
     @Override
@@ -53,7 +52,7 @@ public class RankingRedisRepositoryImpl implements RankingRedisRepository {
         return tuples.stream()
                 .map(t -> new RankingEntry(
                         UUID.fromString(t.getValue()),
-                        BigDecimal.valueOf(t.getScore()),
+                        t.getScore(),
                         rankCounter.getAndIncrement()))
                 .toList();
     }

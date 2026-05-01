@@ -1,14 +1,14 @@
 package io.antcamp.rankingservice.domain.event;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 /**
- * 자산 서비스에서 매매 체결 후 평가금 갱신 시 발행하는 이벤트 payload. competitionId 포함 여부는 자산팀과 협의 후 확정.
+ * 매매 서비스에서 매매 체결 성공 후 발행하는 이벤트.
+ * 랭킹 서비스가 컨슘하여 Redis 실시간 순위를 갱신한다 (DB 저장 없음).
  */
 public record TradeSucceededEvent(
         UUID userId,
         UUID competitionId,
-        BigDecimal totalAsset
+        Double totalAsset  // 현금 + 보유주식 시가 합산 (소수점 포함)
 ) {
 }

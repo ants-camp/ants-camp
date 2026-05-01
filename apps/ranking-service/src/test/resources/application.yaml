@@ -8,6 +8,8 @@ spring:
         format_sql: true
 
 topics:
-  ranking:
-    asset-updated: asset-updated-test
-    participants-valuated: participants-valuated-test
+  trade:
+    trade-succeeded: trade-succeeded-test
+    ranking-update: trade-ranking-update-test
+  asset:
+    total-calculated: asset-total-calculated-test
