@@ -5,8 +5,7 @@ import io.antcamp.userservice.domain.model.enums.RoleType;
 import io.antcamp.userservice.domain.model.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
-import org.springframework.data.annotation.Id;
-
+import jakarta.persistence.Id;
 import java.util.UUID;
 
 @Entity
@@ -25,7 +24,7 @@ public class User extends BaseEntity {
     private String email; // 로그인 ID
 
     @Column(nullable = false)
-    private String password; // 로그인 ID
+    private String password;
 
     @Column(nullable = false)
     private String name;
@@ -40,4 +39,9 @@ public class User extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserStatus status;
+
+    public boolean isActive() {
+        return this.status == UserStatus.ACTIVE;
+    }
 }
+

@@ -8,7 +8,8 @@ import io.antcamp.userservice.domain.model.enums.UserStatus;
 import io.antcamp.userservice.domain.repository.UserRepository;
 import io.antcamp.userservice.presentation.dto.request.UserRegisterRequest;
 import io.antcamp.userservice.presentation.dto.response.UserResponse;
-import jakarta.transaction.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +19,14 @@ import org.springframework.stereotype.Service;
 public class UserCommandService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public UserResponse register(UserRegisterRequest request) {
         validateDuplicateEmail(request.email());
 
         User user = User.builder()
                 .email(request.email())
+                .password(passwordEncoder.encode(request.password()))
                 .name(request.name())
                 .phone(request.phone())
                 .role(RoleType.PLAYER)
@@ -40,6 +43,7 @@ public class UserCommandService {
 
         User user = User.builder()
                 .email(request.email())
+                .password(passwordEncoder.encode(request.password()))
                 .name(request.name())
                 .phone(request.phone())
                 .role(RoleType.MANAGER)
