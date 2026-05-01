@@ -48,6 +48,7 @@ public class AccountEntity {
         this.accountAmount = accountAmount;
         this.competitionId = competitionId;
         this.competitionName = competitionName;
+        this.isEnded = isEnded;
     }
 
     public static AccountEntity from(Account account) {
