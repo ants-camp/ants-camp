@@ -5,9 +5,7 @@ import io.antcamp.tradeservice.application.service.TradeService;
 import io.antcamp.tradeservice.infrastructure.annotation.LoginAccount;
 import io.antcamp.tradeservice.infrastructure.annotation.LoginUser;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
-import io.antcamp.tradeservice.presentation.dto.BuyStockRequest;
-import io.antcamp.tradeservice.presentation.dto.BuyStockResponse;
-import io.antcamp.tradeservice.presentation.dto.MinutePriceResponse;
+import io.antcamp.tradeservice.presentation.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -34,7 +32,8 @@ public class TradeController {
             @RequestParam("stock_code") String stockCode,
             @RequestParam("date_time")
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-            LocalDateTime dateTime) {
+            LocalDateTime dateTime
+    ) {
         return ApiResponse.ok(tradeService.getMinutePrice(stockCode, dateTime));
     }
 
@@ -45,5 +44,14 @@ public class TradeController {
             @LoginAccount UUID accountId
     ){
         return ApiResponse.ok(tradeService.buyStock(LocalDateTime.now(), stockCode, stockAmount, accountId));
+    }
+
+    @PostMapping("/stock-price-list")
+    public ResponseEntity<ApiResponse<StockPriceList>> stockPriceList(
+            @RequestBody StockList stockList,
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime dateTime
+    ){
+        return ApiResponse.ok(tradeService.stockPriceList(stockList, dateTime));
     }
 }

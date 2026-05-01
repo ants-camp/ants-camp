@@ -28,7 +28,9 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static org.springframework.data.elasticsearch.annotations.DateFormat.time;
@@ -157,6 +159,24 @@ public class TradeServiceImpl implements TradeService {
         );
     }
 
+    @Override
+    public StockPriceList stockPriceList(StockList stockList, LocalDateTime dateTime) {
+
+        Map<String ,String > stockMap = new HashMap<>();
+
+        // for
+        for(String stockCode:stockList.stockList()){
+            // redis 에 있는지 먼저 확인
+            String price = redisTemplate.opsForValue().get(stockCode);
+            if(price==null){
+                price = String.valueOf(getMinutePrice(stockCode, dateTime));
+                redisTemplate.opsForValue().set(stockCode, price, Duration.ofSeconds(60));
+            }
+            stockMap.put(stockCode, price);
+        }
+
+        return new StockPriceList(stockMap);
+    }
 
 
     /** 3회 재시도 후 최종 실패 시 폴백 */
