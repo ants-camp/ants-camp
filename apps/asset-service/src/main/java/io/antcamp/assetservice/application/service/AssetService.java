@@ -87,10 +87,7 @@ public class AssetService {
     }
 
     @Transactional
-    public void finalizeCompetition(UUID accountId, Map<String, Long> priceCache) {
-        Account account = accountRepository.findByIdWithLock(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
-
+    public void updateHoldingFinalPrices(UUID accountId, Map<String, Long> priceCache) {
         List<Holding> holdings = holdingRepository.findAllByAccountId(accountId);
 
         for (Holding holding : holdings) {
@@ -98,6 +95,12 @@ public class AssetService {
             holding.updateFinalPrice(price);
             holdingRepository.save(holding);
         }
+    }
+
+    @Transactional
+    public void endAccount(UUID accountId) {
+        Account account = accountRepository.findByIdWithLock(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
         account.end();
         accountRepository.save(account);
