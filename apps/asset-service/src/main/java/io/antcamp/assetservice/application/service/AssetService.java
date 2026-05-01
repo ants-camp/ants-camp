@@ -9,6 +9,7 @@ import io.antcamp.assetservice.domain.repository.HoldingRepository;
 import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
 import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.infrastructure.client.StockPriceClient;
+import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.TotalAssetCalculatedEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,5 +59,27 @@ public class AssetService {
                 holdingEvaluationAmount,
                 totalAssetAmount
         );
+    }
+
+    public List<TotalAssetCalculatedEvent.ParticipantTotalAsset> calculateTotalAssets(UUID competitionId) {
+        List<Account> accounts = accountRepository.findAllByCompetitionId(competitionId);
+
+        return accounts.stream()
+                .map(account -> {
+                    List<Holding> holdings = holdingRepository.findAllByAccountId(account.getAccountId());
+
+                    //자산 계산
+                    long holdingEvaluationAmount = holdings.stream()
+                            .mapToLong(h -> h.getFinalPrice() * h.getStockAmount())
+                            .sum();
+
+                    long totalAsset = account.getAccountAmount() + holdingEvaluationAmount;
+
+                    return new TotalAssetCalculatedEvent.ParticipantTotalAsset(
+                            account.getUserId(),
+                            totalAsset
+                    );
+                })
+                .toList();
     }
 }

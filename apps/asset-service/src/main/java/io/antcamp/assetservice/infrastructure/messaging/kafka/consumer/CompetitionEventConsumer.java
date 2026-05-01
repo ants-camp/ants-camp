@@ -3,7 +3,7 @@ package io.antcamp.assetservice.infrastructure.messaging.kafka.consumer;
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.service.AccountService;
 import io.antcamp.assetservice.domain.model.AccountType;
-import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.CompetitionRegisteredPayload;
+import io.antcamp.assetservice.infrastructure.messaging.kafka.payload.CompetitionRegisteredEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
@@ -20,7 +20,7 @@ public class CompetitionEventConsumer {
             topics = "${topics.competition.registered}",
             groupId = "${spring.kafka.consumer.group-id}"
     )
-    public void handleCompetitionRegistered(CompetitionRegisteredPayload payload) {
+    public void handleCompetitionRegistered(CompetitionRegisteredEvent payload) {
 
         AccountType accountType = AccountType.valueOf(payload.competitionType());
 

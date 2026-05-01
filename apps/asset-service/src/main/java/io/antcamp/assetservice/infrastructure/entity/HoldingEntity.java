@@ -1,10 +1,12 @@
 package io.antcamp.assetservice.infrastructure.entity;
 
+import common.entity.BaseEntity;
 import io.antcamp.assetservice.domain.model.Holding;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
 
@@ -20,7 +22,8 @@ import java.util.UUID;
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class HoldingEntity {
+@SuperBuilder
+public class HoldingEntity extends BaseEntity {
 
     @Id
     private UUID holdingId;

@@ -23,4 +23,8 @@ public class SellHoldingCommand {
     @NotNull
     @Positive
     private Integer stockAmount;
+
+    @NotNull
+    @Positive
+    private Long price;
 }
