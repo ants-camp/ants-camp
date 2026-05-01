@@ -13,3 +13,4 @@ topics:
   competition:
     registered: competition.registered
     finished: competition.finished
+    cancelled: competition.cancelled
