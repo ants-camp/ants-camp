@@ -33,7 +33,7 @@ public class CompetitionEndedEventConsumer {
     private final TotalAssetEventProducer totalAssetEventProducer;
 
     @KafkaListener(
-            topics = "${topics.competition.ended}",
+            topics = "${topics.competition.finished}",
             groupId = "${spring.kafka.consumer.group-id}"
     )
     public void handleCompetitionEnded(CompetitionEndedEvent payload) {
