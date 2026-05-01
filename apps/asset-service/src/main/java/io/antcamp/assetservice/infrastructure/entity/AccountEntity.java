@@ -30,12 +30,25 @@ public class AccountEntity {
     @Column(nullable = false)
     private Long accountAmount;
 
-    private AccountEntity(UUID accountId, UUID userId, String accountNumber, AccountType type, Long accountAmount) {
+    @Column(nullable = true)
+    private UUID competitionId;
+
+    @Column(nullable = true)
+    private String competitionName;
+
+    @Column(nullable = false)
+    private boolean isEnded;
+
+    private AccountEntity(UUID accountId, UUID userId, String accountNumber, AccountType type,
+                          Long accountAmount, UUID competitionId, String competitionName, boolean isEnded) {
         this.accountId = accountId;
         this.userId = userId;
         this.accountNumber = accountNumber;
         this.type = type;
         this.accountAmount = accountAmount;
+        this.competitionId = competitionId;
+        this.competitionName = competitionName;
+        this.isEnded = isEnded;
     }
 
     public static AccountEntity from(Account account) {
@@ -44,11 +57,15 @@ public class AccountEntity {
                 account.getUserId(),
                 account.getAccountNumber(),
                 account.getType(),
-                account.getAccountAmount()
+                account.getAccountAmount(),
+                account.getCompetitionId(),
+                account.getCompetitionName(),
+                account.isEnded()
         );
     }
 
     public Account toDomain() {
-        return new Account(accountId, userId, accountNumber, type, accountAmount);
+        return new Account(accountId, userId, accountNumber, type, accountAmount,
+                competitionId, competitionName, isEnded);
     }
 }
