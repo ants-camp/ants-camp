@@ -26,16 +26,9 @@ public class AssetService {
     private final HoldingRepository holdingRepository;
     private final StockPriceClient stockPriceClient;
 
-    @Transactional(readOnly = true)
     public AssetResult getAsset(UUID accountId, UUID userId) {
 
-        Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
-
-        if (!account.getUserId().equals(userId)) {
-            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
-        }
-
+        Account account = getAccountWithValidation(accountId, userId);
         List<Holding> holdings = holdingRepository.findAllByAccountId(accountId);
 
         long holdingEvaluationAmount = 0L;
@@ -60,6 +53,17 @@ public class AssetService {
                 holdingEvaluationAmount,
                 totalAssetAmount
         );
+    }
+
+    @Transactional(readOnly = true)
+    public Account getAccountWithValidation(UUID accountId, UUID userId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+
+        if (!account.getUserId().equals(userId)) {
+            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+        }
+        return account;
     }
 
     public List<ParticipantTotalAssetResult> calculateTotalAssets(UUID competitionId) {
