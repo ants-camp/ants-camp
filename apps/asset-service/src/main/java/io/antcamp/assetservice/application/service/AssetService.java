@@ -92,6 +92,9 @@ public class AssetService {
 
         for (Holding holding : holdings) {
             Long price = priceCache.get(holding.getStockCode());
+            if (price == null) {
+                throw new IllegalStateException("종목 가격 정보가 없습니다. stockCode=" + holding.getStockCode());
+            }
             holding.updateFinalPrice(price);
             holdingRepository.save(holding);
         }
