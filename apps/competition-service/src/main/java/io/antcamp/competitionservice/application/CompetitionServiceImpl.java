@@ -5,17 +5,17 @@ import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
-import io.antcamp.competitionservice.domain.event.CompetitionEndedPayload;
+import io.antcamp.competitionservice.domain.event.CompetitionEndedEvent;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionChangeNotice;
+import io.antcamp.competitionservice.domain.model.CompetitionParticipant;
 import io.antcamp.competitionservice.domain.model.CompetitionPeriod;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
-import io.antcamp.competitionservice.domain.model.JoinHistory;
 import io.antcamp.competitionservice.domain.model.ParticipantCount;
 import io.antcamp.competitionservice.domain.model.RegisterPeriod;
 import io.antcamp.competitionservice.domain.repository.CompetitionChangeNoticeRepository;
+import io.antcamp.competitionservice.domain.repository.CompetitionParticipantRepository;
 import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
-import io.antcamp.competitionservice.domain.repository.JoinHistoryRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -31,7 +31,7 @@ public class CompetitionServiceImpl implements CompetitionService {
 
     private final CompetitionRepository competitionRepository;
     private final CompetitionChangeNoticeRepository competitionChangeNoticeRepository;
-    private final JoinHistoryRepository joinHistoryRepository;
+    private final CompetitionParticipantRepository competitionParticipantRepository;
     private final CompetitionEventProducer competitionEventProducer;
 
 
@@ -155,18 +155,18 @@ public class CompetitionServiceImpl implements CompetitionService {
         Competition saved = competitionRepository.save(competition);
 
         // 2. 참가자 userId 목록 조회
-        List<JoinHistory> joinHistories = joinHistoryRepository.findAllByCompetitionId(competitionId);
-        List<UUID> participantUserIds = joinHistories.stream()
-                .map(JoinHistory::getUserId)
+        List<CompetitionParticipant> participants = competitionParticipantRepository.findAllByCompetitionId(competitionId);
+        List<UUID> participantUserIds = participants.stream()
+                .map(CompetitionParticipant::getUserId)
                 .toList();
 
         // 3. 대회 종료 이벤트 발행 (자산 서비스가 컨슘 → 최종 총자산 계산 후 랭킹 서비스로 전달)
-        CompetitionEndedPayload payload = new CompetitionEndedPayload(
+        CompetitionEndedEvent event = new CompetitionEndedEvent(
                 saved.getCompetitionId(),
                 participantUserIds,
                 LocalDateTime.now()
         );
-        competitionEventProducer.publishCompetitionEnded(payload);
+        competitionEventProducer.publishCompetitionEnded(event);
 
         return saved;
     }

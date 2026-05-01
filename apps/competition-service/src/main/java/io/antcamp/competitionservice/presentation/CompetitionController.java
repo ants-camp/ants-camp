@@ -1,7 +1,7 @@
 package io.antcamp.competitionservice.presentation;
 
+import io.antcamp.competitionservice.application.CompetitionParticipantService;
 import io.antcamp.competitionservice.application.CompetitionService;
-import io.antcamp.competitionservice.application.JoinHistoryService;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
@@ -10,6 +10,7 @@ import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.presentation.dto.CreateCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.CreateCompetitionResponse;
 import io.antcamp.competitionservice.presentation.dto.FindCompetitionChangeNoticeResponse;
+import io.antcamp.competitionservice.presentation.dto.FindCompetitionParticipantResponse;
 import io.antcamp.competitionservice.presentation.dto.FindCompetitionResponse;
 import io.antcamp.competitionservice.presentation.dto.JoinCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.UpdateCompetitionRequest;
@@ -39,7 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CompetitionController {
 
     private final CompetitionService competitionService;
-    private final JoinHistoryService joinHistoryService;
+    private final CompetitionParticipantService competitionParticipantService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -130,23 +131,39 @@ public class CompetitionController {
                 .toList();
     }
 
-    // JoinHistory 엔드포인트
-    @PostMapping("/{competitionId}/join")
+    // ─── 대회 참여자 엔드포인트 ─────────────────────────────────────────────
+
+    @PostMapping("/{competitionId}/participants")
     @ResponseStatus(HttpStatus.CREATED)
-    public void join(
+    public void competitionRegister(
             @PathVariable UUID competitionId,
             @RequestBody @Valid JoinCompetitionRequest request
     ) {
-        joinHistoryService.join(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+        competitionParticipantService.competitionRegister(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
     }
 
-    @DeleteMapping("/{competitionId}/join")
+    @DeleteMapping("/{competitionId}/participants")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancel(
+    public void competitionCancel(
             @PathVariable UUID competitionId,
             @RequestBody @Valid JoinCompetitionRequest request
     ) {
-        joinHistoryService.cancel(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+        competitionParticipantService.competitionCancel(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+    }
+
+    /**
+     * 대회 참여자 목록 조회 (매매 서비스 FeignClient 호출용).
+     * 매매 서비스는 이 목록을 기반으로 유저별 총자산을 계산하여
+     * RankingUpdateRequestedEvent를 랭킹 서비스로 발행한다.
+     */
+    @GetMapping("/{competitionId}/participants")
+    public List<FindCompetitionParticipantResponse> findParticipants(
+            @PathVariable UUID competitionId
+    ) {
+        return competitionParticipantService.findAllByCompetitionId(competitionId)
+                .stream()
+                .map(FindCompetitionParticipantResponse::from)
+                .toList();
     }
 
     @PatchMapping("/{id}/start")
