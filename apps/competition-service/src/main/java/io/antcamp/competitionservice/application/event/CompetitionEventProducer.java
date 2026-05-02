@@ -1,5 +1,6 @@
 package io.antcamp.competitionservice.application.event;
 
+import io.antcamp.competitionservice.domain.event.CompetitionAbortedEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionCancelledEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionEndedEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionRegisteredEvent;
@@ -19,6 +20,9 @@ public interface CompetitionEventProducer {
 
     /** 참가자가 대회 신청을 취소할 때 발행 → 자산 서비스가 컨슘하여 대회 전용 계좌 정리 */
     void publishCompetitionCancelled(CompetitionCancelledEvent event);
+
+    /** 대회 자체가 취소될 때 발행 → 참가자 계좌 정리 등 후속 처리가 필요한 서비스가 컨슘 */
+    void publishCompetitionAborted(CompetitionAbortedEvent event);
 
     /** 1분마다 진행 중인 대회에서 발행 → 자산 서비스가 컨슘하여 총자산 계산 후 Redis 랭킹 반영 */
     void publishCompetitionTicked(CompetitionTicked event);

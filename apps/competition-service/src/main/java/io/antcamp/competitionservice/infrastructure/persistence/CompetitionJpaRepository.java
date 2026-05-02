@@ -22,7 +22,7 @@ public interface CompetitionJpaRepository extends JpaRepository<CompetitionEntit
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM CompetitionEntity c WHERE c.competitionId = :id")
-    Optional<CompetitionEntity> findByIdForUpdate(@Param("id") UUID id);
+    Optional<CompetitionEntity> findByIdWithLock(@Param("id") UUID id);
 
     /**
      * 진행 중인(ONGOING) 대회 ID 목록만 조회. 틱 이벤트 발행 시 전체 엔티티 로딩을 피하기 위해 ID만 select.

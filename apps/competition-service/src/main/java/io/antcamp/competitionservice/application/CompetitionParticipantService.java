@@ -6,12 +6,13 @@ import java.util.List;
 import java.util.UUID;
 
 public interface CompetitionParticipantService {
-    // 대회 신청
-    void competitionRegister(JoinCompetitionCommand command);
 
-    // 대회 취소
-    void competitionCancel(JoinCompetitionCommand command);
+    // Create
+    void registerCompetition(JoinCompetitionCommand command);
 
-    // 특정 대회의 모든 참가자 조회
+    // Delete
+    void cancelRegistration(JoinCompetitionCommand command);
+
+    // Search
     List<CompetitionParticipant> findAllByCompetitionId(UUID competitionId);
 }
