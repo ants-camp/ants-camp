@@ -23,11 +23,13 @@ public class RankingServiceImpl implements RankingService {
 
     // ── Update ────────────────────────────────────────────────────────────────
 
+    // 매매 체결 시 랭킹 저장(갱신)
     @Override
     public void updateLiveRanking(UUID competitionId, UUID userId, Double totalAsset) {
         rankingRedisRepository.upsertScore(competitionId, userId, totalAsset);
     }
 
+    // 대회 종료 시 최종 랭킹을 DB에 저장하는 메서드
     @Override
     @Transactional
     public void finalizeRankings(UUID competitionId) {
@@ -36,6 +38,7 @@ public class RankingServiceImpl implements RankingService {
             return;
         }
 
+        // RankingEntry는 유저id, 총자산, 순위로 구성
         List<RankingRedisRepository.RankingEntry> all =
                 rankingRedisRepository.getTopRankings(competitionId, 0, total);
 
@@ -46,6 +49,8 @@ public class RankingServiceImpl implements RankingService {
         });
     }
 
+    // 대회 종료 시, 이벤트를 수신할 떄 실행되는 메서드
+    // 참가자들의 최종 자산을 redis에 반영하고 DB에 저장하는 메서드(finalizeRankings)를 호출
     @Override
     @Transactional
     public void finalizeRankingsWithValuations(
