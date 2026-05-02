@@ -25,9 +25,9 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
-    public void competitionRegister(JoinCompetitionCommand command) {
+    public void registerCompetition(JoinCompetitionCommand command) {
         // 1. 대회 조회 (Competition 비관적 락 먼저 획득 - 같은 대회 신청 요청을 직렬화)
-        Competition competition = competitionRepository.findByIdForUpdate(command.competitionId())
+        Competition competition = competitionRepository.findByIdWithLock(command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
 
         // 2. 락 획득 후 중복 신청 체크 (이 시점엔 앞선 트랜잭션이 이미 commit된 상태)
@@ -58,9 +58,9 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
     }
 
     @Transactional
-    public void competitionCancel(JoinCompetitionCommand command) {
+    public void cancelRegistration(JoinCompetitionCommand command) {
         // 1. 대회 조회 (Competition 비관적 락 - 참가자 수 동시성 제어)
-        Competition competition = competitionRepository.findByIdForUpdate(command.competitionId())
+        Competition competition = competitionRepository.findByIdWithLock(command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         competition.cancelRegister();
         competitionRepository.save(competition);
@@ -80,6 +80,7 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
         ));
     }
 
+    // 대회 참가자 목록 조회
     @Transactional(readOnly = true)
     public List<CompetitionParticipant> findAllByCompetitionId(UUID competitionId) {
         return competitionParticipantRepository.findAllByCompetitionId(competitionId);

@@ -10,6 +10,5 @@ spring:
 topics:
   trade:
     trade-succeeded: trade-succeeded-test
-    ranking-update-requested: trade-ranking-update-requested-test
   asset:
     total-calculated: asset-total-calculated-test

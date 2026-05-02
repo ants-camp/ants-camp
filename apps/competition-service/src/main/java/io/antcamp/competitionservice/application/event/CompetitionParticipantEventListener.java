@@ -9,9 +9,8 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * DB 커밋 완료 후 Kafka 이벤트를 발행하는 리스너.
- * @TransactionalEventListener(phase = AFTER_COMMIT) 을 통해
- * 트랜잭션이 정상 커밋된 경우에만 Kafka 발행을 보장한다.
+ * 대회 참가자 관련 이벤트를 수신하여 Kafka로 발행하는 리스너.
+ * DB 커밋 완료 후에만 Kafka 발행을 보장한다.
  */
 @Slf4j
 @Component
