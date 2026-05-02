@@ -3,6 +3,7 @@ package io.antcamp.rankingservice.application;
 import common.exception.BusinessException;
 import common.exception.ErrorCode;
 import io.antcamp.rankingservice.application.dto.RankingResult;
+import io.antcamp.rankingservice.application.event.RankingFinalizedEvent;
 import io.antcamp.rankingservice.domain.event.TotalAssetCalcuatedEvent;
 import io.antcamp.rankingservice.domain.model.RankTier;
 import io.antcamp.rankingservice.domain.model.Ranking;
@@ -11,6 +12,7 @@ import io.antcamp.rankingservice.domain.repository.RankingRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +22,7 @@ public class RankingServiceImpl implements RankingService {
 
     private final RankingRepository rankingRepository;
     private final RankingRedisRepository rankingRedisRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     // ── Update ────────────────────────────────────────────────────────────────
 
@@ -29,41 +32,58 @@ public class RankingServiceImpl implements RankingService {
         rankingRedisRepository.upsertScore(competitionId, userId, totalAsset);
     }
 
-    // 대회 종료 시 최종 랭킹을 DB에 저장하는 메서드
+    // 대회 종료 시 최종 랭킹을 DB에 저장하는 메서드(DB에 관리자가 수동으로 저장할 때 사용)
     @Override
     @Transactional
     public void finalizeRankings(UUID competitionId) {
-        long total = rankingRedisRepository.getTotalCount(competitionId);
-        if (total == 0) {
+        long totalCount = rankingRedisRepository.getTotalCount(competitionId);
+        if (totalCount == 0) {
             return;
         }
 
-        // RankingEntry는 유저id, 총자산, 순위로 구성
+        // RankingEntry는 유저id, 총자산, 순위로 구성, 전체 참가자의 랭킹 목록 조회
         List<RankingRedisRepository.RankingEntry> all =
-                rankingRedisRepository.getTopRankings(competitionId, 0, total);
+                rankingRedisRepository.getTopRankings(competitionId, 0, totalCount);
 
+        // 참가자마다 최종 순위를 기록하고 isFinalized = true로 저장
         all.forEach(entry -> {
             Ranking ranking = Ranking.createRanking(competitionId, entry.userId());
-            ranking.finalize(RankTier.from(entry.rank(), total));
+            ranking.finalize(RankTier.from(entry.rank(), totalCount));
             rankingRepository.save(ranking);
         });
     }
 
-    // 대회 종료 시, 이벤트를 수신할 떄 실행되는 메서드
-    // 참가자들의 최종 자산을 redis에 반영하고 DB에 저장하는 메서드(finalizeRankings)를 호출
+    // 대회 종료 이벤트 수신 시 최종 순위를 DB에 저장하고, 커밋 후 Redis를 동기화하는 메서드
     @Override
     @Transactional
     public void finalizeRankingsWithValuations(
             UUID competitionId,
             List<TotalAssetCalcuatedEvent.ParticipantTotalAsset> valuations
     ) {
-        // 1. 최종 총자산을 Redis에 반영 (자산 서비스가 계산한 최종값으로 덮어쓰기)
-        valuations.forEach(v ->
-                rankingRedisRepository.upsertScore(competitionId, v.userId(), v.totalAsset())
-        );
+        if (valuations.isEmpty()) {
+            return;
+        }
 
-        // 2. Redis 기반으로 최종 순위 계산 후 DB에 저장
-        finalizeRankings(competitionId);
+        long totalCount = valuations.size();
+
+        // 1. valuations를 자산 내림차순 정렬 후 DB에 직접 저장 (Redis 거치지 않음)
+        // Redis는 진행 중 전광판용이고, 최종 결과의 원천은 자산 서비스가 준 확정 데이터
+        List<TotalAssetCalcuatedEvent.ParticipantTotalAsset> sorted = valuations.stream()
+                .sorted((a, b) -> Double.compare(b.totalAsset(), a.totalAsset()))
+                .toList();
+
+        // 참가자마다 랭킹을 기록하고 isFinalized = true로 저장
+        for (int i = 0; i < sorted.size(); i++) {
+            var v = sorted.get(i);
+            // 랭킹 데이터를 생성
+            Ranking ranking = Ranking.createRanking(competitionId, v.userId());
+            // 최중 순위를 기록하고, isFinalized = true로 변경
+            ranking.finalize(RankTier.from((long) i + 1, totalCount)); // 1-based rank
+            rankingRepository.save(ranking);
+        }
+
+        // 2. DB 커밋 완료 후 Redis를 최종값으로 동기화 (AFTER_COMMIT 리스너가 처리)
+        applicationEventPublisher.publishEvent(new RankingFinalizedEvent(competitionId, valuations));
     }
 
     // ── Search ────────────────────────────────────────────────────────────────

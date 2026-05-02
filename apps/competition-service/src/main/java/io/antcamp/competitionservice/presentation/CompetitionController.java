@@ -171,10 +171,7 @@ public class CompetitionController {
                 new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
     }
 
-    /**
-     * 대회 참여자 목록 조회 (매매 서비스 FeignClient 호출용). 매매 서비스는 이 목록을 기반으로 유저별 총자산을 계산하여 RankingUpdateRequestedEvent를 랭킹 서비스로
-     * 발행한다.
-     */
+
     @GetMapping("/{competitionId}/participants")
     public List<FindCompetitionParticipantResponse> findParticipants(
             @PathVariable UUID competitionId

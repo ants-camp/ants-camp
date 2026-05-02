@@ -46,7 +46,7 @@ public class RankingRedisRepositoryImpl implements RankingRedisRepository {
         return count != null ? count : 0L;
     }
 
-    // 최종 순위를 DB에 저장할 떄 사용 ( 유저 id, 총자산, 순위로 저장 )
+    // 최종 순위를 DB에 저장할 떄 이 메서드를 호출 ( 유저 id, 총자산, 순위로 저장 )
     @Override
     public List<RankingEntry> getTopRankings(UUID competitionId, long offset, long count) {
         Set<TypedTuple<String>> tuples = redisTemplate.opsForZSet()

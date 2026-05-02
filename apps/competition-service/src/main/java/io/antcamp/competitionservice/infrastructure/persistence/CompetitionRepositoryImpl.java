@@ -1,5 +1,7 @@
 package io.antcamp.competitionservice.infrastructure.persistence;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
@@ -48,11 +50,11 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
-
+    
     @Override
     public void delete(Competition competition, String deletedBy) {
         CompetitionEntity entity = competitionJpaRepository.findById(competition.getCompetitionId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대회입니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         entity.softDelete(deletedBy);
     }
 

@@ -4,7 +4,6 @@ import common.exception.BusinessException;
 import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
-import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
 import io.antcamp.competitionservice.domain.event.CompetitionAbortedEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionEndedEvent;
 import io.antcamp.competitionservice.domain.model.Competition;
@@ -21,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -33,7 +33,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     private final CompetitionRepository competitionRepository;
     private final CompetitionChangeNoticeRepository competitionChangeNoticeRepository;
     private final CompetitionParticipantRepository competitionParticipantRepository;
-    private final CompetitionEventProducer competitionEventProducer;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     // ── Create ────────────────────────────────────────────────────────────────
 
@@ -126,7 +126,8 @@ public class CompetitionServiceImpl implements CompetitionService {
         Competition saved = competitionRepository.save(competition);
 
         // 2. 참가자 userId 목록 조회
-        List<CompetitionParticipant> participants = competitionParticipantRepository.findAllByCompetitionId(competitionId);
+        List<CompetitionParticipant> participants = competitionParticipantRepository.findAllByCompetitionId(
+                competitionId);
         List<UUID> participantUserIds = participants.stream()
                 .map(CompetitionParticipant::getUserId)
                 .toList();
@@ -137,8 +138,9 @@ public class CompetitionServiceImpl implements CompetitionService {
                 participantUserIds,
                 LocalDateTime.now()
         );
-        competitionEventProducer.publishCompetitionEnded(event);
 
+        // 대회가 끝나고, 최종 랭킹을 계산하도록 하는 이벤트 발행
+        applicationEventPublisher.publishEvent(event);
         return saved;
     }
 
@@ -158,9 +160,9 @@ public class CompetitionServiceImpl implements CompetitionService {
                 .map(CompetitionParticipant::getUserId)
                 .toList();
 
-        competitionEventProducer.publishCompetitionAborted(
-                new CompetitionAbortedEvent(saved.getCompetitionId(), participantUserIds)
-        );
+        // 이미 대회에 참가 신청을 한 유저의 계좌를 정리하도록 하는 이벤트 발행
+        CompetitionAbortedEvent event = new CompetitionAbortedEvent(saved.getCompetitionId(), participantUserIds);
+        applicationEventPublisher.publishEvent(event);
 
         return saved;
     }
