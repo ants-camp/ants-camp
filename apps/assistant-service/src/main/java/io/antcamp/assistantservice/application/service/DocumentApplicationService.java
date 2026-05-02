@@ -51,7 +51,7 @@ public class DocumentApplicationService {
 
     @Transactional
     public DocumentUploadResult updateDocument(UpdateDocumentCommand command) {
-        KnowledgeDocument document = documentRepository.findById(command.documentId())
+        KnowledgeDocument document = documentRepository.findAccessibleById(command.documentId())
                 .orElseThrow(DocumentNotFoundException::new);
 
         // 기존 청크 삭제

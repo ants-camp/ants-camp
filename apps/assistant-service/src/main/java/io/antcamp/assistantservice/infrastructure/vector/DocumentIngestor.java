@@ -26,11 +26,13 @@ public class DocumentIngestor implements IngestPort {
     public void ingest(KnowledgeDocument document) {
         log.info("문서 인제스트 시작: documentId={}", document.getDocumentId());
 
-        // 재인제스트 멱등성: 이전 실패의 잔여 벡터 정리 (실패해도 계속 진행)
+        // 재인제스트 멱등성: 구버전 벡터 정리 실패 시 청킹 진행 금지 → 구/신 벡터 혼재 방지
         try {
             vectorStorePort.deleteByDocumentId(document.getDocumentId());
         } catch (Exception e) {
-            log.warn("이전 벡터 정리 실패 (계속 진행): documentId={}", document.getDocumentId(), e);
+            log.error("이전 벡터 정리 실패, 인제스트 중단: documentId={}", document.getDocumentId(), e);
+            chunkPersistenceHelper.markFailed(document.getDocumentId(), classify(e));
+            return;
         }
 
         List<DocumentChunk> savedChunks;
