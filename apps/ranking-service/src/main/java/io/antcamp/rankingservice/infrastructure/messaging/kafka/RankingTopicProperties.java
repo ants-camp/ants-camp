@@ -16,8 +16,7 @@ public record RankingTopicProperties(
         @Valid Asset asset
 ) {
     public record Trade(
-            @NotBlank String tradeSucceeded,        // 매매 체결 시 단건 실시간 순위 갱신
-            @NotBlank String rankingUpdateRequested  // 1분마다 대회 참가자 전체 총자산 일괄 갱신
+            @NotBlank String tradeSucceeded   // 매매 체결 시 단건 실시간 순위 갱신
     ) {
     }
 

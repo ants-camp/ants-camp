@@ -39,7 +39,6 @@ eureka:
 
 topics:
   trade:
-    trade-succeeded: ${KAFKA_TRADE_SUCCEEDED_INFO}              # 매매 서비스: 매매 체결 시 단건 실시간 순위 갱신
-    ranking-update-requested: ${TRADE_RANKING_UPDATE_REQUESTED} # 매매 서비스: 1분마다 대회 참가자 전체 총자산 일괄 갱신
+    trade-succeeded: ${KAFKA_TRADE_SUCCEEDED_INFO}   # 매매 서비스: 매매 체결 시 단건 실시간 순위 갱신
   asset:
-    total-calculated: ${ASSET_TOTAL_CALCULATED}                 # 자산 서비스: 대회 종료 후 최종 총자산 수신 → 최종 순위 DB 저장
+    total-calculated: ${ASSET_TOTAL_CALCULATED}      # 자산 서비스: 대회 종료 후 최종 총자산 수신 → 최종 순위 DB 저장
