@@ -107,7 +107,7 @@ public class JudgeLlmAdapter implements JudgeLlmPort {
 
                 [AI 응답]
                 %s
-                """.formatted(question, referenceAnswer, retrievedContext, llmResponse)
+                """.formatted(esc(question), esc(referenceAnswer), esc(retrievedContext), esc(llmResponse))
                 : """
                 [질문]
                 %s
@@ -117,7 +117,7 @@ public class JudgeLlmAdapter implements JudgeLlmPort {
 
                 [AI 응답]
                 %s
-                """.formatted(question, retrievedContext, llmResponse);
+                """.formatted(esc(question), esc(retrievedContext), esc(llmResponse));
 
         var resolved = resolveModelAndPrompt(judgeModel, systemPrompt, userContent);
         long start = System.currentTimeMillis();
@@ -145,7 +145,7 @@ public class JudgeLlmAdapter implements JudgeLlmPort {
 
                 [응답 B]
                 %s
-                """.formatted(question, responseA, responseB);
+                """.formatted(esc(question), esc(responseA), esc(responseB));
 
         var resolved = resolveModelAndPrompt(judgeModel, JUDGE_PAIRWISE_PROMPT, userContent);
         ChatResponse response = resolved.model().call(resolved.prompt());
@@ -172,6 +172,11 @@ public class JudgeLlmAdapter implements JudgeLlmPort {
         }
         Prompt prompt = buildPrompt(provider, judgeModel, messages);
         return new ModelWithPrompt(model, prompt);
+    }
+
+    // 외부 입력의 % 문자가 format specifier로 해석되는 것을 방지
+    private static String esc(String s) {
+        return s == null ? "" : s.replace("%", "%%");
     }
 
     // Judge는 결정성이 생명 — temperature 0.0 고정

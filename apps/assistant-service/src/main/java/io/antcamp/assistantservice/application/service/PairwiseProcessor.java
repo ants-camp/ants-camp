@@ -54,6 +54,7 @@ public class PairwiseProcessor {
     private void compareAndSave(RunPairwiseCommand command, String question,
                                   String responseA, String responseB, String judgeModel) {
         try {
+            // A/B 중 어느 응답이 더 나은지 verdict 저장
             Verdict verdict = judgeLlmPort.compare(judgeModel, question, responseA, responseB);
             pairwiseRepository.save(PairwiseResult.create(
                     command.evalRunIdA(), command.evalRunIdB(), question, judgeModel, verdict));

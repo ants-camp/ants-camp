@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: assistant-service
+  thymeleaf:
+    cache: false
   autoconfigure:
     exclude:
       - org.springframework.ai.model.vertexai.autoconfigure.gemini.VertexAiGeminiChatAutoConfiguration
