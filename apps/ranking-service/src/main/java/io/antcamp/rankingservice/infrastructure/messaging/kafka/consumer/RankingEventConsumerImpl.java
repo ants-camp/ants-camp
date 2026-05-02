@@ -2,7 +2,6 @@ package io.antcamp.rankingservice.infrastructure.messaging.kafka.consumer;
 
 import io.antcamp.rankingservice.application.RankingService;
 import io.antcamp.rankingservice.application.event.RankingEventConsumer;
-import io.antcamp.rankingservice.domain.event.RankingUpdateRequestedEvent;
 import io.antcamp.rankingservice.domain.event.TotalAssetCalcuatedEvent;
 import io.antcamp.rankingservice.domain.event.TradeSucceededEvent;
 import io.antcamp.rankingservice.infrastructure.messaging.kafka.RankingTopicProperties;
@@ -38,19 +37,19 @@ public class RankingEventConsumerImpl implements RankingEventConsumer {
         );
     }
 
-    /**
-     * 1분마다 수신 → 대회 참가자 전체 총자산을 Redis에 일괄 갱신 (매매 미체결 시 시가 변동 반영)
-     */
-    @Override
-    @KafkaListener(
-            topics = "${topics.trade.ranking-update-requested}",
-            groupId = "${spring.kafka.consumer.group-id:ranking-service}"
-    )
-    public void handleRankingUpdateRequested(RankingUpdateRequestedEvent payload) {
-        log.info("[Kafka] RankingUpdateRequestedEvent 수신. competitionId={}, participantCount={}",
-                payload.competitionId(), payload.participants().size());
-        rankingService.batchUpsertRankings(payload.competitionId(), payload.participants());
-    }
+//    /**
+//     * 1분마다 수신 → 대회 참가자 전체 총자산을 Redis에 일괄 갱신 (매매 미체결 시 시가 변동 반영)
+//     */
+//    @Override
+//    @KafkaListener(
+//            topics = "${topics.trade.ranking-update-requested}",
+//            groupId = "${spring.kafka.consumer.group-id:ranking-service}"
+//    )
+//    public void handleRankingUpdateRequested(RankingUpdateRequestedEvent payload) {
+//        log.info("[Kafka] RankingUpdateRequestedEvent 수신. competitionId={}, participantCount={}",
+//                payload.competitionId(), payload.participants().size());
+//        rankingService.batchUpsertRankings(payload.competitionId(), payload.participants());
+//    }
 
     /**
      * 대회 종료 후 최종 총자산 수신 → Redis + DB에 최종 순위 확정

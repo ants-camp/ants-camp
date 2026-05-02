@@ -13,6 +13,7 @@ public record CompetitionTopicProperties(
         @NotBlank String registered,
         @NotBlank String finished,
         @NotBlank String cancelled,
+        @NotBlank String aborted,
         @NotBlank String ticked
 ) {
 }

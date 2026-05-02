@@ -42,6 +42,8 @@ public class CompetitionController {
     private final CompetitionService competitionService;
     private final CompetitionParticipantService competitionParticipantService;
 
+    // ─── 대회 엔드포인트 ──────────────────────────────────────────────────────
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public CreateCompetitionResponse create(@RequestBody @Valid CreateCompetitionRequest request) {
@@ -67,22 +69,9 @@ public class CompetitionController {
         return FindCompetitionResponse.from(competition);
     }
 
-    @GetMapping
-    public Page<FindCompetitionResponse> findAll(
-            @RequestParam(required = false) CompetitionStatus status,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<Competition> competitions;
-        if (status != null) {
-            competitions = competitionService.findAllByStatus(status, pageable);
-        } else {
-            competitions = competitionService.findAll(pageable);
-        }
-        return competitions.map(FindCompetitionResponse::from);
-    }
-
     @PatchMapping("/{id}/publish")
-    public FindCompetitionResponse publish(@PathVariable UUID id) {
-        Competition competition = competitionService.publish(id);
+    public FindCompetitionResponse openCompetition(@PathVariable UUID id) {
+        Competition competition = competitionService.openCompetition(id);
         return FindCompetitionResponse.from(competition);
     }
 
@@ -109,19 +98,46 @@ public class CompetitionController {
         return FindCompetitionResponse.from(competition);
     }
 
+    @PatchMapping("/{id}/start")
+    public FindCompetitionResponse startCompetition(@PathVariable UUID id) {
+        Competition competition = competitionService.startCompetition(id);
+        return FindCompetitionResponse.from(competition);
+    }
+
+    @PatchMapping("/{id}/finish")
+    public FindCompetitionResponse finishCompetition(@PathVariable UUID id) {
+        Competition competition = competitionService.finishCompetition(id);
+        return FindCompetitionResponse.from(competition);
+    }
+
     @PatchMapping("/{id}/cancel")
-    public FindCompetitionResponse cancel(@PathVariable UUID id) {
-        Competition competition = competitionService.cancel(id);
+    public FindCompetitionResponse cancelCompetition(@PathVariable UUID id) {
+        Competition competition = competitionService.cancelCompetition(id);
         return FindCompetitionResponse.from(competition);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public void deleteCompetition(
             @PathVariable UUID id,
             @RequestParam String deletedBy) {
-        competitionService.delete(id, deletedBy);
+        competitionService.deleteCompetition(id, deletedBy);
     }
+
+    @GetMapping
+    public Page<FindCompetitionResponse> findAll(
+            @RequestParam(required = false) CompetitionStatus status,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<Competition> competitions;
+        if (status != null) {
+            competitions = competitionService.findAllByStatus(status, pageable);
+        } else {
+            competitions = competitionService.findAll(pageable);
+        }
+        return competitions.map(FindCompetitionResponse::from);
+    }
+
+    // ─── 대회 변경 공지 엔드포인트 ────────────────────────────────────────────
 
     @GetMapping("/{id}/change-notices")
     public List<FindCompetitionChangeNoticeResponse> findChangeNotices(@PathVariable UUID id) {
@@ -131,30 +147,33 @@ public class CompetitionController {
                 .toList();
     }
 
-    // ─── 대회 참여자 엔드포인트 ─────────────────────────────────────────────
+    // ─── 대회 참여자 엔드포인트 ───────────────────────────────────────────────
 
+    // 대회 신청 ( 대회가 조회 가능해야하고, 대회 신청기간에 신청 가능 )
     @PostMapping("/{competitionId}/participants")
     @ResponseStatus(HttpStatus.CREATED)
-    public void competitionRegister(
+    public void registerCompetition(
             @PathVariable UUID competitionId,
             @RequestBody @Valid JoinCompetitionRequest request
     ) {
-        competitionParticipantService.competitionRegister(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+        competitionParticipantService.registerCompetition(
+                new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
     }
 
+    // 대회 신청 취소 ( 대회 신청 기간에 취소 가능 )
     @DeleteMapping("/{competitionId}/participants")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void competitionCancel(
+    public void cancelRegistration(
             @PathVariable UUID competitionId,
             @RequestBody @Valid JoinCompetitionRequest request
     ) {
-        competitionParticipantService.competitionCancel(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+        competitionParticipantService.cancelRegistration(
+                new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
     }
 
     /**
-     * 대회 참여자 목록 조회 (매매 서비스 FeignClient 호출용).
-     * 매매 서비스는 이 목록을 기반으로 유저별 총자산을 계산하여
-     * RankingUpdateRequestedEvent를 랭킹 서비스로 발행한다.
+     * 대회 참여자 목록 조회 (매매 서비스 FeignClient 호출용). 매매 서비스는 이 목록을 기반으로 유저별 총자산을 계산하여 RankingUpdateRequestedEvent를 랭킹 서비스로
+     * 발행한다.
      */
     @GetMapping("/{competitionId}/participants")
     public List<FindCompetitionParticipantResponse> findParticipants(
@@ -164,17 +183,5 @@ public class CompetitionController {
                 .stream()
                 .map(FindCompetitionParticipantResponse::from)
                 .toList();
-    }
-
-    @PatchMapping("/{id}/start")
-    public FindCompetitionResponse start(@PathVariable UUID id) {
-        Competition competition = competitionService.start(id);
-        return FindCompetitionResponse.from(competition);
-    }
-
-    @PatchMapping("/{id}/finish")
-    public FindCompetitionResponse finish(@PathVariable UUID id) {
-        Competition competition = competitionService.finish(id);
-        return FindCompetitionResponse.from(competition);
     }
 }

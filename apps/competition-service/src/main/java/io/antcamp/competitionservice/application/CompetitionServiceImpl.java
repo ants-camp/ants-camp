@@ -5,6 +5,7 @@ import common.exception.ErrorCode;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
+import io.antcamp.competitionservice.domain.event.CompetitionAbortedEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionEndedEvent;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionChangeNotice;
@@ -34,6 +35,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     private final CompetitionParticipantRepository competitionParticipantRepository;
     private final CompetitionEventProducer competitionEventProducer;
 
+    // ── Create ────────────────────────────────────────────────────────────────
 
     @Override
     @Transactional
@@ -50,6 +52,8 @@ public class CompetitionServiceImpl implements CompetitionService {
         return competitionRepository.save(competition);
     }
 
+    // ── Read ──────────────────────────────────────────────────────────────────
+
     @Override
     @Transactional(readOnly = true)
     public Competition findById(UUID id) {
@@ -57,27 +61,19 @@ public class CompetitionServiceImpl implements CompetitionService {
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<Competition> findAll(Pageable pageable) {
-        return competitionRepository.findAll(pageable);
-    }
+    // ── Update ────────────────────────────────────────────────────────────────
 
-    @Override
-    @Transactional(readOnly = true)
-    public Page<Competition> findAllByStatus(CompetitionStatus status, Pageable pageable) {
-        return competitionRepository.findAllByCompetitionStatus(status, pageable);
-    }
-
+    // 사용자들이 대회를 조회 가능하도록 변경
     @Override
     @Transactional
-    public Competition publish(UUID competitionId) {
+    public Competition openCompetition(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         competition.publish();
         return competitionRepository.save(competition);
     }
 
+    // 대회의 정보를 변경하고 변경 내역을 competition_change_notice에 저장
     @Override
     @Transactional
     public Competition updateInfo(UpdateCompetitionCommand command) {
@@ -109,32 +105,7 @@ public class CompetitionServiceImpl implements CompetitionService {
 
     @Override
     @Transactional
-    public Competition cancel(UUID competitionId) {
-        Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
-        competition.cancelCompetition();
-        return competitionRepository.save(competition);
-    }
-
-    @Override
-    @Transactional
-    public void delete(UUID competitionId, String deletedBy) {
-        Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
-        competitionRepository.delete(competition, deletedBy);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<CompetitionChangeNotice> findChangeNotices(UUID competitionId) {
-        competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
-        return competitionChangeNoticeRepository.findAllByCompetitionId(competitionId);
-    }
-
-    @Override
-    @Transactional
-    public Competition start(UUID competitionId) {
+    public Competition startCompetition(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
 
@@ -146,7 +117,7 @@ public class CompetitionServiceImpl implements CompetitionService {
 
     @Transactional
     @Override
-    public Competition finish(UUID competitionId) {
+    public Competition finishCompetition(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
 
@@ -169,5 +140,61 @@ public class CompetitionServiceImpl implements CompetitionService {
         competitionEventProducer.publishCompetitionEnded(event);
 
         return saved;
+    }
+
+    // 대회의 상태를 취소됨으로 변경 및 대회 취소됨 이벤트 발행
+    @Override
+    @Transactional
+    public Competition cancelCompetition(UUID competitionId) {
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
+        competition.cancelCompetition();
+        Competition saved = competitionRepository.save(competition);
+
+        // 참가자 userId 목록 조회 후 대회 취소 이벤트 발행
+        List<UUID> participantUserIds = competitionParticipantRepository
+                .findAllByCompetitionId(competitionId)
+                .stream()
+                .map(CompetitionParticipant::getUserId)
+                .toList();
+
+        competitionEventProducer.publishCompetitionAborted(
+                new CompetitionAbortedEvent(saved.getCompetitionId(), participantUserIds)
+        );
+
+        return saved;
+    }
+
+    // ── Delete ────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional
+    public void deleteCompetition(UUID competitionId, String deletedBy) {
+        Competition competition = competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
+        competitionRepository.delete(competition, deletedBy);
+    }
+
+    // ── Search ────────────────────────────────────────────────────────────────
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Competition> findAll(Pageable pageable) {
+        return competitionRepository.findAll(pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Competition> findAllByStatus(CompetitionStatus status, Pageable pageable) {
+        return competitionRepository.findAllByCompetitionStatus(status, pageable);
+    }
+
+    // 대회 변경 이력 목록을 조회(사용자들이 대회의 변경사항을 알 수 있도록)
+    @Override
+    @Transactional(readOnly = true)
+    public List<CompetitionChangeNotice> findChangeNotices(UUID competitionId) {
+        competitionRepository.findById(competitionId)
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
+        return competitionChangeNoticeRepository.findAllByCompetitionId(competitionId);
     }
 }

@@ -1,5 +1,6 @@
 package io.antcamp.competitionservice.application.event;
 
+import io.antcamp.competitionservice.domain.event.CompetitionAbortedEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionCancelledEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionRegisteredEvent;
 import lombok.RequiredArgsConstructor;
@@ -28,5 +29,10 @@ public class CompetitionParticipantEventListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCompetitionCancelled(CompetitionCancelledEvent event) {
         competitionEventProducer.publishCompetitionCancelled(event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onCompetitionAborted(CompetitionAbortedEvent event) {
+        competitionEventProducer.publishCompetitionAborted(event);
     }
 }

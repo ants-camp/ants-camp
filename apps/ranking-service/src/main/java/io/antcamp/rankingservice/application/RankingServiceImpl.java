@@ -3,7 +3,6 @@ package io.antcamp.rankingservice.application;
 import common.exception.BusinessException;
 import common.exception.ErrorCode;
 import io.antcamp.rankingservice.application.dto.RankingResult;
-import io.antcamp.rankingservice.domain.event.RankingUpdateRequestedEvent;
 import io.antcamp.rankingservice.domain.event.TotalAssetCalcuatedEvent;
 import io.antcamp.rankingservice.domain.model.RankTier;
 import io.antcamp.rankingservice.domain.model.Ranking;
@@ -26,15 +25,15 @@ public class RankingServiceImpl implements RankingService {
     public void upsertRanking(UUID competitionId, UUID userId, Double totalAsset) {
         rankingRedisRepository.upsertScore(competitionId, userId, totalAsset);
     }
-
-    @Override
-    public void batchUpsertRankings(UUID competitionId, List<RankingUpdateRequestedEvent.ParticipantAsset> participants) {
-        // 1분마다 호출 — 참가자 전체 총자산을 Redis에 일괄 갱신 (DB 저장 없음)
-        // 매매 미체결 상태에서 보유주식 시가 변동을 랭킹에 반영하기 위함
-        participants.forEach(p ->
-                rankingRedisRepository.upsertScore(competitionId, p.userId(), p.totalAsset())
-        );
-    }
+//
+//    @Override
+//    public void batchUpsertRankings(UUID competitionId, List<RankingUpdateRequestedEvent.ParticipantAsset> participants) {
+//        // 1분마다 호출 — 참가자 전체 총자산을 Redis에 일괄 갱신 (DB 저장 없음)
+//        // 매매 미체결 상태에서 보유주식 시가 변동을 랭킹에 반영하기 위함
+//        participants.forEach(p ->
+//                rankingRedisRepository.upsertScore(competitionId, p.userId(), p.totalAsset())
+//        );
+//    }
 
     @Override
     public List<RankingResult> getTopRankings(UUID competitionId, int page, int size) {

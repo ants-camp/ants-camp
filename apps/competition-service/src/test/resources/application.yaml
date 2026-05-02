@@ -15,3 +15,4 @@ topics:
     finished: competition.finished
     cancelled: competition.cancelled
     ticked: competition.ticked
+    aborted: competition.aborted

@@ -17,10 +17,14 @@ public class CompetitionParticipantRepositoryImpl implements CompetitionParticip
 
     private final CompetitionParticipantJpaRepository competitionParticipantJpaRepository;
 
+    // ── Create ────────────────────────────────────────────────────────────────
+
     @Override
     public CompetitionParticipant save(CompetitionParticipant participant) {
         return competitionParticipantJpaRepository.save(CompetitionParticipantEntity.from(participant)).toDomain();
     }
+
+    // ── Read ──────────────────────────────────────────────────────────────────
 
     @Override
     public Optional<CompetitionParticipant> findByUserIdAndCompetitionId(UUID userId, UUID competitionId) {
@@ -29,6 +33,8 @@ public class CompetitionParticipantRepositoryImpl implements CompetitionParticip
                 .map(CompetitionParticipantEntity::toDomain);
     }
 
+    // ── Delete ────────────────────────────────────────────────────────────────
+
     @Override
     public void delete(CompetitionParticipant participant, String deletedBy) {
         CompetitionParticipantEntity entity = competitionParticipantJpaRepository
@@ -36,6 +42,8 @@ public class CompetitionParticipantRepositoryImpl implements CompetitionParticip
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
         entity.softDelete(deletedBy);
     }
+
+    // ── Search ────────────────────────────────────────────────────────────────
 
     @Override
     public List<CompetitionParticipant> findAllByCompetitionId(UUID competitionId) {
