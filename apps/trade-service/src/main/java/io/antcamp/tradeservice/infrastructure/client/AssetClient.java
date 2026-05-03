@@ -14,8 +14,13 @@ import java.util.UUID;
 @FeignClient(name = "assetClient", url = "${feign.url.asset}")
 public interface AssetClient {
 
-    @PostMapping("/account")
+    @PostMapping("/api/holdings/buy")
     AssetResponse getAsset(@RequestParam UUID accountId,
                            @RequestBody double price);
+
+    @PostMapping("/api/holdings/sell")
+    AssetResponse getStock(@RequestParam UUID accountId,
+                           @RequestBody String stockCode,
+                           @RequestBody int stockAmount);
 
 }

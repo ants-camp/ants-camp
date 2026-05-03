@@ -45,6 +45,10 @@ public class TradeEntity extends BaseEntity {
         );
     }
 
+    public void updateStatus(Trade trade){
+        this.tradeStatus = trade.tradeStatus();
+    }
+
     public static TradeEntity fromDomain(Trade trade){
         return new TradeEntity(trade);
     }

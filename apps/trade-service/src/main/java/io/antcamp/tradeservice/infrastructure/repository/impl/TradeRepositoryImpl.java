@@ -29,4 +29,10 @@ public class TradeRepositoryImpl implements TradeRepository {
         tradeJpaRepository.save(TradeEntity.fromDomain(trade));
     }
 
+    @Override
+    public void updateStatus(Trade trade){
+        tradeJpaRepository.findById(trade.tradeId()).orElseThrow(
+                () -> new BusinessException(ErrorCode.TRADE_NOT_FOUND)
+        ).updateStatus(trade);
+    }
 }
