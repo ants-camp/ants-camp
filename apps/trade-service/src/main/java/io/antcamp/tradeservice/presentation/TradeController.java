@@ -37,6 +37,18 @@ public class TradeController {
         return ApiResponse.ok(tradeService.getMinutePrice(stockCode, dateTime));
     }
 
+    @GetMapping("/now-price")
+    public ResponseEntity<ApiResponse<Double>> getNowPrice (
+            @RequestParam("stock_code") String stockCode,
+            @RequestParam("date_time")
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime dateTime
+    ) {
+        return ApiResponse.ok(tradeService.getNowPrice(stockCode, dateTime));
+    }
+
+
+
     @PostMapping("/buy")
     public ResponseEntity<ApiResponse<BuyStockResponse>> buyStock(
             @RequestBody String stockCode,
