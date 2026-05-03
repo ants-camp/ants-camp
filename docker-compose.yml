@@ -135,6 +135,7 @@ services:
       KIS_APP_KEY: ${KIS_APP_KEY}
       KIS_APP_SECRET: ${KIS_APP_SECRET}
       KIS_APP_ACCESS: ${KIS_APP_ACCESS}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     env_file:
       - .env
     volumes:
