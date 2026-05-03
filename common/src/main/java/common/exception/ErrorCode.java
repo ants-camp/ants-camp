@@ -38,6 +38,15 @@ public enum ErrorCode {
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "입력값이 유효하지 않습니다."),
     FORBIDDEN(HttpStatus.FORBIDDEN, "FORBIDDEN", "접근 권한이 없습니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_SERVER_ERROR", "서버 오류가 발생했습니다."),
+
+    // ── Trade ────────────────────────────────────────
+    TRADE_NOT_FOUND(HttpStatus.NOT_FOUND, "TRADE_NOT_FOUND", "존재하지 않는 매매입니다."),
+
+    // ── Asset ────────────────────────────────────────
+    ASSET_SERVICE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "ASSET_SERVICE_ERROR", "자산 서비스 에러입니다."),
+
+    // ── KIS ────────────────────────────────────────
+    KIS_SERVER_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "KIS_SERVICE_ERROR", "KIS 서비스 에러입니다."),
     ;
 
     private final HttpStatus status;

@@ -1,3 +1,25 @@
+server:
+  port: 8083
+
+jwt:
+  secret: ${JWT_SECRET}
+
 spring:
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/users/**
+          filters:
+            - CustomAuthFilter
+
+        - id: auth-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/api/auth/**
   application:
     name: api-gateway
+  config:
+    import: optional:configserver:http://localhost:8888
