@@ -6,6 +6,7 @@ import io.antcamp.assetservice.infrastructure.entity.AccountEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -32,5 +33,13 @@ public class AccountRepositoryImpl implements AccountRepository {
     public Optional<Account> findByIdWithLock(UUID accountId) {
         return jpaAccountRepository.findByIdWithLock(accountId)
                 .map(AccountEntity::toDomain);
+    }
+
+    @Override
+    public List<Account> findAllByCompetitionId(UUID competitionId) {
+        return jpaAccountRepository.findAllByCompetitionId(competitionId)
+                .stream()
+                .map(AccountEntity::toDomain)
+                .toList();
     }
 }
