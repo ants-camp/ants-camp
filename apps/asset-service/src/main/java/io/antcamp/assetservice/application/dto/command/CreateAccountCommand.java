@@ -15,5 +15,6 @@ public class CreateAccountCommand {
     private UUID userId;
     private AccountType type;
     private Long initialAmount;
-
+    private UUID competitionId;
+    private String competitionName;
 }

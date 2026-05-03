@@ -3,6 +3,7 @@ package io.antcamp.assetservice.application.service;
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
+import io.antcamp.assetservice.domain.exception.InvalidAmountException;
 import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.AccountType;
@@ -26,7 +27,9 @@ public class AccountService {
                 command.getUserId(),
                 accountNumber,
                 command.getType(),
-                command.getInitialAmount()
+                command.getInitialAmount(),
+                command.getCompetitionId(),
+                command.getCompetitionName()
         );
         return accountRepository.save(newAccount).getAccountId();
     }
@@ -35,6 +38,10 @@ public class AccountService {
     public void deposit(UUID accountId, Long amount) {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+
+        if (account.isEnded()) {
+            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+        }
 
         account.deposit(amount);
         accountRepository.save(account);
@@ -45,13 +52,16 @@ public class AccountService {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
+        if (account.isEnded()) {
+            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+        }
+
         account.withdraw(amount);
         accountRepository.save(account);
     }
 
     @Transactional(readOnly = true)
     public AccountResult getAccount(UUID accountId, UUID requesterUserId) {
-
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
@@ -64,5 +74,11 @@ public class AccountService {
                 account.getAccountNumber(),
                 account.getAccountAmount()
         );
+    }
+
+    @Transactional(readOnly = true)
+    Account getAccountDomain(UUID accountId) {
+        return accountRepository.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
     }
 }

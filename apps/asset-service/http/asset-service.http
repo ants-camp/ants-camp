@@ -1,0 +1,53 @@
+### 계좌 생성
+POST http://localhost:8086/api/accounts
+Content-Type: application/json
+
+{
+  "userId": "550e8400-e29b-41d4-a716-446655440000",
+  "type": "PERSONAL",
+  "initialAmount": 10000000,
+  "competitionId": "550e8400-e29b-41d4-a716-446655440001",
+  "competitionName": "테스트 대회"
+}
+
+### 계좌 조회
+GET http://localhost:8086/api/accounts/9209c108-eac4-467d-a104-3461fed4113e
+X-User-Id: 550e8400-e29b-41d4-a716-446655440000
+
+### 입금
+POST http://localhost:8086/api/accounts/9209c108-eac4-467d-a104-3461fed4113e/deposit?amount=1000000
+
+### 출금
+POST http://localhost:8086/api/accounts/9209c108-eac4-467d-a104-3461fed4113e/withdraw?amount=500000
+
+### 자산 조회
+GET http://localhost:8086/api/assets?accountId=8b63b18a-4a0e-4812-9e6f-7500ddd9c16f
+X-User-Id: 550e8400-e29b-41d4-a716-446655440000
+
+### 매수
+POST http://localhost:8086/api/holdings/buy
+Content-Type: application/json
+X-User-Id: 550e8400-e29b-41d4-a716-446655440000
+
+{
+  "accountId": "8b63b18a-4a0e-4812-9e6f-7500ddd9c16f",
+  "stockCode": "005930",
+  "stockAmount": 10,
+  "buyPrice": 75000
+}
+
+### 매도
+POST http://localhost:8086/api/holdings/sell
+Content-Type: application/json
+X-User-Id: 550e8400-e29b-41d4-a716-446655440000
+
+{
+  "accountId": "8b63b18a-4a0e-4812-9e6f-7500ddd9c16f",
+  "stockCode": "005930",
+  "stockAmount": 5,
+  "price": 80000
+}
+
+### 보유 주식 조회
+GET http://localhost:8086/api/holdings?accountId=8b63b18a-4a0e-4812-9e6f-7500ddd9c16f
+X-User-Id: 550e8400-e29b-41d4-a716-446655440000
