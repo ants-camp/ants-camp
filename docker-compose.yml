@@ -158,7 +158,7 @@ services:
       - "${ASSET_SERVER_PORT}:8086"
     environment:
       SERVER_PORT: ${TRADE_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${ASSET_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -185,34 +185,7 @@ services:
       - "${STOCK_SERVER_PORT}:8088"
     environment:
       SERVER_PORT: ${STOCK_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-    env_file:
-      - .env
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    networks:
-      - kafka-network
-
-  portfolio-service:
-    build:
-      context: .
-      dockerfile: apps/portfolio-service/Dockerfile
-    container_name: antcamp-portfolio
-    ports:
-      - "${PORTFOLIO_SERVER_PORT}:8090"
-    environment:
-      SERVER_PORT: ${PORTFOLIO_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${STOCK_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -239,7 +212,7 @@ services:
       - "${COMPETITION_SERVER_PORT}:8092"
     environment:
       SERVER_PORT: ${COMPETITION_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${COMPETITION_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -266,7 +239,7 @@ services:
       - "${RANKING_SERVER_PORT}:8094"
     environment:
       SERVER_PORT: ${RANKING_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${RANKING_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -284,16 +257,16 @@ services:
     networks:
       - kafka-network
 
-  ai-service:
+  assistant-service:
     build:
       context: .
-      dockerfile: apps/ai-service/Dockerfile
-    container_name: antcamp-ai
+      dockerfile: apps/assistant-service/Dockerfile
+    container_name: antcamp-assistant
     ports:
-      - "${AI_SERVER_PORT}:8096"
+      - "${ASSISTANT_SERVER_PORT}:8096"
     environment:
       SERVER_PORT: ${AI_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${ASSISTANT_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -320,7 +293,7 @@ services:
       - "${NOTIFICATION_SERVER_PORT}:8098"
     environment:
       SERVER_PORT: ${NOTIFICATION_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${NOTIFICATION_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -396,9 +369,44 @@ services:
     networks:
       - kafka-network
 
+#  elasticsearch:
+#    build:
+#      context: .
+#      dockerfile: elasticsearch/Dockerfile
+#    container_name: antcamp-es
+#    environment:
+#      - discovery.type=single-node
+#      - xpack.security.enabled=false        # 개발 환경 — 보안 비활성화
+#      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+#    ports:
+#      - "9200:9200"
+#    volumes:
+#      - es_data:/usr/share/elasticsearch/data
+#    healthcheck:
+#      test: [ "CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -q '\"status\":\"green\\|yellow\"'" ]
+#      interval: 15s
+#      timeout: 5s
+#      retries: 10
+#    networks:
+#      - kafka-network
+#
+#  kibana:
+#    image: docker.elastic.co/kibana/kibana:8.13.4
+#    container_name: antcamp-kibana
+#    environment:
+#      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+#    ports:
+#      - "5601:5601"
+#    depends_on:
+#      elasticsearch:
+#        condition: service_healthy
+#    networks:
+#      - kafka-network
+
 volumes:
   postgres-data:
   redisdata:
+  es_data:
 
 networks:
   kafka-network:
