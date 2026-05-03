@@ -28,6 +28,4 @@ public class BuyHoldingCommand {
     @Positive
     private Long buyPrice;
 
-    @NotNull
-    private UUID userId;
 }
