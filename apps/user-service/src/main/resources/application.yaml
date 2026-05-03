@@ -8,8 +8,8 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/antcamp
     driver-class-name: org.postgresql.Driver
-    username: ${POSTGRES_USER:antcamp}
-    password: ${POSTGRES_PASSWORD:***REMOVED***}
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -26,7 +26,7 @@ spring:
         format_sql: true
 
 jwt:
-  secret: ${JWT_SECRET:very-very-secret-key-should-be-long-enough-123456}
+  secret: ${JWT_SECRET}
   access-token-expiration: 1800000
   refresh-token-expiration: 1209600000
 
