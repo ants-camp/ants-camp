@@ -5,24 +5,28 @@ spring:
   application:
     name: user-server
 
+  datasource:
+    url: jdbc:postgresql://localhost:5433/antcamp
+    driver-class-name: org.postgresql.Driver
+    username: ${POSTGRES_USER:antcamp}
+    password: ${POSTGRES_PASSWORD:p@ssw0rd}
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+
   cloud:
     config:
       enabled: false
       import-check:
         enabled: false
 
-
-
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
     properties:
       hibernate:
         format_sql: true
 
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:very-very-secret-key-should-be-long-enough-123456}
   access-token-expiration: 1800000
   refresh-token-expiration: 1209600000
 
