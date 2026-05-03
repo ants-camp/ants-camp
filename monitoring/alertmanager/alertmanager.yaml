@@ -1,0 +1,33 @@
+route:
+  receiver: 'notification-webhook'
+  group_wait: 0s
+  group_interval: 30s
+  repeat_interval: 1h
+  routes:
+    # notification-service 자체 이상 시: 웹훅 호출이 불가하거나 부하를 가중시키므로 Slack 직통 발송
+    - match_re:
+        alertname: ServiceDown|HighCPU|HighMemory
+        job: antcamp-notification
+      receiver: 'slack'
+
+receivers:
+  # Slack 직통 — notification-service 다운 시 또는 fallback
+  - name: 'slack'
+    slack_configs:
+      - api_url: '${SLACK_ALERTMANAGER_WEBHOOK_URL}'
+        channel: '#grafana'
+        title: '🚨 [{{ .Status | toUpper }}] {{ .CommonLabels.alertname }}'
+        text: |
+          {{ range .Alerts }}
+          *서비스:* {{ .Labels.job }}
+          *심각도:* {{ .Labels.severity }}
+          *상태:* {{ .Status }}
+          {{ end }}
+
+  # notification-service 웹훅 — AI 분석 후 Slack 발송 (기본 경로)
+  - name: 'notification-webhook'
+    webhook_configs:
+      - url: 'http://notification-service:8098/api/notifications/prometheus'
+        http_config:
+          headers:
+            X-Webhook-Secret: '${WEBHOOK_SHARED_SECRET}'
