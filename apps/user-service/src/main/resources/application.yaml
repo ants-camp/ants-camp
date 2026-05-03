@@ -28,3 +28,8 @@ eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
+
+#jwt:
+#  secret: antcamp-local-dev-secret-key-must-be-32chars!!
+#  access-token-expiration: 3600000      # 1시간 (ms)
+#  refresh-token-expiration: 1209600000  # 14일 (ms)
