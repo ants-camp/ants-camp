@@ -1,7 +1,7 @@
 -- =========================
 -- 1. Schema 생성
 -- =========================
-CREATE SCHEMA IF NOT EXISTS user;
+CREATE SCHEMA IF NOT EXISTS "user";
 CREATE SCHEMA IF NOT EXISTS trade;
 CREATE SCHEMA IF NOT EXISTS asset;
 CREATE SCHEMA IF NOT EXISTS stock;
@@ -26,7 +26,7 @@ $$;
 -- =========================
 -- 3. Schema 권한 부여
 -- =========================
-GRANT USAGE ON SCHEMA user TO antcamp;
+GRANT USAGE ON SCHEMA "user" TO antcamp;
 GRANT USAGE ON SCHEMA trade TO antcamp;
 GRANT USAGE ON SCHEMA asset TO antcamp;
 GRANT USAGE ON SCHEMA stock TO antcamp;
@@ -39,7 +39,7 @@ GRANT USAGE ON SCHEMA notification TO antcamp;
 -- =========================
 -- 4. 기본 권한 설정 (테이블 자동 권한)
 -- =========================
-ALTER DEFAULT PRIVILEGES IN SCHEMA user
+ALTER DEFAULT PRIVILEGES IN SCHEMA "user"
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
 ALTER DEFAULT PRIVILEGES IN SCHEMA trade
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
