@@ -1,15 +1,4 @@
--- =========================
--- 1. Schema 생성
--- =========================
-CREATE SCHEMA IF NOT EXISTS user;
-CREATE SCHEMA IF NOT EXISTS trade;
-CREATE SCHEMA IF NOT EXISTS asset;
-CREATE SCHEMA IF NOT EXISTS stock;
-CREATE SCHEMA IF NOT EXISTS portfolio;
-CREATE SCHEMA IF NOT EXISTS competition;
-CREATE SCHEMA IF NOT EXISTS ranking;
-CREATE SCHEMA IF NOT EXISTS ai;
-CREATE SCHEMA IF NOT EXISTS notification;
+
 
 -- =========================
 -- 2. 사용자 생성
@@ -22,6 +11,20 @@ BEGIN
     END IF;
 END
 $$;
+
+
+
+-- =========================
+-- 1. Schema 생성
+-- =========================
+CREATE SCHEMA IF NOT EXISTS user;
+CREATE SCHEMA IF NOT EXISTS trade;
+CREATE SCHEMA IF NOT EXISTS asset;
+CREATE SCHEMA IF NOT EXISTS stock;
+CREATE SCHEMA IF NOT EXISTS competition;
+CREATE SCHEMA IF NOT EXISTS ranking;
+CREATE SCHEMA IF NOT EXISTS ai;
+CREATE SCHEMA IF NOT EXISTS notification;
 
 -- =========================
 -- 3. Schema 권한 부여
