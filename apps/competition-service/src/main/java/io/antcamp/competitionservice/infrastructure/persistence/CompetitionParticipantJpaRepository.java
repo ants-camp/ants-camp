@@ -1,6 +1,6 @@
 package io.antcamp.competitionservice.infrastructure.persistence;
 
-import io.antcamp.competitionservice.infrastructure.entity.JoinHistoryEntity;
+import io.antcamp.competitionservice.infrastructure.entity.CompetitionParticipantEntity;
 import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
@@ -10,14 +10,14 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface JoinHistoryJpaRepository extends JpaRepository<JoinHistoryEntity, UUID> {
+public interface CompetitionParticipantJpaRepository extends JpaRepository<CompetitionParticipantEntity, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT j FROM JoinHistoryEntity j WHERE j.userId = :userId AND j.competitionId = :competitionId")
-    Optional<JoinHistoryEntity> findByUserIdAndCompetitionIdWithLock(
+    @Query("SELECT p FROM CompetitionParticipantEntity p WHERE p.userId = :userId AND p.competitionId = :competitionId")
+    Optional<CompetitionParticipantEntity> findByUserIdAndCompetitionIdWithLock(
             @Param("userId") UUID userId,
             @Param("competitionId") UUID competitionId
     );
 
-    List<JoinHistoryEntity> findAllByCompetitionId(UUID competitionId);
+    List<CompetitionParticipantEntity> findAllByCompetitionId(UUID competitionId);
 }

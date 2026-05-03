@@ -3,7 +3,7 @@ package io.antcamp.competitionservice.infrastructure.entity;
 import common.entity.BaseEntity;
 import common.exception.BusinessException;
 import common.exception.ErrorCode;
-import io.antcamp.competitionservice.domain.model.JoinHistory;
+import io.antcamp.competitionservice.domain.model.CompetitionParticipant;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -21,24 +21,24 @@ import org.springframework.data.domain.Persistable;
 
 @Entity
 @Table(
-        name = "p_join_history",
+        name = "p_competition_participant",
         uniqueConstraints = {
                 @UniqueConstraint(
-                        name = "uq_join_history_user_competition",
+                        name = "uq_competition_participant_user_competition",
                         columnNames = {"user_id", "competition_id"}
                 )
         }
 )
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SQLRestriction("deleted_at is NULL")
-public class JoinHistoryEntity extends BaseEntity implements Persistable<UUID> {
+public class CompetitionParticipantEntity extends BaseEntity implements Persistable<UUID> {
 
     @Transient
     private boolean isNew = true;
 
     @Id
-    @Column(name = "join_history_id", nullable = false, updatable = false)
-    private UUID joinHistoryId;
+    @Column(name = "participant_id", nullable = false, updatable = false)
+    private UUID participantId;
 
     @Column(name = "user_id", nullable = false)
     private UUID userId;
@@ -50,31 +50,31 @@ public class JoinHistoryEntity extends BaseEntity implements Persistable<UUID> {
     private UUID competitionId;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private JoinHistoryEntity(
-            UUID joinHistoryId,
+    private CompetitionParticipantEntity(
+            UUID participantId,
             UUID userId,
             String nickname,
             UUID competitionId
     ) {
-        this.joinHistoryId = joinHistoryId;
+        this.participantId = participantId;
         this.userId = userId;
         this.nickname = nickname;
         this.competitionId = competitionId;
         validate();
     }
 
-    public static JoinHistoryEntity from(JoinHistory domain) {
-        return JoinHistoryEntity.builder()
-                .joinHistoryId(domain.getJoinHistoryId())
+    public static CompetitionParticipantEntity from(CompetitionParticipant domain) {
+        return CompetitionParticipantEntity.builder()
+                .participantId(domain.getParticipantId())
                 .userId(domain.getUserId())
                 .nickname(domain.getNickname())
                 .competitionId(domain.getCompetitionId())
                 .build();
     }
 
-    public JoinHistory toDomain() {
-        return JoinHistory.from(
-                joinHistoryId,
+    public CompetitionParticipant toDomain() {
+        return CompetitionParticipant.from(
+                participantId,
                 userId,
                 nickname,
                 competitionId
@@ -82,7 +82,7 @@ public class JoinHistoryEntity extends BaseEntity implements Persistable<UUID> {
     }
 
     private void validate() {
-        if (joinHistoryId == null) {
+        if (participantId == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (userId == null) {
@@ -98,7 +98,7 @@ public class JoinHistoryEntity extends BaseEntity implements Persistable<UUID> {
 
     @Override
     public UUID getId() {
-        return joinHistoryId;
+        return participantId;
     }
 
     @Override
