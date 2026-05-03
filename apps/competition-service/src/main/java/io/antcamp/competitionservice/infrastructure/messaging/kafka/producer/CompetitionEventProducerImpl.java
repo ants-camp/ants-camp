@@ -9,9 +9,12 @@ import io.antcamp.competitionservice.domain.event.CompetitionTicked;
 import io.antcamp.competitionservice.infrastructure.messaging.kafka.CompetitionTopicProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Component
@@ -109,6 +112,33 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
         String topic = topicProperties.ticked();
 
         kafkaTemplate.send(topic, key, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.error("[Kafka] CompetitionTicked 발행 실패. competitionId={}, topic={}",
+                                key, topic, ex);
+                    } else {
+                        log.debug("[Kafka] CompetitionTicked 발행 성공. competitionId={}, topic={}, partition={}, offset={}",
+                                key, topic,
+                                result.getRecordMetadata().partition(),
+                                result.getRecordMetadata().offset());
+                    }
+                });
+    }
+
+    @Override
+    public void publishCompetitionTicked(CompetitionTicked event) {
+        String key = event.competitionId().toString();
+        String topic = topicProperties.ticked();
+
+        ProducerRecord<String, Object> record = new ProducerRecord<>(topic, key, event);
+
+        record.headers().add(
+                "__TypeId__",
+                "io.antcamp.assetservice.domain.event.payload.CompetitionTicked"
+                        .getBytes(StandardCharsets.UTF_8)
+        );
+
+        kafkaTemplate.send(record)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
                         log.error("[Kafka] CompetitionTicked 발행 실패. competitionId={}, topic={}",

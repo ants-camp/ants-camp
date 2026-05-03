@@ -16,7 +16,8 @@ public class CompetitionTickedEventConsumer {
 
     @KafkaListener(
             topics = "${topics.competition.ticked}",
-            groupId = "${spring.kafka.consumer.group-id}"
+            groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "competitionTickedFactory"
     )
     public void handleCompetitionTicked(CompetitionTicked payload) {
         rankingService.updateRanking(payload.competitionId());
