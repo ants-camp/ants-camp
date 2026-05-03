@@ -8,6 +8,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import org.hibernate.annotations.SQLRestriction;
 import java.util.UUID;
 
 @Entity
@@ -20,6 +21,7 @@ import java.util.UUID;
                 )
         }
 )
+@SQLRestriction("deleted_at is NULL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @SuperBuilder
