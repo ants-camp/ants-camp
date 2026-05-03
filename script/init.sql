@@ -126,6 +126,9 @@ CREATE TABLE IF NOT EXISTS asset.p_accounts (
     account_number  VARCHAR(255)    NOT NULL,
     type            VARCHAR(50)     NOT NULL,
     account_amount  BIGINT          NOT NULL,
+    competition_id  UUID,
+    competition_name VARCHAR(255),
+    is_ended        BOOLEAN         NOT NULL DEFAULT FALSE,
     PRIMARY KEY (account_id),
     CONSTRAINT uq_accounts_account_number UNIQUE (account_number)
 );

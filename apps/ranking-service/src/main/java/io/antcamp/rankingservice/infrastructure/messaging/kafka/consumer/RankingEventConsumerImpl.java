@@ -24,7 +24,7 @@ public class RankingEventConsumerImpl implements RankingEventConsumer {
      */
     @Override
     @KafkaListener(
-            topics = "${topics.trade.trade-succeeded}",
+            topics = "${topics.asset.total-calculated}",
             groupId = "${spring.kafka.consumer.group-id:ranking-service}"
     )
     public void handleTradeSucceeded(TradeSucceededEvent payload) {

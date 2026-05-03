@@ -53,7 +53,7 @@ Content-Type: application/json
   "name": "2026 거래 테스트 대회",
   "type": "PERSONAL",
   "description": "유저1 vs 유저2 수익률 대결",
-  "firstSeed": 10000000,
+  "firstSeed": 100000,
   "registerStartAt": "2026-01-01T00:00:00",
   "registerEndAt": "2026-12-30T23:59:59",
   "competitionStartAt": "2026-12-31T00:00:00",
@@ -123,7 +123,9 @@ Content-Type: application/json
 {
   "userId": "{{user_id_1}}",
   "type": "COMPETITION",
-  "initialAmount": 10000000
+  "initialAmount": 100000,
+  "competitionId": "{{competition_id}}",
+  "competitionName": "2026 거래 테스트 대회"
 }
 
 > {%
@@ -167,7 +169,9 @@ Content-Type: application/json
 {
   "userId": "{{user_id_2}}",
   "type": "COMPETITION",
-  "initialAmount": 10000000
+  "initialAmount": 100000,
+  "competitionId": "{{competition_id}}",
+  "competitionName": "2026 거래 테스트 대회"
 }
 
 > {%
@@ -217,8 +221,8 @@ X-User-Id: {{user_id_1}}
 {
   "accountId": "{{account_id_1}}",
   "stockCode": "{{stock_code}}",
-  "stockAmount": 10,
-  "buyPrice": 75000
+  "stockAmount": 2,
+  "buyPrice": 10000
 }
 
 > {%
@@ -235,6 +239,7 @@ X-User-Id: {{user_id_1}}
 # ---------------------------------------------------------------
 ### @name getHoldings
 GET {{asset_base}}/api/holdings?accountId={{account_id_1}}
+X-User-Id: {{user_id_1}}
 
 > {%
     client.test("200 OK", function() {
@@ -320,7 +325,8 @@ X-User-Id: {{user_id_1}}
 {
   "accountId": "{{account_id_1}}",
   "stockCode": "{{stock_code}}",
-  "stockAmount": 5
+  "stockAmount": 3,
+  "price" : 30000
 }
 
 > {%
