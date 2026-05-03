@@ -6,10 +6,10 @@ spring:
     name: asset-service
 
   datasource:
-    url: jdbc:h2:mem:assetdb;MODE=PostgreSQL
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: ${SPRING_DATASOURCE_URL:}
+    username: ${SPRING_DATASOURCE_USERNAME:}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
 
   h2:
     console:
@@ -17,11 +17,13 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create
-    show-sql: true
+      ddl-auto: update
+    show-sql: false
     properties:
       hibernate:
-        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        temp:
+          use_jdbc_metadata_defaults: false
 
   kafka:
     bootstrap-servers: localhost:9092
@@ -31,7 +33,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "*"
+        spring.json.trusted.packages: "io.antcamp.assetservice.domain.event.payload"
 
   data:
     redis:
@@ -42,5 +44,6 @@ topics:
   competition:
     started: competition.started
     finished: competition.finished
+    ticked: competition.ticked
   asset:
     total-calculated: asset.total-calculated

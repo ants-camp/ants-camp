@@ -11,5 +11,8 @@ server:
 
 topics:
   competition:
-    started: competition.started
+    registered: competition.registered
     finished: competition.finished
+    cancelled: competition.cancelled
+    ticked: competition.ticked
+    aborted: competition.aborted

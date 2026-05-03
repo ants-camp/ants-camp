@@ -7,7 +7,7 @@ public record AccessTokenRequest(
         String grantType,
         @JsonProperty("appkey")
         String appKey,
-        @JsonProperty("secretkey")
-        String secretKey
+        @JsonProperty("appsecret")
+        String appSecret
 ) {
 }
