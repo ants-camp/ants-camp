@@ -11,12 +11,12 @@ import java.time.LocalDateTime;
 @FeignClient(name = "stock-service")
 public interface StockPriceClient {
 
-    @GetMapping("/api/stocks/{stockCode}/price")
+    @GetMapping("/api/trades/minute-price")
     Long getPriceAt(
             @PathVariable("stockCode") String stockCode,
             @RequestParam("at") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime at
     );
 
-    @GetMapping("/api/stocks/{stockCode}/price/current")
+    @GetMapping("/api/trades/now-price")
     Long getCurrentPrice(@PathVariable("stockCode") String stockCode);
 }
