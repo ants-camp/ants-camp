@@ -144,6 +144,7 @@ services:
       KIS_APP_KEY: ${KIS_APP_KEY}
       KIS_APP_SECRET: ${KIS_APP_SECRET}
       KIS_APP_ACCESS: ${KIS_APP_ACCESS}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     env_file:
       - .env
     volumes:
@@ -168,7 +169,7 @@ services:
     environment:
       <<: *java-tz
       SERVER_PORT: ${TRADE_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${ASSET_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -196,7 +197,7 @@ services:
     environment:
       <<: *java-tz
       SERVER_PORT: ${STOCK_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${STOCK_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -213,35 +214,7 @@ services:
         condition: service_started
     networks:
       - kafka-network
-
-  portfolio-service:
-    build:
-      context: .
-      dockerfile: apps/portfolio-service/Dockerfile
-    container_name: antcamp-portfolio
-    ports:
-      - "${PORTFOLIO_SERVER_PORT}:8090"
-    environment:
-      <<: *java-tz
-      SERVER_PORT: ${PORTFOLIO_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-    env_file:
-      - .env
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    networks:
-      - kafka-network
-
+      
   competition-service:
     build:
       context: .
@@ -252,7 +225,7 @@ services:
     environment:
       <<: *java-tz
       SERVER_PORT: ${COMPETITION_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${COMPETITION_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -280,7 +253,7 @@ services:
     environment:
       <<: *java-tz
       SERVER_PORT: ${RANKING_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${RANKING_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -308,7 +281,7 @@ services:
     environment:
       <<: *java-tz
       SERVER_PORT: ${ASSISTANT_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${ASSISTANT_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
