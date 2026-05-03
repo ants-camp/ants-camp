@@ -125,30 +125,4 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
                 });
     }
 
-    @Override
-    public void publishCompetitionTicked(CompetitionTicked event) {
-        String key = event.competitionId().toString();
-        String topic = topicProperties.ticked();
-
-        ProducerRecord<String, Object> record = new ProducerRecord<>(topic, key, event);
-
-        record.headers().add(
-                "__TypeId__",
-                "io.antcamp.assetservice.domain.event.payload.CompetitionTicked"
-                        .getBytes(StandardCharsets.UTF_8)
-        );
-
-        kafkaTemplate.send(record)
-                .whenComplete((result, ex) -> {
-                    if (ex != null) {
-                        log.error("[Kafka] CompetitionTicked 발행 실패. competitionId={}, topic={}",
-                                key, topic, ex);
-                    } else {
-                        log.debug("[Kafka] CompetitionTicked 발행 성공. competitionId={}, topic={}, partition={}, offset={}",
-                                key, topic,
-                                result.getRecordMetadata().partition(),
-                                result.getRecordMetadata().offset());
-                    }
-                });
-    }
 }
