@@ -4,16 +4,11 @@ server:
 spring:
   application:
     name: asset-service
-
   datasource:
     url: ${SPRING_DATASOURCE_URL:}
     username: ${SPRING_DATASOURCE_USERNAME:}
     password: ${SPRING_DATASOURCE_PASSWORD:}
     driver-class-name: org.postgresql.Driver
-
-  h2:
-    console:
-      enabled: true
 
   jpa:
     hibernate:
@@ -26,24 +21,35 @@ spring:
           use_jdbc_metadata_defaults: false
 
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
       group-id: asset-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
-        spring.json.trusted.packages: "io.antcamp.assetservice.domain.event.payload"
+        spring.json.trusted.packages: "*"
 
   data:
     redis:
-      host: localhost
-      port: ${SPRING_DATA_REDIS_PORT:6379}
-
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      url: ${SPRING_DATA_REDIS_URL:redis://localhost:6379}
+      timeout: 36000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 2
+          max-wait: -1ms
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+      
 topics:
   competition:
     started: competition.started
     finished: competition.finished
-    ticked: competition.ticked
+    ticked: ${COMPETITION_TICKED}
   asset:
     total-calculated: asset.total-calculated
