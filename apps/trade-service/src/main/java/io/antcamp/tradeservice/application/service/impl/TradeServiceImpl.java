@@ -137,16 +137,17 @@ public class TradeServiceImpl implements TradeService {
         Trade newTrade = Trade.create(newTradeId, accountId, TradeType.BUY, tradeAt, stockCode, stockAmount, totalPrice);
         tradeRepository.save(newTrade);
 
-        // 자산 서비스에 validation 요청 & event publish
+        // 자산 서비스에 validation 요청 (매매 데이터 생성하고 자산서비스로 넘겨주는 느낌으로?
+        // -> 살때랑 팔때랑 assetservice에서 다른 로직이 필요하자나
+        // buy -> 금액충분한지확인, sell -> 홀딩스가 충분한지
+        // 자산서비스에서는 canTrade 만 리턴해주고 -> Trade서비스에서는 FAIL, SUCCESS로 상태변경
+        // 자산서비스에서는 그냥 validation 되면 redis sorted set에 업데이트)
         try{
             AssetResponse assetResponse = assetClient.getAsset(accountId, totalPrice);
-            if(assetResponse.canTrade()){
-                TradeSucceededEvent event = new TradeSucceededEvent(
-                        assetResponse.account()-totalPrice,
-                        accountId,
-                        newTradeId
-                );
-                kafkaProducer.publishTradeResult(event);
+            if(assetResponse.tradeAt()!=null){
+                Trade foundTrade = tradeRepository.findById(newTradeId);
+                Trade successTrade = Trade.updateSuccess(foundTrade);
+                tradeRepository.updateStatus(successTrade);
             }
         }catch (Exception e){
             log.error("asset server 응답 실패");
@@ -195,14 +196,11 @@ public class TradeServiceImpl implements TradeService {
 
         // 자산 서비스에 validation 요청 & event publish
         try{
-            AssetResponse assetResponse = assetClient.getStock(accountId, stockCode, stockAmount);
-            if(assetResponse.canTrade()){
-                TradeSucceededEvent event = new TradeSucceededEvent(
-                        totalPrice+assetResponse.account(),
-                        accountId,
-                        newTradeId
-                );
-                kafkaProducer.publishTradeResult(event);
+            AssetResponse assetResponse = assetClient.getAsset(accountId, totalPrice);
+            if(assetResponse.tradeAt()!=null){
+                Trade foundTrade = tradeRepository.findById(newTradeId);
+                Trade successTrade = Trade.updateSuccess(foundTrade);
+                tradeRepository.updateStatus(successTrade);
             }
         }catch (Exception e){
             log.error("asset server 응답 실패");
