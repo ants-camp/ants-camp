@@ -1,3 +1,16 @@
 spring:
   application:
     name: ranking-service
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE}
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+server:
+  port: 8094
+
+topics:
+  ranking:
+    asset-updated: asset.updated  # 자산팀이랑 협의 후 토픽명 확정

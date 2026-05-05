@@ -26,10 +26,26 @@ public enum ErrorCode {
     WITHDRAWN_USER(HttpStatus.BAD_REQUEST, "WITHDRAWN_USER", "탈퇴한 계정입니다."),
     INVALID_ROLE(HttpStatus.BAD_REQUEST, "INVALID_ROLE", "유효하지 않은 권한 값입니다."),
     LOGIN_FAILED(HttpStatus.UNAUTHORIZED, "LOGIN_FAILED", "아이디 또는 비밀번호가 올바르지 않습니다."),
-    CANNOT_DELETE_SELF(HttpStatus.FORBIDDEN,"CANNOT_DELETE_SELF","본인 계정은 삭제할 수 없습니다."),
-    CANNOT_UPDATE_ROLE_SELF(HttpStatus.FORBIDDEN,"CANNOT_UPDATE_ROLE_SELF","본인 권한은 변경할 수 없습니다."),
+    CANNOT_DELETE_SELF(HttpStatus.FORBIDDEN, "CANNOT_DELETE_SELF", "본인 계정은 삭제할 수 없습니다."),
+    CANNOT_UPDATE_ROLE_SELF(HttpStatus.FORBIDDEN, "CANNOT_UPDATE_ROLE_SELF", "본인 권한은 변경할 수 없습니다."),
     USER_NOT_APPROVED(HttpStatus.FORBIDDEN, "USER_NOT_APPROVED", "승인되지 않은 사용자입니다."),
     SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "SAME_AS_OLD_PASSWORD", "새 비밀번호는 현재 비밀번호와 달라야 합니다."),
+
+    // ── Competition ───────────────────────────────────
+    COMPETITION_NOT_FOUND(HttpStatus.NOT_FOUND, "COMPETITION_NOT_FOUND", "존재하지 않는 대회입니다."),
+
+    // ── Assistant ─────────────────────────────────────
+    DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOCUMENT_NOT_FOUND", "존재하지 않는 문서입니다."),
+    SESSION_NOT_FOUND(HttpStatus.NOT_FOUND, "SESSION_NOT_FOUND", "존재하지 않는 세션입니다."),
+    INVALID_MESSAGE_CONTENT(HttpStatus.BAD_REQUEST, "INVALID_MESSAGE_CONTENT", "메시지 내용은 비어있을 수 없습니다."),
+    MESSAGE_TOO_LONG(HttpStatus.BAD_REQUEST, "MESSAGE_TOO_LONG", "메시지는 2000자를 초과할 수 없습니다."),
+    DOCUMENT_TITLE_BLANK(HttpStatus.BAD_REQUEST, "DOCUMENT_TITLE_BLANK", "문서 제목은 비어있을 수 없습니다."),
+    DOCUMENT_TITLE_TOO_LONG(HttpStatus.BAD_REQUEST, "DOCUMENT_TITLE_TOO_LONG", "문서 제목은 100자를 초과할 수 없습니다."),
+    DOCUMENT_CONTENT_BLANK(HttpStatus.BAD_REQUEST, "DOCUMENT_CONTENT_BLANK", "문서 내용은 비어있을 수 없습니다."),
+    EVAL_QUESTIONS_EMPTY(HttpStatus.BAD_REQUEST, "EVAL_QUESTIONS_EMPTY", "평가 질문은 최소 1개 이상이어야 합니다."),
+    EVAL_JUDGE_MODELS_EMPTY(HttpStatus.BAD_REQUEST, "EVAL_JUDGE_MODELS_EMPTY", "평가 모델은 최소 1개 이상이어야 합니다."),
+    EVAL_TOO_MANY_COMBINATIONS(HttpStatus.BAD_REQUEST, "EVAL_TOO_MANY_COMBINATIONS", "질문 × 모델 조합이 허용 한도를 초과했습니다."),
+    EVAL_RUN_NOT_FOUND(HttpStatus.NOT_FOUND, "EVAL_RUN_NOT_FOUND", "존재하지 않는 평가 실행입니다."),
 
     // ── Common ────────────────────────────────────────
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "입력값이 유효하지 않습니다."),
