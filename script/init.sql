@@ -8,7 +8,7 @@ CREATE SCHEMA IF NOT EXISTS stock;
 CREATE SCHEMA IF NOT EXISTS portfolio;
 CREATE SCHEMA IF NOT EXISTS competition;
 CREATE SCHEMA IF NOT EXISTS ranking;
-CREATE SCHEMA IF NOT EXISTS ai;
+CREATE SCHEMA IF NOT EXISTS assistant;
 CREATE SCHEMA IF NOT EXISTS notification;
 
 -- =========================
@@ -24,7 +24,12 @@ END
 $$;
 
 -- =========================
--- 3. Schema 권한 부여
+-- 3. 확장 설치 (assistant-service PgVectorStore 요구)
+-- =========================
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS hstore;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- =========================
 GRANT USAGE ON SCHEMA user TO antcamp;
 GRANT USAGE ON SCHEMA trade TO antcamp;
@@ -33,11 +38,11 @@ GRANT USAGE ON SCHEMA stock TO antcamp;
 GRANT USAGE ON SCHEMA portfolio TO antcamp;
 GRANT USAGE ON SCHEMA competition TO antcamp;
 GRANT USAGE ON SCHEMA ranking TO antcamp;
-GRANT USAGE ON SCHEMA ai TO antcamp;
+GRANT USAGE ON SCHEMA assistant TO antcamp;
 GRANT USAGE ON SCHEMA notification TO antcamp;
 
 -- =========================
--- 4. 기본 권한 설정 (테이블 자동 권한)
+-- 5. 기본 권한 설정 (테이블 자동 권한)
 -- =========================
 ALTER DEFAULT PRIVILEGES IN SCHEMA user
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
@@ -53,7 +58,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA competition
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
 ALTER DEFAULT PRIVILEGES IN SCHEMA ranking
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
-ALTER DEFAULT PRIVILEGES IN SCHEMA ai
+ALTER DEFAULT PRIVILEGES IN SCHEMA assistant
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
 ALTER DEFAULT PRIVILEGES IN SCHEMA notification
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
