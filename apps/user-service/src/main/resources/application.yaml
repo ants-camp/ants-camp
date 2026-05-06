@@ -29,6 +29,15 @@ eureka:
     register-with-eureka: true
     fetch-registry: true
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
 #jwt:
 #  secret: antcamp-local-dev-secret-key-must-be-32chars!!
 #  access-token-expiration: 3600000      # 1시간 (ms)
