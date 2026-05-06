@@ -22,30 +22,30 @@ public class RankingController {
 
     private final RankingService rankingService;
 
-    // 대회 전체 랭킹 조회
-    @GetMapping("/competitions/{competitionId}")
-    public List<RankingResponse> getTopRankings(
-            @PathVariable UUID competitionId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        return rankingService.getTopRankings(competitionId, page, size)
-                .stream()
-                .map(RankingResponse::from)
-                .toList();
-    }
-
     // 내 순위 조회
     @GetMapping("/competitions/{competitionId}/users/{userId}")
-    public MyRankingResponse getMyRanking(
+    public MyRankingResponse findMyRanking(
             @PathVariable UUID competitionId,
             @PathVariable UUID userId) {
-        return MyRankingResponse.from(rankingService.getMyRanking(competitionId, userId));
+        return MyRankingResponse.from(rankingService.findMyRanking(competitionId, userId));
     }
 
-    // 대회 종료 시 최종 순위 확정
+    // 대회 종료 시 최종 순위 확정 (수동 트리거)
     @PostMapping("/competitions/{competitionId}/finalize")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void finalizeRankings(@PathVariable UUID competitionId) {
         rankingService.finalizeRankings(competitionId);
+    }
+
+    // 대회 전체 랭킹 조회
+    @GetMapping("/competitions/{competitionId}")
+    public List<RankingResponse> findTopRankings(
+            @PathVariable UUID competitionId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return rankingService.findTopRankings(competitionId, page, size)
+                .stream()
+                .map(RankingResponse::from)
+                .toList();
     }
 }

@@ -2,6 +2,7 @@ package io.antcamp.assetservice.domain.repository;
 
 import io.antcamp.assetservice.domain.model.Account;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,4 +13,7 @@ public interface AccountRepository {
     Optional<Account> findById(UUID accountId);
 
     Optional<Account> findByIdWithLock(UUID accountId);
+
+    List<Account> findAllByCompetitionId(UUID competitionId);
+
 }

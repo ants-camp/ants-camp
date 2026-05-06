@@ -1,0 +1,532 @@
+### ============================================================
+###  전체 시나리오 통합 테스트 (유저 서비스 제외)
+###
+###  서비스 포트 (로컬 직접 호출 기준)
+###    competition-service → localhost:8092
+###    asset-service       → localhost:8091
+###    trade-service       → localhost:8093
+###    ranking-service     → localhost:8094
+###
+###  ✅ 실행 순서 (위에서 아래로 순서대로 실행)
+###    01. 대회 생성               → competition_id 자동 세팅
+###    02. 대회 게시               → PUBLISHED
+###    03. 유저1 대회 참가 신청   → Kafka: competition.registered
+###    04. 유저2 대회 참가 신청   → Kafka: competition.registered
+###    05. 유저3 대회 참가 신청   → Kafka: competition.registered
+###    06. 참여자 목록 확인        → 유저1, 유저2, 유저3
+###    07. 유저3 대회 참가 취소   → Kafka: competition.cancelled
+###    08. 참여자 목록 확인        → 유저1, 유저2
+###    09. 대회 시작               → ONGOING
+###    10. 주식 차트 확인          → 분봉 데이터 (KIS API 연동 필요)
+###    11. 주식 매수
+###    12. 주식 매도
+###    13. 자산 조회
+###    14. 대회 종료 전 순위 확인
+###    15. 대회 종료               → Kafka: competition.finished
+###    16. 대회 종료 후 최종 순위 확인
+###
+###  ⚠️  사전 준비
+###    1) http-client.env.json 의 환경(local)을 선택하세요.
+###    2) 03~05 실행 후 Kafka → Asset Service에서 대회 계좌 자동 생성됩니다.
+###       account_id_1 은 하단 [UTILITY] 수동 계좌 생성 또는 DB 조회로 세팅하세요.
+### ============================================================
+
+
+# ================================================================
+#  01~02. 대회 생성 / 게시
+# ================================================================
+
+# ---------------------------------------------------------------
+# 01. 대회 생성  →  competition_id 자동 세팅
+# ---------------------------------------------------------------
+### @name createCompetition
+POST {{competition_base}}/api/competitions
+Content-Type: application/json
+
+{
+  "name": "2026 봄 주식 모의투자 대회",
+  "type": "PERSONAL",
+  "description": "누가 가장 높은 수익률을 낼 수 있을까요?",
+  "firstSeed": 10000000,
+  "registerStartAt": "2026-01-01T00:00:00",
+  "registerEndAt": "2026-12-30T23:59:59",
+  "competitionStartAt": "2026-12-31T00:00:00",
+  "competitionEndAt": "2027-12-31T23:59:59",
+  "minParticipants": 2,
+  "maxParticipants": 100
+}
+
+> {%
+  client.test("201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+  });
+  client.test("status = PREPARING", function() {
+    client.assert(response.body.status === "PREPARING", "status = " + response.body.status);
+  });
+  if (response.body.competitionId) {
+    client.global.set("competition_id", response.body.competitionId);
+    console.log("✅ competition_id 세팅:", response.body.competitionId);
+  }
+%}
+
+
+# ---------------------------------------------------------------
+# 02. 대회 게시 (PREPARING → PUBLISHED)
+#  → isReadable = true, 일반 유저에게 대회 공개
+# ---------------------------------------------------------------
+### @name publishCompetition
+PATCH {{competition_base}}/api/competitions/{{competition_id}}/publish
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("isReadable = true", function() {
+    client.assert(response.body.isReadable === true, "isReadable = " + response.body.isReadable);
+  });
+  console.log("✅ 대회 공개 완료. 상태:", response.body.status);
+%}
+
+
+# ================================================================
+#  03~08. 대회 참가 신청 / 취소
+# ================================================================
+
+# ---------------------------------------------------------------
+# 03. 유저1 대회 참가 신청  [Kafka: competition.registered 발행]
+#  → Asset Service에서 유저1 대회 계좌 자동 생성
+# ---------------------------------------------------------------
+### @name joinUser1
+POST {{competition_base}}/api/competitions/{{competition_id}}/participants
+Content-Type: application/json
+
+{
+  "userId": "{{user_id_1}}",
+  "nickname": "투자왕김철수"
+}
+
+> {%
+  client.test("201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+  });
+  console.log("[Kafka] competition.registered 발행 → 유저1 대회 계좌 생성 트리거");
+%}
+
+
+# ---------------------------------------------------------------
+# 04. 유저2 대회 참가 신청  [Kafka: competition.registered 발행]
+#  → Asset Service에서 유저2 대회 계좌 자동 생성
+# ---------------------------------------------------------------
+### @name joinUser2
+POST {{competition_base}}/api/competitions/{{competition_id}}/participants
+Content-Type: application/json
+
+{
+  "userId": "{{user_id_2}}",
+  "nickname": "주식고수이영희"
+}
+
+> {%
+  client.test("201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+  });
+  console.log("[Kafka] competition.registered 발행 → 유저2 대회 계좌 생성 트리거");
+%}
+
+
+# ---------------------------------------------------------------
+# 05. 유저3 대회 참가 신청  [Kafka: competition.registered 발행]
+#  → Asset Service에서 유저3 대회 계좌 자동 생성
+# ---------------------------------------------------------------
+### @name joinUser3
+POST {{competition_base}}/api/competitions/{{competition_id}}/participants
+Content-Type: application/json
+
+{
+  "userId": "{{user_id_3}}",
+  "nickname": "단타왕박민준"
+}
+
+> {%
+  client.test("201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+  });
+  console.log("[Kafka] competition.registered 발행 → 유저3 대회 계좌 생성 트리거");
+%}
+
+
+# ---------------------------------------------------------------
+# 06. 참여자 목록 확인 — 유저1, 유저2, 유저3 모두 있어야 함
+# ---------------------------------------------------------------
+### @name getParticipantsBeforeCancel
+GET {{competition_base}}/api/competitions/{{competition_id}}/participants
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("참여자 3명", function() {
+    client.assert(response.body.length === 3, "참여자 수 = " + response.body.length + " (expected 3)");
+  });
+  console.log("참여자 수:", response.body.length);
+  response.body.forEach(function(p, i) {
+    console.log("  →", p.nickname, "(", p.userId, ")");
+  });
+%}
+
+
+# ---------------------------------------------------------------
+# 07. 유저3 대회 참가 취소  [Kafka: competition.cancelled 발행]
+#  → Asset Service에서 유저3 대회 계좌 정리
+# ---------------------------------------------------------------
+### @name cancelUser3
+DELETE {{competition_base}}/api/competitions/{{competition_id}}/participants
+Content-Type: application/json
+
+{
+  "userId": "{{user_id_3}}",
+  "nickname": "단타왕박민준"
+}
+
+> {%
+  client.test("204 No Content", function() {
+    client.assert(response.status === 204, "Expected 204, got " + response.status);
+  });
+  console.log("[Kafka] competition.cancelled 발행 → 유저3 대회 계좌 정리 트리거");
+%}
+
+
+# ---------------------------------------------------------------
+# 08. 참여자 목록 확인 — 유저1, 유저2 만 있어야 함
+# ---------------------------------------------------------------
+### @name getParticipantsAfterCancel
+GET {{competition_base}}/api/competitions/{{competition_id}}/participants
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("참여자 2명", function() {
+    client.assert(response.body.length === 2, "참여자 수 = " + response.body.length + " (expected 2)");
+  });
+  console.log("참여자 수:", response.body.length);
+  response.body.forEach(function(p, i) {
+    console.log("  →", p.nickname, "(", p.userId, ")");
+  });
+%}
+
+
+# ================================================================
+#  09. 대회 시작
+# ================================================================
+
+# ---------------------------------------------------------------
+# 09. 대회 시작 (PUBLISHED → ONGOING)
+#  ⚠️  03~04 에서 유저1, 유저2가 신청 완료된 상태여야 합니다 (minParticipants=2).
+# ---------------------------------------------------------------
+### @name startCompetition
+PATCH {{competition_base}}/api/competitions/{{competition_id}}/start
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("status = ONGOING", function() {
+    client.assert(response.body.status === "ONGOING", "status = " + response.body.status);
+  });
+  console.log("✅ 대회 시작. 상태:", response.body.status);
+%}
+
+
+# ================================================================
+#  10~13. 주식 거래 / 자산 조회
+#
+#  ⚠️  account_id_1 사전 세팅 필요
+#      참가 신청(03번) 후 Kafka → Asset Service에서 계좌 자동 생성됩니다.
+#      accountId는 아래 방법 중 하나로 확인하세요:
+#
+#      방법 A) DB 직접 조회
+#        SELECT account_id FROM asset.accounts WHERE user_id = '11111111-...' AND type = 'COMPETITION';
+#
+#      방법 B) 하단 [UTILITY] 수동 계좌 생성 실행 후 응답의 accountId 사용
+# ================================================================
+
+# ---------------------------------------------------------------
+# 10. 주식 차트 확인 (분봉)
+#  → stock_code: 삼성전자 005930 (http-client.env.json 에서 변경 가능)
+#  ⚠️  한국투자증권(KIS) API 연동 필요. 미연동 시 [UTILITY] KIS 토큰 발급 먼저 실행.
+# ---------------------------------------------------------------
+### @name getStockChart
+GET {{trade_base}}/api/trades/minute-price?stock_code={{stock_code}}&date_time={{chart_datetime}}
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("종목코드:", "{{stock_code}}");
+  console.log("분봉 데이터:", JSON.stringify(response.body, null, 2));
+%}
+
+
+# ---------------------------------------------------------------
+# 11. 주식 매수
+#  ⚠️  account_id_1 세팅 필요 (위 주석 참고)
+# ---------------------------------------------------------------
+### @name buyStock
+POST {{asset_base}}/api/holdings/buy
+Content-Type: application/json
+X-User-Id: {{user_id_1}}
+
+{
+  "accountId": "{{account_id_1}}",
+  "stockCode": "{{stock_code}}",
+  "stockAmount": 10,
+  "buyPrice": 75000
+}
+
+> {%
+  client.test("200 or 201", function() {
+    client.assert(response.status === 200 || response.status === 201,
+      "Expected 200/201, got " + response.status);
+  });
+  console.log("✅ 매수 완료:", "{{stock_code}}", "10주 @75,000원");
+  console.log("응답:", JSON.stringify(response.body, null, 2));
+%}
+
+
+# ---------------------------------------------------------------
+# 12. 주식 매도
+# ---------------------------------------------------------------
+### @name sellStock
+POST {{asset_base}}/api/holdings/sell
+Content-Type: application/json
+
+{
+  "accountId": "{{account_id_1}}",
+  "stockCode": "{{stock_code}}",
+  "stockAmount": 5
+}
+
+> {%
+  client.test("200 or 201", function() {
+    client.assert(response.status === 200 || response.status === 201,
+      "Expected 200/201, got " + response.status);
+  });
+  console.log("✅ 매도 완료:", "{{stock_code}}", "5주");
+  console.log("응답:", JSON.stringify(response.body, null, 2));
+%}
+
+
+# ---------------------------------------------------------------
+# 13. 자산 조회 (현금 잔액)
+# ---------------------------------------------------------------
+### @name getAsset
+GET {{asset_base}}/api/accounts/{{account_id_1}}
+X-User-Id: {{user_id_1}}
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("계좌번호:", response.body.data.accountNumber);
+  console.log("현금 잔액:", response.body.data.accountAmount, "원");
+%}
+
+
+# ================================================================
+#  14~16. 순위 확인 / 대회 종료
+# ================================================================
+
+# ---------------------------------------------------------------
+# 14. 대회 종료 전 순위 확인 (Redis 실시간)
+# ---------------------------------------------------------------
+### @name getRankingsBeforeFinish
+GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("=== 대회 종료 전 순위 ===");
+  if (Array.isArray(response.body)) {
+    response.body.forEach(function(r) {
+      console.log("  " + r.rank + "위", r.nickname, "| 총자산:", r.totalAsset, "| 수익률:", r.rateOfReturn + "%");
+    });
+  } else {
+    console.log(JSON.stringify(response.body, null, 2));
+  }
+%}
+
+
+# ---------------------------------------------------------------
+# 15. 대회 종료 (ONGOING → FINISHED)
+#  → Kafka: competition.finished 발행
+#  ⚠️  종료 후 최종 순위 확정까지 수 초 소요될 수 있습니다 (비동기 처리).
+#     16번 실행 전 잠시 대기하거나, [UTILITY] 수동 순위 확정을 실행하세요.
+# ---------------------------------------------------------------
+### @name finishCompetition
+PATCH {{competition_base}}/api/competitions/{{competition_id}}/finish
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  client.test("status = FINISHED", function() {
+    client.assert(response.body.status === "FINISHED", "status = " + response.body.status);
+  });
+  console.log("✅ 대회 종료. 상태:", response.body.status);
+  console.log("[Kafka] competition.finished 발행 → 최종 자산 계산 및 순위 확정 트리거");
+%}
+
+
+# ---------------------------------------------------------------
+# 16. 대회 종료 후 최종 순위 확인
+# ---------------------------------------------------------------
+### @name getRankingsAfterFinish
+GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("=== 대회 최종 순위 ===");
+  if (Array.isArray(response.body)) {
+    response.body.forEach(function(r) {
+      console.log("  " + r.rank + "위", r.nickname, "| 총자산:", r.totalAsset, "| 수익률:", r.rateOfReturn + "%");
+    });
+  } else {
+    console.log(JSON.stringify(response.body, null, 2));
+  }
+%}
+
+
+# ================================================================
+#  [UTILITY] 보조 API (필요 시 단독 실행)
+# ================================================================
+
+# ---------------------------------------------------------------
+# [U1] 유저1 내 순위 조회
+# ---------------------------------------------------------------
+### @name getMyRankingUser1
+GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}/users/{{user_id_1}}
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("유저1 순위:", JSON.stringify(response.body, null, 2));
+%}
+
+
+# ---------------------------------------------------------------
+# [U2] 유저2 내 순위 조회
+# ---------------------------------------------------------------
+### @name getMyRankingUser2
+GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}/users/{{user_id_2}}
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("유저2 순위:", JSON.stringify(response.body, null, 2));
+%}
+
+
+# ---------------------------------------------------------------
+# [U3] 수동 순위 확정 (Redis → DB)
+#  → 15번(대회 종료) 후 Kafka 비동기 처리가 안 됐을 때 사용
+# ---------------------------------------------------------------
+### @name finalizeRanking
+POST {{ranking_base}}/api/rankings/competitions/{{competition_id}}/finalize
+
+> {%
+  client.test("204 No Content", function() {
+    client.assert(response.status === 204, "Expected 204, got " + response.status);
+  });
+  console.log("✅ 순위 수동 확정 완료 — PostgreSQL ranking 테이블 저장");
+%}
+
+
+# ---------------------------------------------------------------
+# [U4] 수동 계좌 생성 (account_id 확보용)
+#  → 참가 신청 후 Kafka로 자동 생성된 계좌의 ID를 모를 때 사용
+#  → 응답의 accountId 를 http-client.env.json 의 account_id_1 에 복사하세요.
+# ---------------------------------------------------------------
+### @name createAccountManual
+POST {{asset_base}}/api/accounts
+Content-Type: application/json
+
+{
+  "userId": "{{user_id_1}}",
+  "type": "COMPETITION",
+  "initialAmount": 10000000
+}
+
+> {%
+  client.test("201 Created", function() {
+    client.assert(response.status === 201, "Expected 201, got " + response.status);
+  });
+  if (response.body) {
+    client.global.set("account_id_1", response.body);
+    console.log("✅ account_id_1 세팅:", response.body);
+    console.log("⚠️  http-client.env.json 의 account_id_1 에도 복사해두세요.");
+  }
+%}
+
+
+# ---------------------------------------------------------------
+# [U5] 보유 주식 조회
+# ---------------------------------------------------------------
+### @name getHoldings
+GET {{asset_base}}/api/holdings?accountId={{account_id_1}}
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("보유 주식:", JSON.stringify(response.body, null, 2));
+%}
+
+
+# ---------------------------------------------------------------
+# [U6] 시장 상태 확인
+# ---------------------------------------------------------------
+### @name getMarketStatus
+GET {{trade_base}}/api/market/status
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("시장 상태:", response.body.status, "| 메시지:", response.body.message);
+%}
+
+
+# ---------------------------------------------------------------
+# [U7] KIS 접근 토큰 발급
+#  → 주식 차트(10번) 조회 전 KIS 토큰이 없을 때 실행
+# ---------------------------------------------------------------
+### @name issueKisToken
+POST {{trade_base}}/api/trades/access-token
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("✅ KIS 접근 토큰 발급 완료");
+  console.log(JSON.stringify(response.body, null, 2));
+%}
+
+
+# ---------------------------------------------------------------
+# [U8] 종목 검색
+# ---------------------------------------------------------------
+### @name searchStock
+GET {{trade_base}}/api/stocks/search?q=삼성전자&limit=5
+
+> {%
+  client.test("200 OK", function() {
+    client.assert(response.status === 200, "Expected 200, got " + response.status);
+  });
+  console.log("검색 결과:", JSON.stringify(response.body, null, 2));
+%}
