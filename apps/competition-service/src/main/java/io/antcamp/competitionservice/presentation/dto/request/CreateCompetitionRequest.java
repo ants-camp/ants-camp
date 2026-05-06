@@ -1,4 +1,4 @@
-package io.antcamp.competitionservice.presentation.dto;
+package io.antcamp.competitionservice.presentation.dto.request;
 
 import io.antcamp.competitionservice.domain.model.CompetitionType;
 import jakarta.validation.constraints.NotBlank;
