@@ -69,6 +69,15 @@ eureka:
     register-with-eureka: ${EUREKA_ENABLED:true}
     fetch-registry: ${EUREKA_ENABLED:true}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
 kis:
   app:
     url: ${KIS_REST_URL}
