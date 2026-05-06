@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chat</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.8/dist/purify.min.js"></script>
+
+<style>
+  :root {
+    --bg:        #fafaf9;
+    --surface:   #ffffff;
+    --surface-2: #f5f5f4;
+    --border:    #e7e5e4;
+    --border-strong: #d6d3d1;
+    --text:      #1c1917;
+    --text-2:    #57534e;
+    --text-3:    #a8a29e;
+    --accent:    #1c1917;
+    --accent-soft: #f5f5f4;
+    --user-bg:   #1c1917;
+    --user-text: #fafaf9;
+    --bot-bg:    #f5f5f4;
+    --danger:    #dc2626;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.04), 0 1px 1px rgba(0,0,0,.03);
+    --shadow-md: 0 4px 12px rgba(0,0,0,.05), 0 1px 3px rgba(0,0,0,.04);
+    --shadow-lg: 0 12px 32px rgba(0,0,0,.08), 0 2px 6px rgba(0,0,0,.05);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+    --ease: cubic-bezier(.22,.61,.36,1);
+    --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:        #0c0a09;
+      --surface:   #1c1917;
+      --surface-2: #292524;
+      --border:    #292524;
+      --border-strong: #44403c;
+      --text:      #fafaf9;
+      --text-2:    #a8a29e;
+      --text-3:    #78716c;
+      --accent:    #fafaf9;
+      --accent-soft: #292524;
+      --user-bg:   #fafaf9;
+      --user-text: #1c1917;
+      --bot-bg:    #1c1917;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,.3);
+      --shadow-md: 0 4px 12px rgba(0,0,0,.4);
+      --shadow-lg: 0 12px 32px rgba(0,0,0,.5);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    height: 100%;
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    font-feature-settings: "ss06", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ===== Top bar ===== */
+  #top-bar {
+    height: 44px;
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  #top-bar .brand {
+    font-family: 'Pretendard Variable', Pretendard, sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    letter-spacing: -0.02em;
+    margin-right: auto;
+    display: flex; align-items: center; gap: 8px;
+  }
+  #top-bar .brand .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 0 8px rgba(16,185,129,.4);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .55; transform: scale(.85); }
+  }
+  #top-bar .meta { display: flex; align-items: center; gap: 6px; }
+  #top-bar .meta .lbl { color: var(--text-3); }
+  #top-bar .meta .val { color: var(--text-2); }
+
+  /* ===== Layout ===== */
+  #main { display: flex; flex: 1; overflow: hidden; }
+
+  /* ===== Sidebar ===== */
+  #session-panel {
+    width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+  }
+
+  .panel-head {
+    padding: 16px 18px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .panel-head h3 {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  #btn-new-session {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: var(--radius-sm);
+    padding: 6px 11px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+    transition: transform .15s var(--ease-spring), opacity .2s var(--ease);
+  }
+  #btn-new-session:hover { transform: translateY(-1px); opacity: .9; }
+  #btn-new-session:active { transform: translateY(0); }
+
+  #session-search {
+    padding: 0 14px 10px;
+    position: relative;
+  }
+  #session-search input {
+    width: 100%;
+    padding: 8px 12px 8px 32px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: inherit;
+    color: var(--text);
+    transition: border-color .15s var(--ease), background .15s var(--ease);
+  }
+  #session-search input::placeholder { color: var(--text-3); }
+  #session-search input:focus {
+    outline: none;
+    border-color: var(--border-strong);
+    background: var(--surface);
+  }
+  #session-search::before {
+    content: '';
+    position: absolute;
+    left: 24px; top: 50%;
+    transform: translateY(-58%);
+    width: 14px; height: 14px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23a8a29e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+    background-size: contain;
+    background-repeat: no-repeat;
+    pointer-events: none;
+  }
+
+  #session-list {
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 8px 12px;
+  }
+  #session-list::-webkit-scrollbar { width: 8px; }
+  #session-list::-webkit-scrollbar-track { background: transparent; }
+  #session-list::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 4px;
+    border: 2px solid var(--surface);
+  }
+
+  .session-item {
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: background .15s var(--ease);
+    margin-bottom: 2px;
+    position: relative;
+    animation: fadeSlideIn .35s var(--ease) backwards;
+  }
+  .session-item:hover { background: var(--surface-2); }
+  .session-item.active {
+    background: var(--accent-soft);
+  }
+  .session-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 18%; bottom: 18%;
+    width: 2px;
+    background: var(--accent);
+    border-radius: 0 2px 2px 0;
+  }
+  .session-item .s-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.005em;
+  }
+  .session-item .s-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-3);
+    margin-top: 3px;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ===== Chat panel ===== */
+  #chat-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    min-width: 0;
+  }
+  #chat-header {
+    padding: 14px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; gap: 10px;
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  #chat-header strong {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+  #chat-header .id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    user-select: all;
+  }
+  #chat-header .placeholder { color: var(--text-2); font-size: 13px; }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 24px 24px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  #messages::-webkit-scrollbar { width: 10px; }
+  #messages::-webkit-scrollbar-track { background: transparent; }
+  #messages::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 5px;
+    border: 2px solid var(--bg);
+  }
+
+  /* ===== Message bubble ===== */
+  .msg {
+    display: flex;
+    flex-direction: column;
+    max-width: 75%;
+    position: relative;
+    animation: msgIn .36s var(--ease) backwards;
+  }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.bot  { align-self: flex-start; align-items: flex-start; }
+
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(6px) scale(.985); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .msg-bubble {
+    padding: 11px 15px;
+    border-radius: var(--radius);
+    font-size: 14px;
+    line-height: 1.6;
+    letter-spacing: -0.005em;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    box-shadow: var(--shadow-sm);
+  }
+  .msg.user .msg-bubble {
+    background: var(--user-bg);
+    color: var(--user-text);
+    border-bottom-right-radius: 4px;
+  }
+  .msg.bot .msg-bubble {
+    background: var(--bot-bg);
+    color: var(--text);
+    border-bottom-left-radius: 4px;
+  }
+
+  /* Markdown body */
+  .msg-bubble p { margin: 0; }
+  .msg-bubble p + p { margin-top: 8px; }
+  .msg-bubble strong { font-weight: 600; }
+  .msg-bubble em { font-style: italic; }
+  .msg-bubble code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.88em;
+    padding: 1px 5px;
+    border-radius: 4px;
+    background: rgba(120,113,108,.18);
+  }
+  .msg.user .msg-bubble code { background: rgba(255,255,255,.16); }
+  .msg-bubble pre {
+    margin: 8px 0;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(0,0,0,.06);
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .msg.user .msg-bubble pre { background: rgba(0,0,0,.25); }
+  .msg-bubble pre code { padding: 0; background: transparent; }
+  .msg-bubble ul, .msg-bubble ol { padding-left: 20px; margin: 6px 0; }
+  .msg-bubble li { margin: 2px 0; }
+  .msg-bubble a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+  .msg-bubble blockquote {
+    border-left: 3px solid currentColor;
+    padding-left: 10px;
+    opacity: .8;
+    margin: 6px 0;
+  }
+  .msg-bubble h1, .msg-bubble h2, .msg-bubble h3 {
+    font-weight: 600;
+    margin: 8px 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .msg-bubble h1 { font-size: 1.15em; }
+  .msg-bubble h2 { font-size: 1.08em; }
+  .msg-bubble h3 { font-size: 1em; }
+
+  .msg-meta {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 5px;
+    padding: 0 6px;
+    height: 18px;
+  }
+  .msg-time {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-3);
+  }
+
+  /* Hover actions */
+  .msg-actions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transform: translateY(2px);
+    transition: opacity .15s var(--ease), transform .2s var(--ease);
+    pointer-events: none;
+  }
+  .msg:hover .msg-actions {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+  .msg-action {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background .12s var(--ease), color .12s var(--ease), transform .12s var(--ease-spring);
+    padding: 0;
+  }
+  .msg-action:hover {
+    background: var(--surface-2);
+    color: var(--text);
+    transform: scale(1.08);
+  }
+  .msg-action.copied { color: #10b981; }
+  .msg-action svg { width: 12px; height: 12px; }
+
+  /* Typing indicator */
+  .typing-bubble {
+    background: var(--bot-bg);
+    border-bottom-left-radius: 4px;
+    padding: 14px 16px !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .typing-bubble .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--text-3);
+    animation: typingDot 1.4s infinite var(--ease);
+  }
+  .typing-bubble .dot:nth-child(2) { animation-delay: .18s; }
+  .typing-bubble .dot:nth-child(3) { animation-delay: .36s; }
+  @keyframes typingDot {
+    0%, 60%, 100% { opacity: .25; transform: translateY(0); }
+    30%           { opacity: 1;   transform: translateY(-3px); }
+  }
+
+  /* Empty state */
+  #empty-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-3);
+    gap: 10px;
+    padding: 24px;
+  }
+  #empty-state .icon {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    background: var(--surface-2);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 4px;
+  }
+  #empty-state .icon svg { width: 22px; height: 22px; color: var(--text-3); }
+  #empty-state .title { font-size: 14px; font-weight: 500; color: var(--text-2); letter-spacing: -0.01em; }
+  #empty-state .desc { font-size: 12.5px; color: var(--text-3); }
+
+  /* ===== Composer ===== */
+  #input-area {
+    padding: 14px 20px 18px;
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+  .composer {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    padding: 8px 8px 8px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: border-color .15s var(--ease), box-shadow .15s var(--ease);
+  }
+  .composer:focus-within {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+  }
+  #msg-input {
+    flex: 1;
+    padding: 8px 4px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    resize: none;
+    font-family: inherit;
+    max-height: 180px;
+    min-height: 24px;
+  }
+  #msg-input::placeholder { color: var(--text-3); }
+  #msg-input:focus { outline: none; }
+
+  #btn-send {
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 10px;
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: transform .15s var(--ease-spring), opacity .15s var(--ease);
+  }
+  #btn-send svg { width: 16px; height: 16px; }
+  #btn-send:hover:not(:disabled) { transform: translateY(-1px) scale(1.04); }
+  #btn-send:active:not(:disabled) { transform: translateY(0) scale(.98); }
+  #btn-send:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+  }
+
+  .composer-hint {
+    margin-top: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-3);
+    text-align: center;
+  }
+  .kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: var(--surface);
+    font-size: 10px;
+  }
+
+  /* States */
+  .state-text {
+    font-size: 13px;
+    color: var(--text-3);
+    padding: 12px;
+    text-align: center;
+  }
+  .err-text {
+    color: var(--danger);
+    font-size: 12.5px;
+    padding: 12px;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--accent);
+    color: var(--bg);
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .25s var(--ease), transform .35s var(--ease-spring);
+    z-index: 100;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Mobile */
+  @media (max-width: 720px) {
+    #session-panel { width: 240px; }
+    .msg { max-width: 88%; }
+    #messages { padding: 18px 14px 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="top-bar">
+  <div class="brand">
+    <span class="dot"></span>
+    Assistant
+  </div>
+  <div class="meta"><span class="lbl">uid</span> <span class="val" id="lbl-uid"></span></div>
+  <div class="meta"><span class="lbl">role</span> <span class="val" id="lbl-role"></span></div>
+</div>
+
+<div id="main">
+  <aside id="session-panel">
+    <div class="panel-head">
+      <h3>세션</h3>
+      <button id="btn-new-session" title="새 세션">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        New
+      </button>
+    </div>
+    <div id="session-search">
+      <input id="search-input" placeholder="세션 검색">
+    </div>
+    <div id="session-list"><p class="state-text">불러오는 중…</p></div>
+  </aside>
+
+  <main id="chat-panel">
+    <div id="chat-header">
+      <span class="placeholder">세션을 선택하거나 새로 만드세요</span>
+    </div>
+
+    <div id="empty-state">
+      <div class="icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <div class="title">대화를 시작하세요</div>
+      <div class="desc">왼쪽에서 세션을 선택하거나 새 세션을 만드세요</div>
+    </div>
+
+    <div id="messages" style="display:none"></div>
+
+    <div id="input-area" style="display:none">
+      <div class="composer">
+        <textarea id="msg-input" rows="1" placeholder="메시지 보내기…"></textarea>
+        <button id="btn-send" title="전송">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12h14M13 6l6 6-6 6"/>
+          </svg>
+        </button>
+      </div>
+      <div class="composer-hint">
+        <span class="kbd">Enter</span> 전송 · <span class="kbd">Shift</span>+<span class="kbd">Enter</span> 줄바꿈
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast">복사됨</div>
+
+<script>
+  /* ================================================================
+   * 테스트용 하드코딩 값 — 실제 DB UUID로 교체
+   * ================================================================ */
+  const TEST_USER_ID   = '00000000-0000-0000-0000-000000000001';
+  const TEST_USER_ROLE = 'PLAYER';
+  /* ============================================================== */
+
+  const BASE = window.location.origin;
+
+  // marked 설정 — 줄바꿈을 <br>로
+  if (window.marked) {
+    marked.setOptions({ breaks: true, gfm: true });
+  }
+
+  document.getElementById('lbl-uid').textContent  = TEST_USER_ID.slice(0, 8) + '…';
+  document.getElementById('lbl-role').textContent = TEST_USER_ROLE;
+
+  const $ = id => document.getElementById(id);
+  let currentSessionId = null;
+  let sessions = [];
+
+  const apiHeaders = () => ({
+    'Content-Type': 'application/json',
+    'X-User-Id':   TEST_USER_ID,
+    'X-User-Role': TEST_USER_ROLE,
+  });
+
+  async function req(method, path, body) {
+    const res = await fetch(BASE + '/api/assistants/sessions' + path, {
+      method,
+      headers: apiHeaders(),
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.message || `HTTP ${res.status}`);
+    return json;
+  }
+
+  /* ── 세션 목록 ── */
+  async function loadSessions(keyword) {
+    const qs = keyword ? `?keyword=${encodeURIComponent(keyword)}` : '';
+    try {
+      const json = await req('GET', qs);
+      sessions = json.data?.items ?? [];
+      renderSessions();
+    } catch (e) {
+      $('session-list').innerHTML = `<p class="err-text">${esc(e.message)}</p>`;
+    }
+  }
+
+  function renderSessions() {
+    if (!sessions.length) {
+      $('session-list').innerHTML = '<p class="state-text">세션이 없습니다</p>';
+      return;
+    }
+    $('session-list').innerHTML = sessions.map((s, i) => `
+      <div class="session-item ${s.chatSessionId === currentSessionId ? 'active' : ''}"
+           data-idx="${i}"
+           style="animation-delay:${Math.min(i * 25, 250)}ms">
+        <div class="s-title">${esc(s.title || '(제목 없음)')}</div>
+        <div class="s-date">${fmtDate(s.updatedAt)}</div>
+      </div>`).join('');
+
+    $('session-list').querySelectorAll('.session-item').forEach(el => {
+      el.addEventListener('click', () => {
+        const s = sessions[el.dataset.idx];
+        selectSession(s.chatSessionId, s.title || '(제목 없음)');
+      });
+    });
+  }
+
+  /* ── 세션 생성 ── */
+  $('btn-new-session').onclick = async () => {
+    try {
+      const json = await req('POST', '');
+      await loadSessions();
+      selectSession(json.data.chatSessionId, json.data.title || '새 세션');
+    } catch (e) { showToast(e.message); }
+  };
+
+  /* ── 세션 선택 ── */
+  async function selectSession(id, title) {
+    currentSessionId = id;
+    renderSessions();
+    $('chat-header').innerHTML = `
+      <strong>${esc(title)}</strong>
+      <span class="id">${esc(id)}</span>`;
+    $('empty-state').style.display = 'none';
+    $('messages').style.display    = 'flex';
+    $('input-area').style.display  = 'block';
+    $('msg-input').focus();
+    await loadMessages(id);
+  }
+
+  /* ── 메시지 목록 ── */
+  async function loadMessages(sessionId) {
+    $('messages').innerHTML = '<p class="state-text">불러오는 중…</p>';
+    try {
+      const json = await req('GET', `/${sessionId}/messages`);
+      renderMessages(json.data ?? []);
+    } catch (e) {
+      $('messages').innerHTML = `<p class="err-text">${esc(e.message)}</p>`;
+    }
+  }
+
+  function renderMessages(msgs) {
+    if (!msgs.length) {
+      $('messages').innerHTML = '<p class="state-text" style="margin-top:32px">첫 메시지를 보내보세요</p>';
+      return;
+    }
+    $('messages').innerHTML = '';
+    msgs.forEach((m, i) => {
+      const isUser = m.role === 'USER';
+      const node = buildMsgNode(isUser ? 'user' : 'bot', m.content, m.createdAt);
+      node.style.animationDelay = `${Math.min(i * 30, 250)}ms`;
+      $('messages').appendChild(node);
+    });
+    scrollToBottom();
+  }
+
+  function buildMsgNode(type, content, createdAt) {
+    const el = document.createElement('div');
+    el.className = `msg ${type}`;
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    if (type === 'bot') {
+      bubble.innerHTML = renderMarkdown(content);
+    } else {
+      bubble.textContent = content;
+    }
+
+    const meta = document.createElement('div');
+    meta.className = 'msg-meta';
+
+    const actions = document.createElement('div');
+    actions.className = 'msg-actions';
+    actions.appendChild(makeActionBtn('copy', content));
+
+    const time = document.createElement('span');
+    time.className = 'msg-time';
+    time.textContent = fmtDate(createdAt);
+
+    if (type === 'user') {
+      meta.appendChild(actions);
+      meta.appendChild(time);
+    } else {
+      meta.appendChild(time);
+      meta.appendChild(actions);
+    }
+
+    el.appendChild(bubble);
+    el.appendChild(meta);
+    return el;
+  }
+
+  function makeActionBtn(kind, payload) {
+    const btn = document.createElement('button');
+    btn.className = 'msg-action';
+    btn.title = '복사';
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(payload);
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>`;
+        showToast('복사됨');
+        setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>`;
+        }, 1400);
+      } catch { showToast('복사 실패'); }
+    };
+    return btn;
+  }
+
+  function renderMarkdown(src) {
+    if (!window.marked || !window.DOMPurify) return esc(src);
+    const raw = marked.parse(src ?? '');
+    return DOMPurify.sanitize(raw);
+  }
+
+  /* ── 메시지 전송 ── */
+  $('btn-send').onclick = sendMessage;
+
+  // 자동 높이 조절 + Enter 전송
+  const ta = $('msg-input');
+  ta.addEventListener('input', () => {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 180) + 'px';
+    $('btn-send').disabled = !ta.value.trim();
+  });
+  ta.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+  $('btn-send').disabled = true;
+
+  async function sendMessage() {
+    if (!currentSessionId) return;
+    const content = ta.value.trim();
+    if (!content) return;
+    ta.value = '';
+    ta.style.height = 'auto';
+    $('btn-send').disabled = true;
+
+    appendMessage('user', content, new Date().toISOString());
+
+    // 타이핑 인디케이터
+    const typing = document.createElement('div');
+    typing.className = 'msg bot';
+    typing.innerHTML = `
+      <div class="msg-bubble typing-bubble">
+        <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+      </div>`;
+    $('messages').appendChild(typing);
+    scrollToBottom();
+
+    try {
+      const json = await req('POST', `/${currentSessionId}/messages`, { content });
+      typing.remove();
+      appendMessage('bot', json.data?.content ?? '(응답 없음)', new Date().toISOString());
+      loadSessions();
+    } catch (e) {
+      typing.remove();
+      appendMessage('bot', `⚠️ ${e.message}`, new Date().toISOString());
+    } finally {
+      ta.focus();
+    }
+  }
+
+  function appendMessage(type, text, createdAt) {
+    const node = buildMsgNode(type, text, createdAt);
+    $('messages').appendChild(node);
+    scrollToBottom();
+  }
+
+  function scrollToBottom() {
+    const m = $('messages');
+    m.scrollTo({ top: m.scrollHeight, behavior: 'smooth' });
+  }
+
+  /* ── 검색 ── */
+  let searchTimer;
+  $('search-input').oninput = () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => loadSessions($('search-input').value.trim()), 300);
+  };
+
+  /* ── Toast ── */
+  let toastTimer;
+  function showToast(msg) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 1500);
+  }
+
+  /* ── 유틸 ── */
+  function esc(s) {
+    return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function fmtDate(s) {
+    if (!s) return '';
+    const d = new Date(s);
+    if (isNaN(d)) return s;
+    const now = new Date();
+    const sameDay = d.toDateString() === now.toDateString();
+    if (sameDay) {
+      return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    }
+    return d.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+  }
+
+  loadSessions();
+</script>
+</body>
+</html>

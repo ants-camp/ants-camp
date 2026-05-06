@@ -1,5 +1,6 @@
 package io.antcamp.assetservice.infrastructure.persistence;
 
+import io.antcamp.assetservice.domain.exception.HoldingNotFoundException;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
 import io.antcamp.assetservice.infrastructure.entity.HoldingEntity;
@@ -43,6 +44,9 @@ public class HoldingRepositoryImpl implements HoldingRepository {
 
     @Override
     public void delete(Holding holding) {
-        jpaHoldingRepository.delete(HoldingEntity.from(holding));
+        HoldingEntity entity = jpaHoldingRepository.findById(holding.getHoldingId())
+                .orElseThrow(() -> new HoldingNotFoundException("보유 주식을 찾을 수 없습니다."));
+        entity.softDelete("SYSTEM");
+        jpaHoldingRepository.save(entity);
     }
 }

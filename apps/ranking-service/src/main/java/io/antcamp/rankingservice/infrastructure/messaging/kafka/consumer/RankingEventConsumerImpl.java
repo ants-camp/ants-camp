@@ -2,7 +2,8 @@ package io.antcamp.rankingservice.infrastructure.messaging.kafka.consumer;
 
 import io.antcamp.rankingservice.application.RankingService;
 import io.antcamp.rankingservice.application.event.RankingEventConsumer;
-import io.antcamp.rankingservice.domain.event.AssetUpdatedPayload;
+import io.antcamp.rankingservice.domain.event.TotalAssetCalcuatedEvent;
+import io.antcamp.rankingservice.domain.event.TradeSucceededEvent;
 import io.antcamp.rankingservice.infrastructure.messaging.kafka.RankingTopicProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,18 +19,35 @@ public class RankingEventConsumerImpl implements RankingEventConsumer {
 
     private final RankingService rankingService;
 
+    /**
+     * 매매 체결마다 호출 → Redis만 갱신 (실시간 순위, DB 저장 없음)
+     */
     @Override
     @KafkaListener(
-            topics = "${topics.ranking.asset-updated}",
+            topics = "${topics.trade.trade-succeeded}",
             groupId = "${spring.kafka.consumer.group-id:ranking-service}"
     )
-    public void handleAssetUpdated(AssetUpdatedPayload payload) {
-        log.info("[Kafka] AssetUpdatedEvent 수신. userId={}, competitionId={}, totalAsset={}",
+    public void handleTradeSucceeded(TradeSucceededEvent payload) {
+        log.info("[Kafka] TradeSucceededEvent 수신. userId={}, competitionId={}, totalAsset={}",
                 payload.userId(), payload.competitionId(), payload.totalAsset());
-        rankingService.upsertRanking(
+        rankingService.updateLiveRanking(
                 payload.competitionId(),
                 payload.userId(),
                 payload.totalAsset()
         );
+    }
+
+    /**
+     * 대회 종료 후 최종 총자산 수신 → Redis + DB에 최종 순위 확정
+     */
+    @Override
+    @KafkaListener(
+            topics = "${topics.asset.total-calculated}",
+            groupId = "${spring.kafka.consumer.group-id:ranking-service}"
+    )
+    public void handleTotalAssetCalcuated(TotalAssetCalcuatedEvent payload) {
+        log.info("[Kafka] TotalAssetCalcuatedEvent 수신. competitionId={}, participantCount={}",
+                payload.competitionId(), payload.totalAssets().size());
+        rankingService.finalizeRankingsWithValuations(payload.competitionId(), payload.totalAssets());
     }
 }

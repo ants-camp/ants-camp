@@ -6,7 +6,7 @@ spring:
     url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:antcamp}
     driver-class-name: org.postgresql.Driver
     username: ${POSTGRES_USER:antcamp}
-    password: ${POSTGRES_PASSWORD:***REMOVED***}
+    password: ${POSTGRES_PASSWORD:p@ssw0rd}
 
   jpa:
     hibernate:
