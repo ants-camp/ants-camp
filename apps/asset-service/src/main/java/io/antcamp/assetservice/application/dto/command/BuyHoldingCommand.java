@@ -27,4 +27,5 @@ public class BuyHoldingCommand {
     @NotNull
     @Positive
     private Long buyPrice;
+
 }

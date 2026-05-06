@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: ${DDL_AUTO:update}
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -32,15 +32,16 @@ spring:
   kafka:
     bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
     consumer:
-      group-id: order-service
+      group-id: trade-service
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       properties:
         spring.json.trusted.packages: "*"
-        spring.json.type.mapping: "io.antcamp.tradeservice.application.event.producer.TradeCreatedEvent:
-        io.antcamp.stockservice.infrastructure.event.consumer.TradeCreatedEvent"
     producer:
+      topics:
+        trade-succeeded-info: ${KAFKA_TRADE_SUCCEEDED_INFO}
+        trade-refreshed-info: ${KAFKA_TRADE_REFRESHED_INFO}
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
@@ -52,6 +53,12 @@ spring:
         hc5:
           enabled: true
 
+  # ── Elasticsearch ──────────────────────────────────────────────────────────
+  elasticsearch:
+    uris: ${SPRING_ELASTICSEARCH_URIS:http://elasticsearch:9200}
+    connection-timeout: 5s
+    socket-timeout: 30s
+
 server:
   port: ${SERVER_PORT:8084}
 
@@ -59,34 +66,42 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+    register-with-eureka: ${EUREKA_ENABLED:true}
+    fetch-registry: ${EUREKA_ENABLED:true}
 
-feign:
-  client:
-    config:
-      paymentClient:
-        connectTimeout: 3000
-        readTimeout: 5000
-
-resilience4j.retry:
-  instances:
-    seatService:
-      maxAttempts: 3
-      waitDuration: 1s
-      enableExponentialBackoff: true    # 1초 → 2초 → 4초
-      exponentialBackoffMultiplier: 2
-      retryExceptions:                 # 이 예외들만 재시도
-        - feign.RetryableException
-        - java.net.SocketTimeoutException
-      ignoreExceptions:                # 이 예외들은 재시도 안 함 (바로 실패)
-        - feign.FeignException.BadRequest      # 400
-        - feign.FeignException.NotFound        # 404
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: when_authorized
 
 kis:
   app:
     url: ${KIS_REST_URL}
     approveUrl: ${KIS_APPROVAL_URL}
+    approveUri: ${KIS_APPROVAL_URI}
     key: ${KIS_APP_KEY}
     secret: ${KIS_APP_SECRET}
     access: ${KIS_APP_ACCESS}
   ws:
     url: ${KIS_WS_URL:}
+
+feign:
+  url:
+    asset: ${ASSET_SERVER_URL}
+
+resilience4j:
+  retry:
+    instances:
+      kisApi:
+        max-attempts: 3
+        wait-duration: 500ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        retry-exceptions:
+          - feign.RetryableException
+        ignore-exceptions:
+          - io.antcamp.tradeservice.infrastructure.exception.KisApiException

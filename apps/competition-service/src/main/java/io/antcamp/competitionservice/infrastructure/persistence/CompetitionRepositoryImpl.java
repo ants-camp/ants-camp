@@ -1,9 +1,12 @@
 package io.antcamp.competitionservice.infrastructure.persistence;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
 import io.antcamp.competitionservice.infrastructure.entity.CompetitionEntity;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -17,20 +20,22 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
 
     private final CompetitionJpaRepository competitionJpaRepository;
 
+    // ── Create / Update ───────────────────────────────────────────────────────
+
     @Override
     public Competition save(Competition competition) {
         return competitionJpaRepository.findById(competition.getCompetitionId())
                 .map(entity -> {
-                    // 기존 엔티티가 있으면 필드 업데이트
                     entity.update(competition);
                     return competitionJpaRepository.save(entity).toDomain();
                 })
                 .orElseGet(() -> {
-                    // 없으면 새로 저장
                     CompetitionEntity entity = CompetitionEntity.from(competition);
                     return competitionJpaRepository.save(entity).toDomain();
                 });
     }
+
+    // ── Read ──────────────────────────────────────────────────────────────────
 
     @Override
     public Optional<Competition> findById(UUID id) {
@@ -39,10 +44,21 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     }
 
     @Override
-    public Optional<Competition> findByIdForUpdate(UUID id) {
-        return competitionJpaRepository.findByIdForUpdate(id)
+    public Optional<Competition> findByIdWithLock(UUID id) {
+        return competitionJpaRepository.findByIdWithLock(id)
                 .map(CompetitionEntity::toDomain);
     }
+
+    // ── Delete ────────────────────────────────────────────────────────────────
+    
+    @Override
+    public void delete(Competition competition, String deletedBy) {
+        CompetitionEntity entity = competitionJpaRepository.findById(competition.getCompetitionId())
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
+        entity.softDelete(deletedBy);
+    }
+
+    // ── Search ────────────────────────────────────────────────────────────────
 
     @Override
     public Page<Competition> findAll(Pageable pageable) {
@@ -57,9 +73,7 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     }
 
     @Override
-    public void delete(Competition competition, String deletedBy) {
-        CompetitionEntity entity = competitionJpaRepository.findById(competition.getCompetitionId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 대회입니다."));
-        entity.softDelete(deletedBy);
+    public List<UUID> findAllOngoingIds() {
+        return competitionJpaRepository.findAllOngoingIds(CompetitionStatus.ONGOING);
     }
 }

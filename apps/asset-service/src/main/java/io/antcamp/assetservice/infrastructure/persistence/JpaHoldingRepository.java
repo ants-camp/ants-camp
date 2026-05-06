@@ -13,17 +13,17 @@ import java.util.UUID;
 
 public interface JpaHoldingRepository extends JpaRepository<HoldingEntity, UUID> {
 
-    Optional<HoldingEntity> findByAccountIdAndStockCode(UUID accountId, String stockCode);
+    @Query("SELECT h FROM HoldingEntity h WHERE h.accountId = :accountId AND h.stockCode = :stockCode")
+    Optional<HoldingEntity> findByAccountIdAndStockCode(
+            @Param("accountId") UUID accountId,
+            @Param("stockCode") String stockCode
+    );
 
-    List<HoldingEntity> findAllByAccountId(UUID accountId);
+    @Query("SELECT h FROM HoldingEntity h WHERE h.accountId = :accountId")
+    List<HoldingEntity> findAllByAccountId(@Param("accountId") UUID accountId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("""
-        SELECT h
-        FROM HoldingEntity h
-        WHERE h.accountId = :accountId
-          AND h.stockCode = :stockCode
-    """)
+    @Query("SELECT h FROM HoldingEntity h WHERE h.accountId = :accountId AND h.stockCode = :stockCode")
     Optional<HoldingEntity> findByAccountIdAndStockCodeWithLock(
             @Param("accountId") UUID accountId,
             @Param("stockCode") String stockCode

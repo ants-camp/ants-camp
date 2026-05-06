@@ -35,9 +35,9 @@ public class NotificationController {
      */
     @PostMapping("/prometheus")
     public ResponseEntity<Void> receivePrometheusAlert(
-            @RequestHeader(value = "X-Webhook-Secret", required = false) String secret,
+            @RequestHeader(value = "Authorization", required = false) String authHeader,
             @RequestBody PrometheusWebhookRequest request) {
-        if (!webhookSecret.isBlank() && !webhookSecret.equals(secret)) {
+        if (!webhookSecret.isBlank() && !("Bearer " + webhookSecret).equals(authHeader)) {
             log.warn("Prometheus webhook 인증 실패");
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }

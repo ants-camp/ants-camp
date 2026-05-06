@@ -35,7 +35,7 @@ services:
       - ./script/init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d postgres" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -144,6 +144,7 @@ services:
       KIS_APP_KEY: ${KIS_APP_KEY}
       KIS_APP_SECRET: ${KIS_APP_SECRET}
       KIS_APP_ACCESS: ${KIS_APP_ACCESS}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     env_file:
       - .env
     volumes:
@@ -167,8 +168,8 @@ services:
       - "${ASSET_SERVER_PORT}:8086"
     environment:
       <<: *java-tz
-      SERVER_PORT: ${TRADE_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SERVER_PORT: ${ASSET_SERVER_PORT}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${ASSET_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -181,61 +182,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-      eureka-server:
-        condition: service_started
-    networks:
-      - kafka-network
-
-  stock-service:
-    build:
-      context: .
-      dockerfile: apps/stock-service/Dockerfile
-    container_name: antcamp-stock
-    ports:
-      - "${STOCK_SERVER_PORT}:8088"
-    environment:
-      <<: *java-tz
-      SERVER_PORT: ${STOCK_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-    env_file:
-      - .env
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    networks:
-      - kafka-network
-
-  portfolio-service:
-    build:
-      context: .
-      dockerfile: apps/portfolio-service/Dockerfile
-    container_name: antcamp-portfolio
-    ports:
-      - "${PORTFOLIO_SERVER_PORT}:8090"
-    environment:
-      <<: *java-tz
-      SERVER_PORT: ${PORTFOLIO_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-    env_file:
-      - .env
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
+      kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
@@ -251,8 +198,9 @@ services:
       - "${COMPETITION_SERVER_PORT}:8092"
     environment:
       <<: *java-tz
+      SPRING_PROFILES_ACTIVE: default
       SERVER_PORT: ${COMPETITION_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${COMPETITION_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -264,6 +212,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
@@ -279,8 +229,9 @@ services:
       - "${RANKING_SERVER_PORT}:8094"
     environment:
       <<: *java-tz
+      SPRING_PROFILES_ACTIVE: default
       SERVER_PORT: ${RANKING_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${RANKING_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
@@ -292,6 +243,8 @@ services:
       postgres:
         condition: service_healthy
       redis:
+        condition: service_healthy
+      kafka:
         condition: service_healthy
       eureka-server:
         condition: service_started
@@ -307,10 +260,14 @@ services:
       - "${ASSISTANT_SERVER_PORT}:8096"
     environment:
       <<: *java-tz
-      SERVER_PORT: ${ASSISTANT_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${TRADE_SCHEMA}
+      ASSISTANT_SERVER_PORT: ${ASSISTANT_SERVER_PORT}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${ASSISTANT_SCHEMA},public
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     env_file:
       - .env
@@ -318,8 +275,6 @@ services:
       - ./logs:/app/logs
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       eureka-server:
         condition: service_started
@@ -393,7 +348,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
     healthcheck:
-      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092"]
+      test: [ "CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:9092" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -448,7 +403,7 @@ services:
       - WEBHOOK_SHARED_SECRET=${WEBHOOK_SHARED_SECRET}
     volumes:
       - ./monitoring/alertmanager/alertmanager.yaml:/etc/alertmanager/alertmanager.yaml
-    entrypoint: ["/bin/sh", "-c"]
+    entrypoint: [ "/bin/sh", "-c" ]
     command:
       - 'sed "s|\$${SLACK_ALERTMANAGER_WEBHOOK_URL}|$$SLACK_ALERTMANAGER_WEBHOOK_URL|g; s|\$${WEBHOOK_SHARED_SECRET}|$$WEBHOOK_SHARED_SECRET|g" /etc/alertmanager/alertmanager.yaml > /tmp/am.yaml && /bin/alertmanager --config.file=/tmp/am.yaml'
     networks:

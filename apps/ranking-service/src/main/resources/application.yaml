@@ -2,15 +2,52 @@ spring:
   application:
     name: ranking-service
   profiles:
-    active: ${SPRING_PROFILES_ACTIVE}
+    active: ${SPRING_PROFILES_ACTIVE:default}
   jpa:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        spring.json.add.type.headers: false
+    consumer:
+      group-id: ranking-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "io.antcamp.rankingservice.domain.event"
+
 server:
-  port: 8094
+  port: ${RANKING_SERVICE_PORT:8094}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: when_authorized
 
 topics:
-  ranking:
-    asset-updated: asset.updated  # 자산팀이랑 협의 후 토픽명 확정
+  trade:
+    trade-succeeded: ${KAFKA_TRADE_SUCCEEDED_INFO}   # 매매 서비스: 매매 체결 시 단건 실시간 순위 갱신
+  asset:
+    total-calculated: ${ASSET_TOTAL_CALCULATED}      # 자산 서비스: 대회 종료 후 최종 총자산 수신 → 최종 순위 DB 저장

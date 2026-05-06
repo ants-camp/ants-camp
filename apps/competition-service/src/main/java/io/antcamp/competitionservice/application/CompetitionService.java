@@ -12,29 +12,24 @@ import org.springframework.data.domain.Pageable;
 
 public interface CompetitionService {
 
+    // Create
     Competition create(CreateCompetitionCommand command);
 
+    // Read
     Competition findById(UUID id);
 
-    Page<Competition> findAll(Pageable pageable);
-
-    Page<Competition> findAllByStatus(CompetitionStatus status, Pageable pageable);
-
-    // 게시 (isReadable = true)
-    Competition publish(UUID competitionId);
-
-    // 대회 정보 수정
+    // Update
+    Competition openCompetition(UUID competitionId);
     Competition updateInfo(UpdateCompetitionCommand command);
+    Competition startCompetition(UUID competitionId);
+    Competition finishCompetition(UUID competitionId);
+    Competition cancelCompetition(UUID competitionId);
 
-    // 대회 취소
-    Competition cancel(UUID competitionId);
+    // Delete
+    Competition deleteCompetition(UUID competitionId, String deletedBy);
 
-    // 대회 삭제 (소프트 딜리트)
-    void delete(UUID competitionId, String deletedBy);
-
+    // Search
+    Page<Competition> findAll(Pageable pageable);
+    Page<Competition> findAllByStatus(CompetitionStatus status, Pageable pageable);
     List<CompetitionChangeNotice> findChangeNotices(UUID competitionId);
-
-    Competition start(UUID competitionId);
-
-    Competition finish(UUID competitionId);
 }

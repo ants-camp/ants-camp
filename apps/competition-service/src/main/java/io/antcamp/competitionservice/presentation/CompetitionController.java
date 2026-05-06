@@ -1,18 +1,19 @@
 package io.antcamp.competitionservice.presentation;
 
+import io.antcamp.competitionservice.application.CompetitionParticipantService;
 import io.antcamp.competitionservice.application.CompetitionService;
-import io.antcamp.competitionservice.application.JoinHistoryService;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
-import io.antcamp.competitionservice.presentation.dto.CreateCompetitionRequest;
-import io.antcamp.competitionservice.presentation.dto.CreateCompetitionResponse;
-import io.antcamp.competitionservice.presentation.dto.FindCompetitionChangeNoticeResponse;
-import io.antcamp.competitionservice.presentation.dto.FindCompetitionResponse;
-import io.antcamp.competitionservice.presentation.dto.JoinCompetitionRequest;
-import io.antcamp.competitionservice.presentation.dto.UpdateCompetitionRequest;
+import io.antcamp.competitionservice.presentation.dto.request.CreateCompetitionRequest;
+import io.antcamp.competitionservice.presentation.dto.request.JoinCompetitionRequest;
+import io.antcamp.competitionservice.presentation.dto.request.UpdateCompetitionRequest;
+import io.antcamp.competitionservice.presentation.dto.response.CreateCompetitionResponse;
+import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionChangeNoticeResponse;
+import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionParticipantResponse;
+import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -39,7 +40,9 @@ import org.springframework.web.bind.annotation.RestController;
 public class CompetitionController {
 
     private final CompetitionService competitionService;
-    private final JoinHistoryService joinHistoryService;
+    private final CompetitionParticipantService competitionParticipantService;
+
+    // ─── 대회 엔드포인트 ──────────────────────────────────────────────────────
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -66,22 +69,9 @@ public class CompetitionController {
         return FindCompetitionResponse.from(competition);
     }
 
-    @GetMapping
-    public Page<FindCompetitionResponse> findAll(
-            @RequestParam(required = false) CompetitionStatus status,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<Competition> competitions;
-        if (status != null) {
-            competitions = competitionService.findAllByStatus(status, pageable);
-        } else {
-            competitions = competitionService.findAll(pageable);
-        }
-        return competitions.map(FindCompetitionResponse::from);
-    }
-
     @PatchMapping("/{id}/publish")
-    public FindCompetitionResponse publish(@PathVariable UUID id) {
-        Competition competition = competitionService.publish(id);
+    public FindCompetitionResponse openCompetition(@PathVariable UUID id) {
+        Competition competition = competitionService.openCompetition(id);
         return FindCompetitionResponse.from(competition);
     }
 
@@ -108,19 +98,45 @@ public class CompetitionController {
         return FindCompetitionResponse.from(competition);
     }
 
+    @PatchMapping("/{id}/start")
+    public FindCompetitionResponse startCompetition(@PathVariable UUID id) {
+        Competition competition = competitionService.startCompetition(id);
+        return FindCompetitionResponse.from(competition);
+    }
+
+    @PatchMapping("/{id}/finish")
+    public FindCompetitionResponse finishCompetition(@PathVariable UUID id) {
+        Competition competition = competitionService.finishCompetition(id);
+        return FindCompetitionResponse.from(competition);
+    }
+
     @PatchMapping("/{id}/cancel")
-    public FindCompetitionResponse cancel(@PathVariable UUID id) {
-        Competition competition = competitionService.cancel(id);
+    public FindCompetitionResponse cancelCompetition(@PathVariable UUID id) {
+        Competition competition = competitionService.cancelCompetition(id);
         return FindCompetitionResponse.from(competition);
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(
+    public FindCompetitionResponse deleteCompetition(
             @PathVariable UUID id,
             @RequestParam String deletedBy) {
-        competitionService.delete(id, deletedBy);
+        return FindCompetitionResponse.from(competitionService.deleteCompetition(id, deletedBy));
     }
+
+    @GetMapping
+    public Page<FindCompetitionResponse> findAll(
+            @RequestParam(required = false) CompetitionStatus status,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+        Page<Competition> competitions;
+        if (status != null) {
+            competitions = competitionService.findAllByStatus(status, pageable);
+        } else {
+            competitions = competitionService.findAll(pageable);
+        }
+        return competitions.map(FindCompetitionResponse::from);
+    }
+
+    // ─── 대회 변경 공지 엔드포인트 ────────────────────────────────────────────
 
     @GetMapping("/{id}/change-notices")
     public List<FindCompetitionChangeNoticeResponse> findChangeNotices(@PathVariable UUID id) {
@@ -130,34 +146,38 @@ public class CompetitionController {
                 .toList();
     }
 
-    // JoinHistory 엔드포인트
-    @PostMapping("/{competitionId}/join")
+    // ─── 대회 참여자 엔드포인트 ───────────────────────────────────────────────
+
+    // 대회 신청 ( 대회가 조회 가능해야하고, 대회 신청기간에 신청 가능 )
+    @PostMapping("/{competitionId}/participants")
     @ResponseStatus(HttpStatus.CREATED)
-    public void join(
+    public FindCompetitionParticipantResponse registerCompetition(
             @PathVariable UUID competitionId,
             @RequestBody @Valid JoinCompetitionRequest request
     ) {
-        joinHistoryService.join(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+        return FindCompetitionParticipantResponse.from(
+                competitionParticipantService.registerCompetition(
+                        new JoinCompetitionCommand(competitionId, request.userId(), request.nickname())));
     }
 
-    @DeleteMapping("/{competitionId}/join")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancel(
+    // 대회 신청 취소 ( 대회 신청 기간에 취소 가능 )
+    @DeleteMapping("/{competitionId}/participants")
+    public FindCompetitionParticipantResponse cancelRegistration(
             @PathVariable UUID competitionId,
             @RequestBody @Valid JoinCompetitionRequest request
     ) {
-        joinHistoryService.cancel(new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+        return FindCompetitionParticipantResponse.from(
+                competitionParticipantService.cancelRegistration(
+                        new JoinCompetitionCommand(competitionId, request.userId(), request.nickname())));
     }
 
-    @PatchMapping("/{id}/start")
-    public FindCompetitionResponse start(@PathVariable UUID id) {
-        Competition competition = competitionService.start(id);
-        return FindCompetitionResponse.from(competition);
-    }
-
-    @PatchMapping("/{id}/finish")
-    public FindCompetitionResponse finish(@PathVariable UUID id) {
-        Competition competition = competitionService.finish(id);
-        return FindCompetitionResponse.from(competition);
+    @GetMapping("/{competitionId}/participants")
+    public List<FindCompetitionParticipantResponse> findParticipants(
+            @PathVariable UUID competitionId
+    ) {
+        return competitionParticipantService.findAllByCompetitionId(competitionId)
+                .stream()
+                .map(FindCompetitionParticipantResponse::from)
+                .toList();
     }
 }
