@@ -6,9 +6,6 @@ spring:
     name: assistant-service
   thymeleaf:
     cache: false
-  autoconfigure:
-    exclude:
-      - org.springframework.ai.model.vertexai.autoconfigure.gemini.VertexAiGeminiChatAutoConfiguration
   jpa:
     hibernate:
       ddl-auto: update
@@ -27,7 +24,7 @@ spring:
       api-key: ${OPENAI_API_KEY}
       chat:
         options:
-          model: gpt-4o-mini
+          model: ${OPENAI_CHAT_MODEL}
       embedding:
         options:
           model: text-embedding-3-small
@@ -35,14 +32,14 @@ spring:
       api-key: ${ANTHROPIC_API_KEY}
       chat:
         options:
-          model: claude-haiku-4-5-20251001
+          model: ${ANTHROPIC_CHAT_MODEL}
     vertex:
       ai:
         gemini:
           api-key: ${GEMINI_API_KEY}
           chat:
             options:
-              model: gemini-1.5-pro
+              model: ${GEMINI_CHAT_MODEL}
     vectorstore:
       pgvector:
         initialize-schema: true
