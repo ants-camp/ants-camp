@@ -12,11 +12,13 @@ import io.antcamp.rankingservice.domain.repository.RankingRepository;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class RankingServiceImpl implements RankingService {
 
@@ -29,7 +31,11 @@ public class RankingServiceImpl implements RankingService {
     // 매매 체결 시 랭킹 저장(갱신)
     @Override
     public void updateLiveRanking(UUID competitionId, UUID userId, Double totalAsset) {
+        log.info("[Redis 저장 시작] upsertScore | competitionId={} userId={} totalAsset={}",
+                competitionId, userId, totalAsset);
         rankingRedisRepository.upsertScore(competitionId, userId, totalAsset);
+        log.info("[Redis 저장 완료] upsertScore | competitionId={} userId={} totalAsset={}",
+                competitionId, userId, totalAsset);
     }
 
     // 대회 종료 시 최종 랭킹을 DB에 저장하는 메서드(DB에 관리자가 수동으로 저장할 때 사용)
