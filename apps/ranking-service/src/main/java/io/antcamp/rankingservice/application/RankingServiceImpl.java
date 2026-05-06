@@ -35,10 +35,10 @@ public class RankingServiceImpl implements RankingService {
     // 대회 종료 시 최종 랭킹을 DB에 저장하는 메서드(DB에 관리자가 수동으로 저장할 때 사용)
     @Override
     @Transactional
-    public void finalizeRankings(UUID competitionId) {
+    public int finalizeRankings(UUID competitionId) {
         long totalCount = rankingRedisRepository.getTotalCount(competitionId);
         if (totalCount == 0) {
-            return;
+            return 0;
         }
 
         // RankingEntry는 유저id, 총자산, 순위로 구성, 전체 참가자의 랭킹 목록 조회
@@ -51,6 +51,8 @@ public class RankingServiceImpl implements RankingService {
             ranking.finalize(RankTier.from(entry.rank(), totalCount));
             rankingRepository.save(ranking);
         });
+
+        return all.size();
     }
 
     // 대회 종료 이벤트 수신 시 최종 순위를 DB에 저장하고, 커밋 후 Redis를 동기화하는 메서드
