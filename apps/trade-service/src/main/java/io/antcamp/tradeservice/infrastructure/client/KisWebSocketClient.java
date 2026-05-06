@@ -51,7 +51,7 @@ public class KisWebSocketClient {
     public void connect() {
         try {
             // KIS: POST /oauth2/Approval → approval_key (REST access_token 과 별개)
-            String approvalKey = tradeService.requestAccessToken().token();
+            String approvalKey = tradeService.requestApprovalKey();
             log.info("KIS 접속키 발급 완료");
 
             StandardWebSocketClient client = new StandardWebSocketClient();
@@ -108,7 +108,7 @@ public class KisWebSocketClient {
             return;
         }
         try {
-            String approvalKey = tradeService.requestAccessToken().token();
+            String approvalKey = tradeService.requestApprovalKey();
 
             Map<String, Object> request = Map.of(
                     "header", Map.of(

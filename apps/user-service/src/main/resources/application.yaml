@@ -1,3 +1,35 @@
+server:
+  port: 8082
+
 spring:
   application:
-    name: user-service
+    name: user-server
+
+  profiles:
+    active: dev
+
+  config:
+    import: optional:configserver:http://localhost:8888
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/antcamp
+    username: antcamp
+    password: ***REMOVED***
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+
+#jwt:
+#  secret: antcamp-local-dev-secret-key-must-be-32chars!!
+#  access-token-expiration: 3600000      # 1시간 (ms)
+#  refresh-token-expiration: 1209600000  # 14일 (ms)

@@ -1,26 +1,26 @@
 package io.antcamp.rankingservice.domain.repository;
 
-import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
 /**
- * 대회 진행중 랭킹 갱신/조회 기능 제공
+ * 대회 진행 중 랭킹 갱신/조회 기능 제공 (Redis)
  */
 public interface RankingRedisRepository {
-    // 매매 체결시, 랭킹 갱신
-    void upsertScore(UUID competitionId, UUID userId, BigDecimal totalAsset);
 
-    // 랭킹 단건 조회
-    long getRank(UUID competitionId, UUID userId);   // 0-based
+    // Update
+    /** 매매 체결 시 해당 유저의 총자산 점수를 Redis ZSet에 갱신 */
+    void upsertScore(UUID competitionId, UUID userId, Double totalAsset);
 
-    // 해당 대회의 참가자 수
-    long getTotalCount(UUID competitionId);
+    // Read
+    long getRank(UUID competitionId, UUID userId);       // 0-based 순위
+    Double getScore(UUID competitionId, UUID userId);    // 총자산 점수 (없으면 null)
+    long getTotalCount(UUID competitionId);              // 해당 대회 참가자 수
 
-    // 평가금이 높은 순서로 목록을 반환 ( 페이징 적용 )
+    // Search
+    /** 총자산 높은 순으로 페이징 조회 */
     List<RankingEntry> getTopRankings(UUID competitionId, long offset, long count);
 
-    // 랭킹 목록 저장용 record
-    record RankingEntry(UUID userId, BigDecimal totalAsset, long rank) {
+    record RankingEntry(UUID userId, Double totalAsset, long rank) {
     }
 }
