@@ -54,7 +54,8 @@ public class CompetitionEndedEventConsumer {
 
     @KafkaListener(
             topics = "${topics.competition.finished}",
-            groupId = "${spring.kafka.consumer.group-id}"
+            groupId = "${spring.kafka.consumer.group-id}",
+            containerFactory = "competitionRegisteredFactory"
     )
     public void handleCompetitionEnded(CompetitionEndedEvent payload) {
 

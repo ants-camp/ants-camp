@@ -9,9 +9,12 @@ import io.antcamp.competitionservice.domain.event.CompetitionTicked;
 import io.antcamp.competitionservice.infrastructure.messaging.kafka.CompetitionTopicProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
+
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Component
@@ -121,4 +124,5 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
                     }
                 });
     }
+
 }

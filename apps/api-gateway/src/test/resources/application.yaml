@@ -1,0 +1,9 @@
+spring:
+  cloud:
+    config:
+      enabled: false  # 테스트 시에는 컨피그 서버 사용 안 함
+
+jwt:
+  secret: "your_test_secret_key_must_be_long_enough_32_bytes"
+cors:
+  allowed-origins: "http://localhost:3000"

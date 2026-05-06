@@ -22,7 +22,12 @@ END
 $$;
 
 -- =========================
--- 3. Schema 권한 부여
+-- 3. 확장 설치 (assistant-service PgVectorStore 요구)
+-- =========================
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS hstore;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- =========================
 GRANT USAGE, CREATE ON SCHEMA "user" TO antcamp;
 GRANT USAGE, CREATE ON SCHEMA trade TO antcamp;
@@ -201,6 +206,148 @@ CREATE TABLE IF NOT EXISTS notification.p_slack_messages (
     deleted_at          TIMESTAMP,
     deleted_by          VARCHAR(255),
     PRIMARY KEY (slack_message_id)
+);
+
+-- assistant schema
+CREATE TABLE IF NOT EXISTS assistant.p_chat_sessions (
+    chat_session_id UUID            NOT NULL,
+    user_id         UUID            NOT NULL,
+    title           VARCHAR(200),
+    created_at      TIMESTAMP       NOT NULL,
+    created_by      VARCHAR(255)    NOT NULL,
+    updated_at      TIMESTAMP,
+    updated_by      VARCHAR(255),
+    deleted_at      TIMESTAMP,
+    deleted_by      VARCHAR(255),
+    PRIMARY KEY (chat_session_id)
+);
+
+CREATE TABLE IF NOT EXISTS assistant.p_chat_messages (
+    chat_message_id UUID            NOT NULL,
+    chat_session_id UUID            NOT NULL,
+    content         TEXT            NOT NULL,
+    role            VARCHAR(20)     NOT NULL,
+    seq             INT             NOT NULL,
+    sources         JSONB           NOT NULL,
+    status          VARCHAR(20)     NOT NULL,
+    created_at      TIMESTAMP       NOT NULL,
+    created_by      VARCHAR(255)    NOT NULL,
+    updated_at      TIMESTAMP,
+    updated_by      VARCHAR(255),
+    deleted_at      TIMESTAMP,
+    deleted_by      VARCHAR(255),
+    PRIMARY KEY (chat_message_id)
+);
+
+CREATE TABLE IF NOT EXISTS assistant.p_documents (
+    document_id     UUID            NOT NULL,
+    title           VARCHAR(100)    NOT NULL,
+    type            VARCHAR(20)     NOT NULL,
+    content         TEXT            NOT NULL,
+    ingest_status   VARCHAR(20)     NOT NULL,
+    failure_reason  VARCHAR(100),
+    retry_count     INT             NOT NULL DEFAULT 0,
+    last_attempt_at TIMESTAMP,
+    created_at      TIMESTAMP       NOT NULL,
+    created_by      VARCHAR(255)    NOT NULL,
+    updated_at      TIMESTAMP,
+    updated_by      VARCHAR(255),
+    deleted_at      TIMESTAMP,
+    deleted_by      VARCHAR(255),
+    PRIMARY KEY (document_id)
+);
+
+CREATE TABLE IF NOT EXISTS assistant.p_document_chunks (
+    document_chunk_id       UUID    NOT NULL,
+    knowledge_document_id   UUID    NOT NULL,
+    seq                     INT     NOT NULL,
+    content                 TEXT    NOT NULL,
+    PRIMARY KEY (document_chunk_id)
+);
+
+CREATE TABLE IF NOT EXISTS assistant.p_rag_queries (
+    rag_query_id        UUID            NOT NULL,
+    chat_message_id     UUID,
+    user_query          TEXT            NOT NULL,
+    retrieved_chunks    JSONB           NOT NULL,
+    prompt_used         TEXT            NOT NULL,
+    llm_model           VARCHAR(50)     NOT NULL,
+    llm_response        TEXT            NOT NULL,
+    latency_ms          INT,
+    prompt_tokens       INT,
+    completion_tokens   INT,
+    top_k               INT,
+    source              VARCHAR(10)     NOT NULL,
+    created_at          TIMESTAMP       NOT NULL,
+    created_by          VARCHAR(255)    NOT NULL,
+    updated_at          TIMESTAMP,
+    updated_by          VARCHAR(255),
+    deleted_at          TIMESTAMP,
+    deleted_by          VARCHAR(255),
+    PRIMARY KEY (rag_query_id)
+);
+
+CREATE TABLE IF NOT EXISTS assistant.p_prompt_versions (
+    prompt_version_id   UUID            NOT NULL,
+    name                VARCHAR(100)    NOT NULL,
+    content             TEXT            NOT NULL,
+    created_at          TIMESTAMP       NOT NULL,
+    created_by          VARCHAR(255)    NOT NULL,
+    updated_at          TIMESTAMP,
+    updated_by          VARCHAR(255),
+    deleted_at          TIMESTAMP,
+    deleted_by          VARCHAR(255),
+    PRIMARY KEY (prompt_version_id)
+);
+
+CREATE TABLE IF NOT EXISTS assistant.p_eval_runs (
+    eval_run_id         UUID            NOT NULL,
+    questions           JSONB           NOT NULL,
+    judge_models        JSONB           NOT NULL,
+    prompt_version_id   UUID,
+    memo                TEXT,
+    status              VARCHAR(20)     NOT NULL,
+    created_at          TIMESTAMP       NOT NULL,
+    created_by          VARCHAR(255)    NOT NULL,
+    updated_at          TIMESTAMP,
+    updated_by          VARCHAR(255),
+    deleted_at          TIMESTAMP,
+    deleted_by          VARCHAR(255),
+    PRIMARY KEY (eval_run_id)
+);
+
+CREATE TABLE IF NOT EXISTS assistant.p_eval_results (
+    eval_result_id          UUID            NOT NULL,
+    eval_run_id             UUID            NOT NULL,
+    rag_query_id            UUID            NOT NULL,
+    judge_model             VARCHAR(50)     NOT NULL,
+    scores                  JSONB           NOT NULL,
+    judge_latency_ms        INT,
+    judge_prompt_tokens     INT,
+    judge_completion_tokens INT,
+    created_at              TIMESTAMP       NOT NULL,
+    created_by              VARCHAR(255)    NOT NULL,
+    updated_at              TIMESTAMP,
+    updated_by              VARCHAR(255),
+    deleted_at              TIMESTAMP,
+    deleted_by              VARCHAR(255),
+    PRIMARY KEY (eval_result_id)
+);
+
+CREATE TABLE IF NOT EXISTS assistant.p_pairwise_results (
+    pairwise_result_id  UUID            NOT NULL,
+    eval_run_id_a       UUID            NOT NULL,
+    eval_run_id_b       UUID            NOT NULL,
+    question            TEXT            NOT NULL,
+    judge_model         VARCHAR(50)     NOT NULL,
+    verdict             VARCHAR(10)     NOT NULL,
+    created_at          TIMESTAMP       NOT NULL,
+    created_by          VARCHAR(255)    NOT NULL,
+    updated_at          TIMESTAMP,
+    updated_by          VARCHAR(255),
+    deleted_at          TIMESTAMP,
+    deleted_by          VARCHAR(255),
+    PRIMARY KEY (pairwise_result_id)
 );
 
 -- =========================

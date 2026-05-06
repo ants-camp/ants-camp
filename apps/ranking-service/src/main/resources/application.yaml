@@ -37,6 +37,15 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
 topics:
   trade:
     trade-succeeded: ${KAFKA_TRADE_SUCCEEDED_INFO}   # 매매 서비스: 매매 체결 시 단건 실시간 순위 갱신

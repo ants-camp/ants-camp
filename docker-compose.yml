@@ -189,34 +189,6 @@ services:
     networks:
       - kafka-network
 
-  stock-service:
-    build:
-      context: .
-      dockerfile: apps/stock-service/Dockerfile
-    container_name: antcamp-stock
-    ports:
-      - "${STOCK_SERVER_PORT}:8088"
-    environment:
-      <<: *java-tz
-      SERVER_PORT: ${STOCK_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${STOCK_SCHEMA}
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
-    env_file:
-      - .env
-    volumes:
-      - ./logs:/app/logs
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-    networks:
-      - kafka-network
-
   competition-service:
     build:
       context: .
@@ -288,10 +260,14 @@ services:
       - "${ASSISTANT_SERVER_PORT}:8096"
     environment:
       <<: *java-tz
-      SERVER_PORT: ${ASSISTANT_SERVER_PORT}
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${ASSISTANT_SCHEMA}
+      ASSISTANT_SERVER_PORT: ${ASSISTANT_SERVER_PORT}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${ASSISTANT_SCHEMA},public
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_CHAT_MODEL: ${OPENAI_CHAT_MODEL}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
     env_file:
       - .env
@@ -299,8 +275,6 @@ services:
       - ./logs:/app/logs
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       eureka-server:
         condition: service_started
