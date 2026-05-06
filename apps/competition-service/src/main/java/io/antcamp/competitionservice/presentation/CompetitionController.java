@@ -7,13 +7,13 @@ import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
-import io.antcamp.competitionservice.presentation.dto.CreateCompetitionRequest;
-import io.antcamp.competitionservice.presentation.dto.CreateCompetitionResponse;
-import io.antcamp.competitionservice.presentation.dto.FindCompetitionChangeNoticeResponse;
-import io.antcamp.competitionservice.presentation.dto.FindCompetitionParticipantResponse;
-import io.antcamp.competitionservice.presentation.dto.FindCompetitionResponse;
-import io.antcamp.competitionservice.presentation.dto.JoinCompetitionRequest;
-import io.antcamp.competitionservice.presentation.dto.UpdateCompetitionRequest;
+import io.antcamp.competitionservice.presentation.dto.request.CreateCompetitionRequest;
+import io.antcamp.competitionservice.presentation.dto.request.JoinCompetitionRequest;
+import io.antcamp.competitionservice.presentation.dto.request.UpdateCompetitionRequest;
+import io.antcamp.competitionservice.presentation.dto.response.CreateCompetitionResponse;
+import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionChangeNoticeResponse;
+import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionParticipantResponse;
+import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
@@ -117,11 +117,10 @@ public class CompetitionController {
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteCompetition(
+    public FindCompetitionResponse deleteCompetition(
             @PathVariable UUID id,
             @RequestParam String deletedBy) {
-        competitionService.deleteCompetition(id, deletedBy);
+        return FindCompetitionResponse.from(competitionService.deleteCompetition(id, deletedBy));
     }
 
     @GetMapping
@@ -152,25 +151,25 @@ public class CompetitionController {
     // 대회 신청 ( 대회가 조회 가능해야하고, 대회 신청기간에 신청 가능 )
     @PostMapping("/{competitionId}/participants")
     @ResponseStatus(HttpStatus.CREATED)
-    public void registerCompetition(
+    public FindCompetitionParticipantResponse registerCompetition(
             @PathVariable UUID competitionId,
             @RequestBody @Valid JoinCompetitionRequest request
     ) {
-        competitionParticipantService.registerCompetition(
-                new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+        return FindCompetitionParticipantResponse.from(
+                competitionParticipantService.registerCompetition(
+                        new JoinCompetitionCommand(competitionId, request.userId(), request.nickname())));
     }
 
     // 대회 신청 취소 ( 대회 신청 기간에 취소 가능 )
     @DeleteMapping("/{competitionId}/participants")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void cancelRegistration(
+    public FindCompetitionParticipantResponse cancelRegistration(
             @PathVariable UUID competitionId,
             @RequestBody @Valid JoinCompetitionRequest request
     ) {
-        competitionParticipantService.cancelRegistration(
-                new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()));
+        return FindCompetitionParticipantResponse.from(
+                competitionParticipantService.cancelRegistration(
+                        new JoinCompetitionCommand(competitionId, request.userId(), request.nickname())));
     }
-
 
     @GetMapping("/{competitionId}/participants")
     public List<FindCompetitionParticipantResponse> findParticipants(

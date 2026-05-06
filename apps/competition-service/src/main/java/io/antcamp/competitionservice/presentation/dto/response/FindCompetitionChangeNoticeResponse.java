@@ -1,4 +1,4 @@
-package io.antcamp.competitionservice.presentation.dto;
+package io.antcamp.competitionservice.presentation.dto.response;
 
 import io.antcamp.competitionservice.domain.model.CompetitionChangeNotice;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;

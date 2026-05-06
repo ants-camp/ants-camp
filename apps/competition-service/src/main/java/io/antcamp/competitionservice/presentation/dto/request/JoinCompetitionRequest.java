@@ -1,4 +1,4 @@
-package io.antcamp.competitionservice.presentation.dto;
+package io.antcamp.competitionservice.presentation.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
