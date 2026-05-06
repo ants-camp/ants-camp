@@ -29,5 +29,5 @@ receivers:
     webhook_configs:
       - url: 'http://notification-service:8098/api/notifications/prometheus'
         http_config:
-          headers:
-            X-Webhook-Secret: '${WEBHOOK_SHARED_SECRET}'
+          authorization:
+            credentials: '${WEBHOOK_SHARED_SECRET}'
