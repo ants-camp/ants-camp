@@ -16,8 +16,10 @@ public interface RankingService {
 
     /**
      * 대회 종료 시 최종 순위 확정 (HTTP - 수동 트리거용)
+     *
+     * @return 확정된 랭킹 수
      */
-    void finalizeRankings(UUID competitionId);
+    int finalizeRankings(UUID competitionId);
 
     /**
      * 대회 종료 이벤트 수신 시 최종 순위 확정 (Kafka - 자산 서비스로부터 최종 총자산 수신)

@@ -8,10 +8,10 @@ import java.util.UUID;
 public interface CompetitionParticipantService {
 
     // Create
-    void registerCompetition(JoinCompetitionCommand command);
+    CompetitionParticipant registerCompetition(JoinCompetitionCommand command);
 
     // Delete
-    void cancelRegistration(JoinCompetitionCommand command);
+    CompetitionParticipant cancelRegistration(JoinCompetitionCommand command);
 
     // Search
     List<CompetitionParticipant> findAllByCompetitionId(UUID competitionId);
