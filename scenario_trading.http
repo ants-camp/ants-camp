@@ -77,7 +77,7 @@ Content-Type: application/json
 # 02. 대회 게시 (PREPARING → PUBLISHED)
 # ---------------------------------------------------------------
 ### @name publishCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/publish
+POST {{competition_base}}/api/competitions/{{competition_id}}/publications
 
 > {%
   client.test("200 OK", function() {
@@ -189,7 +189,7 @@ Content-Type: application/json
 # 07. 대회 시작 (PUBLISHED → ONGOING)
 # ---------------------------------------------------------------
 ### @name startCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/start
+POST {{competition_base}}/api/competitions/{{competition_id}}/starts
 
 > {%
   client.test("200 OK", function() {
@@ -235,6 +235,7 @@ X-User-Id: {{user_id_1}}
 # ---------------------------------------------------------------
 ### @name getHoldings
 GET {{asset_base}}/api/holdings?accountId={{account_id_1}}
+X-User-Id: {{user_id_1}}
 
 > {%
     client.test("200 OK", function() {
@@ -405,7 +406,7 @@ GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
 #  ⚠️  17번은 Kafka 비동기 처리 완료 후 실행하세요 (수 초 소요).
 # ---------------------------------------------------------------
 ### @name finishCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/finish
+POST {{competition_base}}/api/competitions/{{competition_id}}/finishes
 
 > {%
   client.test("200 OK", function() {
