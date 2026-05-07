@@ -51,7 +51,7 @@ public class Competition {
     }
 
     /**
-     * 영속 데이터로부터 도메인 객체를 복원할 때 사용하는 생성자. 외부에서는 from() 정적 팩토리 메서드를 통해서만 호출 가능.
+     * 영속 데이터로부터 도메인 객체를 복원할 때 사용하는 생성자. 외부에서는 reconstitute() 정적 팩토리 메서드를 통해서만 호출 가능.
      */
     private Competition(
             UUID competitionId,
@@ -100,7 +100,7 @@ public class Competition {
                 .build();
     }
 
-    public static Competition from(
+    public static Competition reconstitute(
             UUID competitionId,
             String name,
             CompetitionType type,

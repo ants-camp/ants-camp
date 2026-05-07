@@ -68,7 +68,7 @@ public class CompetitionChangeNotice {
         );
     }
 
-    public static CompetitionChangeNotice from(
+    public static CompetitionChangeNotice reconstitute(
             UUID noticeId,
             UUID competitionId,
             CompetitionStatus competitionStatus,

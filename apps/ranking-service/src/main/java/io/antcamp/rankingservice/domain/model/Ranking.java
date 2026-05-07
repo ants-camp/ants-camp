@@ -50,7 +50,7 @@ public class Ranking {
                 .build();
     }
 
-    public static Ranking from(UUID rankingId, UUID competitionId, UUID userId,
+    public static Ranking reconstitute(UUID rankingId, UUID competitionId, UUID userId,
                                RankTier rank, LocalDateTime lastUpdatedAt, boolean isFinalized) {
         return new Ranking(rankingId, competitionId, userId, rank, lastUpdatedAt, isFinalized);
     }
