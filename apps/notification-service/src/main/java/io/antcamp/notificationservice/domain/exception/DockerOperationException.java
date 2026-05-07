@@ -13,10 +13,6 @@ public class DockerOperationException extends BusinessException {
         return new DockerOperationException(ErrorCode.CONTAINER_NOT_FOUND);
     }
 
-    public static DockerOperationException operationForbidden() {
-        return new DockerOperationException(ErrorCode.INFRASTRUCTURE_OPERATION_FORBIDDEN);
-    }
-
     public static DockerOperationException rollbackImageNotConfigured() {
         return new DockerOperationException(ErrorCode.ROLLBACK_IMAGE_NOT_CONFIGURED);
     }

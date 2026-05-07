@@ -10,7 +10,6 @@ import com.github.dockerjava.api.model.ExposedPort;
 import io.antcamp.notificationservice.application.port.RestartPort;
 import io.antcamp.notificationservice.application.port.RollbackPort;
 import io.antcamp.notificationservice.domain.exception.DockerOperationException;
-import io.antcamp.notificationservice.infrastructure.config.NotificationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -29,11 +28,9 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
 
     private final DockerClient dockerClient;
     private final Environment environment;
-    private final NotificationProperties properties;
 
     @Override
     public void restart(String job) {
-        validateJobAllowed(job);
         String containerName = toContainerName(job);
         log.info("재시작 시작: job={}", job);
         String containerId = findContainerId(containerName);
@@ -49,7 +46,6 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
 
     @Override
     public void rollback(String job) {
-        validateJobAllowed(job);
         String rollbackImage = getRollbackImage(job);
         String containerName = toContainerName(job);
         log.info("롤백 시작: job={}, image={}", job, rollbackImage);
@@ -176,13 +172,6 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
                 log.error("이미지 풀링 중단: image={}", image, ie);
                 throw DockerOperationException.operationFailed();
             }
-        }
-    }
-
-    private void validateJobAllowed(String job) {
-        if (properties.infrastructureJobs().contains(job)) {
-            log.warn("인프라 서비스 조작 시도 차단: job={}", job);
-            throw DockerOperationException.operationForbidden();
         }
     }
 

@@ -59,6 +59,10 @@ public class GatewaySecurityConfig {
                         .pathMatchers("/api/admin/**")
                         .hasRole("ADMIN")
 
+                        // 알림 관리자 조회 API — 매니저/마스터
+                        .pathMatchers("/api/notifications/admin/**")
+                        .hasAnyRole("MANAGER", "MASTER")
+
                         // 대회 생성/수정/삭제는 관리자 또는 매니저
                         .pathMatchers(
                                 HttpMethod.POST, "/api/contests/**"

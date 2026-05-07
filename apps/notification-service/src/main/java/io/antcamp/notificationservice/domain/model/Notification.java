@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -25,6 +26,8 @@ public class Notification {
     private String slackMessageTs;
     private ResolutionAction actionButton;
     private String actionUserEmail;
+    private final LocalDateTime createdAt;
+    private final LocalDateTime updatedAt;
 
     public static Notification restore(
             UUID notificationId,
@@ -40,7 +43,9 @@ public class Notification {
             AlertStatus status,
             String slackMessageTs,
             ResolutionAction actionButton,
-            String actionUserEmail
+            String actionUserEmail,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
     ) {
         return Notification.builder()
                 .notificationId(notificationId)
@@ -57,6 +62,8 @@ public class Notification {
                 .slackMessageTs(slackMessageTs)
                 .actionButton(actionButton)
                 .actionUserEmail(actionUserEmail)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
                 .build();
     }
 

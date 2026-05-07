@@ -16,6 +16,7 @@ import io.antcamp.notificationservice.domain.exception.DockerOperationException;
 import io.antcamp.notificationservice.domain.exception.NotificationException;
 import io.antcamp.notificationservice.domain.model.*;
 import io.antcamp.notificationservice.domain.repository.NotificationRepository;
+import io.antcamp.notificationservice.infrastructure.config.NotificationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +41,7 @@ public class NotificationApplicationService {
     private final AlertContentBuilder alertContentBuilder;
     private final DeduplicationPort deduplicationPort;
     private final NotificationCommandHandler notificationCommandHandler;
+    private final NotificationProperties properties;
 
     @Value("${slack.channel-id}")
     private String channelId;
@@ -171,6 +173,10 @@ public class NotificationApplicationService {
                 }
             }
             case RESTART -> {
+                if (properties.infrastructureJobs().contains(job)) {
+                    log.warn("인프라 서비스 재시작 시도 차단: job={}", job);
+                    yield new ActionResult.Failure(ActionResult.FailureReason.EXECUTION_ERROR);
+                }
                 try {
                     restartPort.restart(job);
                     yield new ActionResult.Success();
@@ -180,6 +186,10 @@ public class NotificationApplicationService {
                 }
             }
             case ROLLBACK -> {
+                if (properties.infrastructureJobs().contains(job)) {
+                    log.warn("인프라 서비스 롤백 시도 차단: job={}", job);
+                    yield new ActionResult.Failure(ActionResult.FailureReason.EXECUTION_ERROR);
+                }
                 try {
                     rollbackPort.rollback(job);
                     yield new ActionResult.Success();

@@ -1,14 +1,20 @@
 package io.antcamp.notificationservice.presentation.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import common.dto.ApiResponse;
 import io.antcamp.notificationservice.application.dto.command.PrometheusAlertCommand;
 import io.antcamp.notificationservice.application.dto.command.SlackActionCommand;
+import io.antcamp.notificationservice.application.dto.response.NotificationDetailResponse;
+import io.antcamp.notificationservice.application.dto.response.NotificationSummaryResponse;
 import io.antcamp.notificationservice.application.service.NotificationApplicationService;
+import io.antcamp.notificationservice.application.service.NotificationQueryService;
+import io.antcamp.notificationservice.presentation.dto.request.NotificationSearchRequest;
 import io.antcamp.notificationservice.presentation.dto.request.PrometheusWebhookRequest;
 import io.antcamp.notificationservice.presentation.dto.request.SlackInteractivePayload;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +31,7 @@ import java.util.UUID;
 public class NotificationController {
 
     private final NotificationApplicationService notificationApplicationService;
+    private final NotificationQueryService notificationQueryService;
     private final ObjectMapper objectMapper;
 
     @Value("${webhook.secret:}")
@@ -93,6 +100,33 @@ public class NotificationController {
             log.error("Slack 액션 처리 실패: {}", e.getMessage());
         }
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 알림 목록 조회
+     */
+    @GetMapping("/admin")
+    public ResponseEntity<ApiResponse<Page<NotificationSummaryResponse>>> list(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Role", required = false) String role,
+            @ModelAttribute NotificationSearchRequest request,
+            @RequestParam(defaultValue = "0") int page) {
+        log.info("알림 목록 조회: userId={}, role={}", userId, role);
+        return ApiResponse.ok("알림 목록 조회에 성공했습니다.",
+                notificationQueryService.search(request.toCriteria(), page));
+    }
+
+    /**
+     * 알림 상세 조회
+     */
+    @GetMapping("/admin/{slackMessageId}")
+    public ResponseEntity<ApiResponse<NotificationDetailResponse>> detail(
+            @RequestHeader(value = "X-User-Id", required = false) String userId,
+            @RequestHeader(value = "X-Role", required = false) String role,
+            @PathVariable UUID slackMessageId) {
+        log.info("알림 상세 조회: userId={}, role={}, slackMessageId={}", userId, role, slackMessageId);
+        return ApiResponse.ok("알림 상세 조회에 성공했습니다.",
+                notificationQueryService.findById(slackMessageId));
     }
 
 }

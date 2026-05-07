@@ -19,6 +19,13 @@ spring:
           uri: lb://USER-SERVICE
           predicates:
             - Path=/api/auth/**
+
+        - id: notification-service
+          uri: lb://NOTIFICATION-SERVICE
+          predicates:
+            - Path=/api/notifications/admin/**
+          filters:
+            - CustomAuthFilter
   application:
     name: api-gateway
   config:
