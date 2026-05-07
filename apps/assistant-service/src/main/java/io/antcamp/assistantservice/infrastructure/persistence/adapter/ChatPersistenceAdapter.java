@@ -60,4 +60,17 @@ public class ChatPersistenceAdapter implements ChatPort {
                 ChatMessageEntity.from(ChatMessage.createBotMessage(chatSessionId, errorMessage, nextSeq, List.of()))
         ).toDomain();
     }
+
+    // 캐시 히트: 유저 메시지 완료 + 봇 메시지 저장 (RAG 쿼리 없음)
+    @Transactional
+    @Override
+    public ChatMessage saveCachedBotResult(ChatMessage completedUserMessage, UUID chatSessionId,
+                                           String content, List<SourceReference> sources) {
+        messageRepository.save(ChatMessageEntity.from(completedUserMessage));
+
+        int nextSeq = messageRepository.findMaxSeqForUpdate(chatSessionId) + 1;
+        return messageRepository.save(
+                ChatMessageEntity.from(ChatMessage.createBotMessage(chatSessionId, content, nextSeq, sources))
+        ).toDomain();
+    }
 }

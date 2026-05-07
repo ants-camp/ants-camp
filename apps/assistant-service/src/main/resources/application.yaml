@@ -50,6 +50,9 @@ spring:
 assistant:
   llm:
     model-name: ${OPENAI_CHAT_MODEL}
+  response-cache:
+    similarity-threshold: 0.95    #유사도 
+    ttl-hours: 24       
 
 management:
   endpoints:
@@ -59,3 +62,9 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+  tracing:
+    sampling:
+      probability: 0.1
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT}
