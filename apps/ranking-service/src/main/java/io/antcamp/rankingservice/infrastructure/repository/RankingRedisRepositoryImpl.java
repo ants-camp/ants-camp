@@ -6,10 +6,12 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations.TypedTuple;
 import org.springframework.stereotype.Repository;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class RankingRedisRepositoryImpl implements RankingRedisRepository {
@@ -23,6 +25,8 @@ public class RankingRedisRepositoryImpl implements RankingRedisRepository {
 
     @Override
     public void upsertScore(UUID competitionId, UUID userId, Double totalAsset) {
+        log.debug("[Redis 저장] upsertScore | competitionId={} userId={} totalAsset={}",
+                competitionId, userId, totalAsset);
         redisTemplate.opsForZSet()
                 .add(key(competitionId), userId.toString(), totalAsset);
     }

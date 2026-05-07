@@ -29,7 +29,13 @@ public class JwtProvider {
             @Value("${jwt.access-token-expiration}") long accessTokenExpirationMillis,
             @Value("${jwt.refresh-token-expiration}") long refreshTokenExpirationMillis
     ) {
-        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalArgumentException("JWT_SECRET 값이 비어 있습니다.");
+        }
+
+        String trimmedSecret = secret.trim();
+
+        this.key = Keys.hmacShaKeyFor(trimmedSecret.getBytes(StandardCharsets.UTF_8));
         this.accessTokenExpirationMillis = accessTokenExpirationMillis;
         this.refreshTokenExpirationMillis = refreshTokenExpirationMillis;
     }
