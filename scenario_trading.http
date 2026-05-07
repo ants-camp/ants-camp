@@ -53,7 +53,7 @@ Content-Type: application/json
   "name": "2026 거래 테스트 대회",
   "type": "PERSONAL",
   "description": "유저1 vs 유저2 수익률 대결",
-  "firstSeed": 100000,
+  "firstSeed": 10000000,
   "registerStartAt": "2026-01-01T00:00:00",
   "registerEndAt": "2026-12-30T23:59:59",
   "competitionStartAt": "2026-12-31T00:00:00",
@@ -77,7 +77,7 @@ Content-Type: application/json
 # 02. 대회 게시 (PREPARING → PUBLISHED)
 # ---------------------------------------------------------------
 ### @name publishCompetition
-POST {{competition_base}}/api/competitions/{{competition_id}}/publications
+PATCH {{competition_base}}/api/competitions/{{competition_id}}/publish
 
 > {%
   client.test("200 OK", function() {
@@ -123,9 +123,7 @@ Content-Type: application/json
 {
   "userId": "{{user_id_1}}",
   "type": "COMPETITION",
-  "initialAmount": 100000,
-  "competitionId": "{{competition_id}}",
-  "competitionName": "2026 거래 테스트 대회"
+  "initialAmount": 10000000
 }
 
 > {%
@@ -169,9 +167,7 @@ Content-Type: application/json
 {
   "userId": "{{user_id_2}}",
   "type": "COMPETITION",
-  "initialAmount": 100000,
-  "competitionId": "{{competition_id}}",
-  "competitionName": "2026 거래 테스트 대회"
+  "initialAmount": 10000000
 }
 
 > {%
@@ -193,7 +189,7 @@ Content-Type: application/json
 # 07. 대회 시작 (PUBLISHED → ONGOING)
 # ---------------------------------------------------------------
 ### @name startCompetition
-POST {{competition_base}}/api/competitions/{{competition_id}}/starts
+PATCH {{competition_base}}/api/competitions/{{competition_id}}/start
 
 > {%
   client.test("200 OK", function() {
@@ -221,8 +217,8 @@ X-User-Id: {{user_id_1}}
 {
   "accountId": "{{account_id_1}}",
   "stockCode": "{{stock_code}}",
-  "stockAmount": 2,
-  "buyPrice": 10000
+  "stockAmount": 10,
+  "buyPrice": 75000
 }
 
 > {%
@@ -239,7 +235,6 @@ X-User-Id: {{user_id_1}}
 # ---------------------------------------------------------------
 ### @name getHoldings
 GET {{asset_base}}/api/holdings?accountId={{account_id_1}}
-X-User-Id: {{user_id_1}}
 
 > {%
     client.test("200 OK", function() {
@@ -325,8 +320,7 @@ X-User-Id: {{user_id_1}}
 {
   "accountId": "{{account_id_1}}",
   "stockCode": "{{stock_code}}",
-  "stockAmount": 3,
-  "price" : 30000
+  "stockAmount": 5
 }
 
 > {%
@@ -411,7 +405,7 @@ GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
 #  ⚠️  17번은 Kafka 비동기 처리 완료 후 실행하세요 (수 초 소요).
 # ---------------------------------------------------------------
 ### @name finishCompetition
-POST {{competition_base}}/api/competitions/{{competition_id}}/finishes
+PATCH {{competition_base}}/api/competitions/{{competition_id}}/finish
 
 > {%
   client.test("200 OK", function() {

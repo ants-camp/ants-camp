@@ -30,7 +30,7 @@ public class RankingController {
     }
 
     // 대회 종료 시 최종 순위 확정 (수동 트리거)
-    @PostMapping("/competitions/{competitionId}/finalizations")
+    @PostMapping("/competitions/{competitionId}/finalize")
     public FinalizeRankingsResponse finalizeRankings(@PathVariable UUID competitionId) {
         int finalizedCount = rankingService.finalizeRankings(competitionId);
         return new FinalizeRankingsResponse(competitionId, finalizedCount);
