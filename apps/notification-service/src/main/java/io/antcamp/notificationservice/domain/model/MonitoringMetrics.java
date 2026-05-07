@@ -1,5 +1,7 @@
 package io.antcamp.notificationservice.domain.model;
 
+import io.antcamp.notificationservice.domain.exception.PrometheusMetricInvalidException;
+
 public record MonitoringMetrics(
         String job,                         // 서비스
         Double cpuUsage,                    // cpu 사용률
@@ -9,9 +11,9 @@ public record MonitoringMetrics(
 ) {
     public MonitoringMetrics {
         if (cpuUsage != null && (cpuUsage < 0 || cpuUsage > 1))
-            throw new IllegalArgumentException("cpuUsage must be in [0,1]");
+            throw new PrometheusMetricInvalidException();
         if (heapUsageRatio != null && (heapUsageRatio < 0 || heapUsageRatio > 1))
-            throw new IllegalArgumentException("heapUsageRatio must be in [0,1]");
+            throw new PrometheusMetricInvalidException();
     }
     public static MonitoringMetrics empty(String job) {
         return new MonitoringMetrics(job, null, null, null, null);

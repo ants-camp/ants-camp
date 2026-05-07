@@ -1,7 +1,9 @@
 package io.antcamp.notificationservice.infrastructure.client.llm;
 
 import io.antcamp.notificationservice.application.dto.command.PrometheusAlertCommand;
+import io.antcamp.notificationservice.domain.exception.PromptTemplateLoadFailedException;
 import io.antcamp.notificationservice.domain.model.MonitoringMetrics;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
@@ -13,6 +15,7 @@ import java.util.regex.Pattern;
 
 import static java.util.Map.entry;
 
+@Slf4j
 @Component
 public class PromptUtil {
 
@@ -32,7 +35,8 @@ public class PromptUtil {
         try {
             this.template = promptResource.getContentAsString(StandardCharsets.UTF_8);
         } catch (IOException e) {
-            throw new IllegalStateException("프롬프트 템플릿 로드 실패", e);
+            log.error("프롬프트 템플릿 로드 실패", e);
+            throw new PromptTemplateLoadFailedException();
         }
     }
 

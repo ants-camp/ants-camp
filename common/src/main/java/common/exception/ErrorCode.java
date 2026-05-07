@@ -60,6 +60,20 @@ public enum ErrorCode {
 
     // ── KIS ────────────────────────────────────────
     KIS_SERVER_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "KIS_SERVICE_ERROR", "KIS 서비스 에러입니다."),
+
+    // ── Notification ──────────────────────────────────
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "존재하지 않는 알림입니다."),
+    NOTIFICATION_ALREADY_HANDLED(HttpStatus.CONFLICT, "NOTIFICATION_ALREADY_HANDLED", "이미 처리된 알림입니다."),
+    NOTIFICATION_INVALID_STATE(HttpStatus.CONFLICT, "NOTIFICATION_INVALID_STATE", "알림의 현재 상태에서 수행할 수 없는 작업입니다."),
+    NOTIFICATION_INVALID_FIELD(HttpStatus.BAD_REQUEST, "NOTIFICATION_INVALID_FIELD", "알림 필드 값이 유효하지 않습니다."),
+    CONTAINER_NOT_FOUND(HttpStatus.NOT_FOUND, "CONTAINER_NOT_FOUND", "대상 컨테이너를 찾을 수 없습니다."),
+    INFRASTRUCTURE_OPERATION_FORBIDDEN(HttpStatus.FORBIDDEN, "INFRASTRUCTURE_OPERATION_FORBIDDEN", "인프라 서비스는 조작할 수 없습니다."),
+    SLACK_API_ERROR(HttpStatus.BAD_GATEWAY, "SLACK_API_ERROR", "Slack API 호출에 실패했습니다."),
+    DOCKER_OPERATION_FAILED(HttpStatus.SERVICE_UNAVAILABLE, "DOCKER_OPERATION_FAILED", "Docker 작업에 실패했습니다."),
+    ROLLBACK_IMAGE_NOT_CONFIGURED(HttpStatus.INTERNAL_SERVER_ERROR, "ROLLBACK_IMAGE_NOT_CONFIGURED", "롤백 이미지가 설정되지 않았습니다."),
+    PROMPT_TEMPLATE_LOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PROMPT_TEMPLATE_LOAD_FAILED", "프롬프트 템플릿 로드에 실패했습니다."),
+    INVALID_CACHE_PATTERN(HttpStatus.BAD_REQUEST, "INVALID_CACHE_PATTERN", "캐시 키 패턴이 유효하지 않습니다."),
+    PROMETHEUS_METRIC_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "PROMETHEUS_METRIC_INVALID", "Prometheus 메트릭 값이 유효 범위를 벗어났습니다."),
     ;
 
     private final HttpStatus status;

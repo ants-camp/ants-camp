@@ -1,9 +1,9 @@
 package io.antcamp.notificationservice.application.service;
 
+import common.exception.ErrorCode;
 import io.antcamp.notificationservice.application.dto.command.PrometheusAlertCommand;
 import io.antcamp.notificationservice.application.dto.command.SlackActionCommand;
 import io.antcamp.notificationservice.application.port.ActionResult;
-import io.antcamp.notificationservice.domain.exception.AlreadyHandledException;
 import io.antcamp.notificationservice.application.port.AlertPort;
 import io.antcamp.notificationservice.application.port.CachePort;
 import io.antcamp.notificationservice.application.port.DeduplicationPort;
@@ -12,6 +12,8 @@ import io.antcamp.notificationservice.application.port.LogPort;
 import io.antcamp.notificationservice.application.port.MonitoringPort;
 import io.antcamp.notificationservice.application.port.RestartPort;
 import io.antcamp.notificationservice.application.port.RollbackPort;
+import io.antcamp.notificationservice.domain.exception.DockerOperationException;
+import io.antcamp.notificationservice.domain.exception.NotificationException;
 import io.antcamp.notificationservice.domain.model.*;
 import io.antcamp.notificationservice.domain.repository.NotificationRepository;
 import lombok.RequiredArgsConstructor;
@@ -110,9 +112,12 @@ public class NotificationApplicationService {
             //슬랙 액션 저장
             notificationCommandHandler.recordAction(command.notificationId(), command.action(), userEmail);
             return true;
-        } catch (AlreadyHandledException e) {
-            log.info("이미 처리된 알림 버튼 클릭 무시: notificationId={}, userId={}", command.notificationId(), command.slackUserId());
-            return false;
+        } catch (NotificationException e) {
+            if (e.getErrorCode() == ErrorCode.NOTIFICATION_ALREADY_HANDLED) {
+                log.info("이미 처리된 알림 버튼 클릭 무시: notificationId={}, userId={}", command.notificationId(), command.slackUserId());
+                return false;
+            }
+            throw e;
         }
     }
 
@@ -124,7 +129,10 @@ public class NotificationApplicationService {
     @Async("slackActionExecutor")
     public void executeAndNotifyAsync(SlackActionCommand command) {
         Notification notification = notificationRepository.findById(command.notificationId())
-                .orElseThrow(() -> new IllegalStateException("알림을 찾을 수 없습니다: " + command.notificationId()));
+                .orElseThrow(() -> {
+                    log.warn("비동기 처리 중 알림을 찾을 수 없음: notificationId={}", command.notificationId());
+                    return NotificationException.notFound();
+                });
 
         trySlack("처리 중 메시지 갱신", () ->
                 alertPort.markAsProcessing(notification, command.slackUserId(), command.action()));
@@ -175,9 +183,13 @@ public class NotificationApplicationService {
                 try {
                     rollbackPort.rollback(job);
                     yield new ActionResult.Success();
-                } catch (IllegalStateException e) {
-                    log.warn("롤백 이미지 미설정: {}", e.getMessage());
-                    yield new ActionResult.Failure(ActionResult.FailureReason.NOT_CONFIGURED);
+                } catch (DockerOperationException e) {
+                    if (e.getErrorCode() == ErrorCode.ROLLBACK_IMAGE_NOT_CONFIGURED) {
+                        log.warn("롤백 이미지 미설정: job={}", job);
+                        yield new ActionResult.Failure(ActionResult.FailureReason.NOT_CONFIGURED);
+                    }
+                    log.error("코드 롤백 실패: {}", e.getMessage());
+                    yield new ActionResult.Failure(ActionResult.FailureReason.EXECUTION_ERROR);
                 } catch (Exception e) {
                     log.error("코드 롤백 실패: {}", e.getMessage());
                     yield new ActionResult.Failure(ActionResult.FailureReason.EXECUTION_ERROR);
