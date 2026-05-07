@@ -16,11 +16,17 @@ public class CompetitionEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCompetitionEnded(CompetitionEndedEvent event) {
+        log.info("[이벤트 발행] CompetitionEnded | competitionId={} participantCount={}",
+                event.competitionId(), event.participantUserIds().size());
         competitionEventProducer.publishCompetitionEnded(event);
+        log.debug("[이벤트 발행 완료] CompetitionEnded | competitionId={}", event.competitionId());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCompetitionAborted(CompetitionAbortedEvent event) {
+        log.info("[이벤트 발행] CompetitionAborted | competitionId={} participantCount={}",
+                event.competitionId(), event.participantUserIds().size());
         competitionEventProducer.publishCompetitionAborted(event);
+        log.debug("[이벤트 발행 완료] CompetitionAborted | competitionId={}", event.competitionId());
     }
 }

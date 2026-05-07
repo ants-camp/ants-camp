@@ -45,6 +45,9 @@ public class GatewaySecurityConfig {
                         // CORS preflight 허용
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
+                        // Prometheus 메트릭 수집 허용
+                        .pathMatchers("/actuator/prometheus", "/actuator/health", "/actuator/info").permitAll()
+
                         // 인증 없이 접근 가능
                         .pathMatchers(
                                 "/api/auth/**",

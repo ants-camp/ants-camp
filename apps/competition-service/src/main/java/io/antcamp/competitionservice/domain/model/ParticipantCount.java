@@ -1,5 +1,8 @@
 package io.antcamp.competitionservice.domain.model;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
+
 /**
  * 참가 인원 VO (순수 도메인 - JPA 의존성 없음)
  */
@@ -11,10 +14,10 @@ public class ParticipantCount {
 
     private ParticipantCount(int min, int max, int current) {
         if (min > max) {
-            throw new IllegalArgumentException("최소 인원은 최대 인원보다 클 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (min < 0 || current < 0) {
-            throw new IllegalArgumentException("참가 인원은 0 이상이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.min = min;
         this.max = max;
@@ -40,14 +43,14 @@ public class ParticipantCount {
 
     public ParticipantCount increment() {
         if (isFull()) {
-            throw new IllegalStateException("최대 참가 인원을 초과할 수 없습니다.");
+            throw new BusinessException(ErrorCode.COMPETITION_NOT_REGISTERABLE);
         }
         return new ParticipantCount(min, max, current + 1);
     }
 
     public ParticipantCount decrement() {
         if (current <= 0) {
-            throw new IllegalStateException("취소할 신청 인원이 없습니다.");
+            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
         }
         return new ParticipantCount(min, max, current - 1);
     }

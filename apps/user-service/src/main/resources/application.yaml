@@ -1,20 +1,12 @@
-server:
-  port: 8082
-
 spring:
   application:
     name: user-server
 
-  profiles:
-    active: dev
-
-  config:
-    import: optional:configserver:http://localhost:8888
-
   datasource:
-    url: jdbc:postgresql://localhost:5432/antcamp
-    username: antcamp
-    password: p@ssw0rd
+    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:antcamp}
+    driver-class-name: org.postgresql.Driver
+    username: ${POSTGRES_USER:antcamp}
+    password: ${POSTGRES_PASSWORD:***REMOVED***}
 
   jpa:
     hibernate:
@@ -23,8 +15,24 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        default_schema: ${USER_SCHEMA:user}
+
+  cloud:
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
+
+
 
 eureka:
   client:
     register-with-eureka: true
     fetch-registry: true
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_SERVER_PORT:8761}/eureka/

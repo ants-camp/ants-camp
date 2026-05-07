@@ -34,7 +34,8 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
                         log.error("[Kafka] CompetitionRegisteredEvent 발행 실패. competitionId={}, userId={}, topic={}",
                                 key, event.userId(), topic, ex);
                     } else {
-                        log.info("[Kafka] CompetitionRegisteredEvent 발행 성공. competitionId={}, userId={}, topic={}, partition={}, offset={}",
+                        log.info(
+                                "[Kafka] CompetitionRegisteredEvent 발행 성공. competitionId={}, userId={}, topic={}, partition={}, offset={}",
                                 key, event.userId(), topic,
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());
@@ -54,7 +55,8 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
                         log.error("[Kafka] CompetitionEndedEvent 발행 실패. competitionId={}, topic={}",
                                 key, topic, ex);
                     } else {
-                        log.info("[Kafka] CompetitionEndedEvent 발행 성공. competitionId={}, participantCount={}, topic={}, partition={}, offset={}",
+                        log.info(
+                                "[Kafka] CompetitionEndedEvent 발행 성공. competitionId={}, participantCount={}, topic={}, partition={}, offset={}",
                                 key, event.participantUserIds().size(), topic,
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());
@@ -74,7 +76,8 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
                         log.error("[Kafka] CompetitionCancelledEvent 발행 실패. competitionId={}, userId={}, topic={}",
                                 key, event.userId(), topic, ex);
                     } else {
-                        log.info("[Kafka] CompetitionCancelledEvent 발행 성공. competitionId={}, userId={}, topic={}, partition={}, offset={}",
+                        log.info(
+                                "[Kafka] CompetitionCancelledEvent 발행 성공. competitionId={}, userId={}, topic={}, partition={}, offset={}",
                                 key, event.userId(), topic,
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());
@@ -91,10 +94,12 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
         kafkaTemplate.send(topic, key, event)
                 .whenComplete((result, ex) -> {
                     if (ex != null) {
-                        log.error("[Kafka] CompetitionAbortedEvent 발행 실패. competitionId={}, participantCount={}, topic={}",
+                        log.error(
+                                "[Kafka] CompetitionAbortedEvent 발행 실패. competitionId={}, participantCount={}, topic={}",
                                 key, event.participantUserIds().size(), topic, ex);
                     } else {
-                        log.info("[Kafka] CompetitionAbortedEvent 발행 성공. competitionId={}, participantCount={}, topic={}, partition={}, offset={}",
+                        log.info(
+                                "[Kafka] CompetitionAbortedEvent 발행 성공. competitionId={}, participantCount={}, topic={}, partition={}, offset={}",
                                 key, event.participantUserIds().size(), topic,
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());
@@ -114,11 +119,12 @@ public class CompetitionEventProducerImpl implements CompetitionEventProducer {
                         log.error("[Kafka] CompetitionTicked 발행 실패. competitionId={}, topic={}",
                                 key, topic, ex);
                     } else {
-                        log.debug("[Kafka] CompetitionTicked 발행 성공. competitionId={}, topic={}, partition={}, offset={}",
+                        log.info("[Kafka] CompetitionTicked 발행 성공. competitionId={}, topic={}, partition={}, offset={}",
                                 key, topic,
                                 result.getRecordMetadata().partition(),
                                 result.getRecordMetadata().offset());
                     }
                 });
     }
+
 }

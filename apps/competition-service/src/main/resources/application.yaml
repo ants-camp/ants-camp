@@ -32,6 +32,15 @@ eureka:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
 # [추가] 토픽명 매핑 (CompetitionTopicProperties와 연결)
 topics:
   competition:

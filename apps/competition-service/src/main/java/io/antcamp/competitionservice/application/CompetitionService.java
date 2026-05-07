@@ -26,7 +26,7 @@ public interface CompetitionService {
     Competition cancelCompetition(UUID competitionId);
 
     // Delete
-    void deleteCompetition(UUID competitionId, String deletedBy);
+    Competition deleteCompetition(UUID competitionId, String deletedBy);
 
     // Search
     Page<Competition> findAll(Pageable pageable);

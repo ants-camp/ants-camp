@@ -13,30 +13,38 @@ public class Account {
     private String accountNumber;
     private AccountType type;
     private Long accountAmount;
+    private UUID competitionId;
+    private String competitionName;
+    private boolean isEnded;
 
-    public Account(UUID accountId, UUID userId, String accountNumber, AccountType type, Long accountAmount) {
+    public Account(UUID accountId, UUID userId, String accountNumber, AccountType type,
+                   Long accountAmount, UUID competitionId, String competitionName, boolean isEnded) {
         this.accountId = accountId;
         this.userId = userId;
         this.accountNumber = accountNumber;
         this.type = type;
         this.accountAmount = accountAmount;
+        this.competitionId = competitionId;
+        this.competitionName = competitionName;
+        this.isEnded = isEnded;
     }
 
-    public static Account create(UUID userId, String generatedNumber, AccountType type, Long initialAmount) {
-        AccountType resolvedType = (type != null) ? type : AccountType.PERSONAL;
-        Long finalAmount;
-        if (resolvedType == AccountType.PERSONAL){
-            finalAmount = 10_000_000L;
-        } else {
-            finalAmount = initialAmount;
-        }
+    public static Account create(UUID userId, String generatedNumber, AccountType type,
+                                 Long initialAmount, UUID competitionId, String competitionName) {
         return new Account(
                 UUID.randomUUID(),
                 userId,
                 generatedNumber,
-                resolvedType,
-                finalAmount
+                type,
+                initialAmount,
+                competitionId,
+                competitionName,
+                false
         );
+    }
+
+    public void end() {
+        this.isEnded = true;
     }
 
     public void deposit(Long amount) {
