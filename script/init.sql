@@ -16,7 +16,7 @@ DO
 $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'antcamp') THEN
-        CREATE ROLE antcamp LOGIN PASSWORD 'p@ssw0rd';
+        CREATE ROLE antcamp LOGIN PASSWORD '***REMOVED***';
     END IF;
 END
 $$;
