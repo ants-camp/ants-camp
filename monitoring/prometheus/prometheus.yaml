@@ -12,6 +12,12 @@ rule_files:
   - alert-rules.yaml
 
 scrape_configs:
+  - job_name: 'antcamp-config-server'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets:
+          - config-server:8888
+
   - job_name: 'antcamp-eureka-server'
     metrics_path: '/actuator/prometheus'
     static_configs:
