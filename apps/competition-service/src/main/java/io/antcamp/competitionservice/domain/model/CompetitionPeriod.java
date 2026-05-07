@@ -1,5 +1,7 @@
 package io.antcamp.competitionservice.domain.model;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import java.time.LocalDateTime;
 
 /**
@@ -12,10 +14,10 @@ public class CompetitionPeriod {
 
     private CompetitionPeriod(LocalDateTime startAt, LocalDateTime endAt) {
         if (startAt == null || endAt == null) {
-            throw new IllegalArgumentException("시작일과 종료일은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (startAt.isAfter(endAt)) {
-            throw new IllegalArgumentException("대회 시작일은 종료일보다 이전이어야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         this.startAt = startAt;
         this.endAt = endAt;

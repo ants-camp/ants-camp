@@ -75,7 +75,7 @@ Content-Type: application/json
 #  → isReadable = true, 일반 유저에게 대회 공개
 # ---------------------------------------------------------------
 ### @name publishCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/publish
+POST {{competition_base}}/api/competitions/{{competition_id}}/publications
 
 > {%
   client.test("200 OK", function() {
@@ -225,7 +225,7 @@ GET {{competition_base}}/api/competitions/{{competition_id}}/participants
 #  ⚠️  03~04 에서 유저1, 유저2가 신청 완료된 상태여야 합니다 (minParticipants=2).
 # ---------------------------------------------------------------
 ### @name startCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/start
+POST {{competition_base}}/api/competitions/{{competition_id}}/starts
 
 > {%
   client.test("200 OK", function() {
@@ -365,7 +365,7 @@ GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
 #     16번 실행 전 잠시 대기하거나, [UTILITY] 수동 순위 확정을 실행하세요.
 # ---------------------------------------------------------------
 ### @name finishCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/finish
+POST {{competition_base}}/api/competitions/{{competition_id}}/finishes
 
 > {%
   client.test("200 OK", function() {
@@ -437,7 +437,7 @@ GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}/users/{{user_i
 #  → 15번(대회 종료) 후 Kafka 비동기 처리가 안 됐을 때 사용
 # ---------------------------------------------------------------
 ### @name finalizeRanking
-POST {{ranking_base}}/api/rankings/competitions/{{competition_id}}/finalize
+POST {{ranking_base}}/api/rankings/competitions/{{competition_id}}/finalizations
 
 > {%
   client.test("204 No Content", function() {

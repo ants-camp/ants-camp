@@ -2,20 +2,20 @@ package io.antcamp.assetservice.application.service;
 
 import io.antcamp.assetservice.application.dto.query.AssetResult;
 import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
+import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
+import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
-import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
-import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.infrastructure.client.StockPriceClient;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -33,15 +33,15 @@ public class AssetService {
         long holdingEvaluationAmount = 0L;
 
         for (Holding holding : holdings) {
-            Long price;
+            double price;
 
             if (account.isEnded()) {
-                price = holding.getFinalPrice();
+                price = Double.parseDouble(String.valueOf(holding.getFinalPrice()));
             } else {
-                price = stockPriceClient.getCurrentPrice(holding.getStockCode());
+                price = stockPriceClient.getCurrentPrice(holding.getStockCode(), LocalDateTime.now()).getData();
             }
 
-            holdingEvaluationAmount += price * holding.getStockAmount();
+            holdingEvaluationAmount += (long) (price * holding.getStockAmount());
         }
 
         Long totalAssetAmount = account.getAccountAmount() + holdingEvaluationAmount;

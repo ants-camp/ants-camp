@@ -28,12 +28,12 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
     public CompetitionParticipant registerCompetition(JoinCompetitionCommand command) {
         // 1. 대회 조회 (Competition 비관적 락 먼저 획득 - 같은 대회 신청 요청을 직렬화)
         Competition competition = competitionRepository.findByIdWithLock(command.competitionId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
 
         // 2. 락 획득 후 중복 신청 체크 (이 시점엔 앞선 트랜잭션이 이미 commit된 상태)
         competitionParticipantRepository.findByUserIdAndCompetitionId(command.userId(), command.competitionId())
                 .ifPresent(p -> {
-                    throw new BusinessException(ErrorCode.INVALID_INPUT);
+                    throw new BusinessException(ErrorCode.COMPETITION_ALREADY_REGISTERED);
                 });
 
         competition.register();
@@ -63,14 +63,14 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
     public CompetitionParticipant cancelRegistration(JoinCompetitionCommand command) {
         // 1. 대회 조회 (Competition 비관적 락 - 참가자 수 동시성 제어)
         Competition competition = competitionRepository.findByIdWithLock(command.competitionId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         competition.cancelRegister();
         competitionRepository.save(competition);
 
         // 2. 참여자 조회 (비관적 락)
         CompetitionParticipant participant = competitionParticipantRepository
                 .findByUserIdAndCompetitionId(command.userId(), command.competitionId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_NOT_FOUND));
 
         // 3. 참여자 소프트 삭제 (deletedBy는 임시로 userId 사용 - 추후 인증 연동 시 교체)
         competitionParticipantRepository.delete(participant, command.userId().toString());
