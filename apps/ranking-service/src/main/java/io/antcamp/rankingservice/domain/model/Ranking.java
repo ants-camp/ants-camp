@@ -57,19 +57,12 @@ public class Ranking {
 
     // ─── 도메인 행위 ─────────────────────────────────────────────────────
 
-    public void markUpdated() {
-        if (isFinalized) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        this.lastUpdatedAt = LocalDateTime.now();
-    }
-
     /**
      * 대회 종료 시점에 최종 티어를 확정한다. 확정 후에는 변경 불가.
      */
     public void finalize(RankTier tier) {
         if (isFinalized) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.RANKING_ALREADY_FINALIZED);
         }
         this.rank = tier;
         this.isFinalized = true;

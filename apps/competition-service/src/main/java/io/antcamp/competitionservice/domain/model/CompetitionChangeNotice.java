@@ -1,5 +1,7 @@
 package io.antcamp.competitionservice.domain.model;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.Getter;
@@ -92,13 +94,13 @@ public class CompetitionChangeNotice {
             String reason
     ) {
         if (beforeContents == null || beforeContents.isBlank()) {
-            throw new IllegalArgumentException("변경 전 내용은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (afterContents == null || afterContents.isBlank()) {
-            throw new IllegalArgumentException("변경 후 내용은 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (reason == null || reason.isBlank()) {
-            throw new IllegalArgumentException("변경 사유는 필수입니다.");
+            throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
     }
 }
