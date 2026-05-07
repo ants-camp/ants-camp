@@ -1,5 +1,6 @@
 package io.antcamp.assetservice.infrastructure.persistence;
 
+import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
 import io.antcamp.assetservice.infrastructure.entity.AccountEntity;
@@ -41,5 +42,27 @@ public class AccountRepositoryImpl implements AccountRepository {
                 .stream()
                 .map(AccountEntity::toDomain)
                 .toList();
+    }
+
+    @Override
+    public Optional<Account> findByUserIdAndCompetitionId(UUID userId, UUID competitionId) {
+        return jpaAccountRepository.findByUserIdAndCompetitionId(userId, competitionId)
+                .map(AccountEntity::toDomain);
+    }
+
+    @Override
+    public void deleteByUserIdAndCompetitionId(UUID userId, UUID competitionId) {
+        AccountEntity entity = jpaAccountRepository
+                .findByUserIdAndCompetitionId(userId, competitionId)
+                .orElseThrow(() -> new AccountNotFoundException("해당 계좌를 찾을 수 없습니다."));
+        entity.softDelete("SYSTEM");
+        jpaAccountRepository.save(entity);
+    }
+
+    @Override
+    public void deleteAllByCompetitionId(UUID competitionId) {
+        List<AccountEntity> entities = jpaAccountRepository.findAllByCompetitionId(competitionId);
+        entities.forEach(e -> e.softDelete("SYSTEM"));
+        jpaAccountRepository.saveAll(entities);
     }
 }

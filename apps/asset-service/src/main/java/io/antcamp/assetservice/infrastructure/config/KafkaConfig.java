@@ -1,8 +1,6 @@
 package io.antcamp.assetservice.infrastructure.config;
 
-import io.antcamp.assetservice.domain.event.payload.CompetitionEndedEvent;
-import io.antcamp.assetservice.domain.event.payload.CompetitionRegisteredEvent;
-import io.antcamp.assetservice.domain.event.payload.CompetitionTicked;
+import io.antcamp.assetservice.domain.event.payload.*;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -65,6 +63,30 @@ public class KafkaConfig {
         props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, CompetitionTicked.class.getName());
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
         ConsumerFactory<String, CompetitionTicked> factory = new DefaultKafkaConsumerFactory<>(props);
+        return new ConcurrentKafkaListenerContainerFactory<>() {{
+            setConsumerFactory(factory);
+        }};
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, CompetitionCancelledEvent> competitionCancelledFactory() {
+        Map<String, Object> props = baseConsumerConfig();
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, CompetitionCancelledEvent.class.getName());
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        ConsumerFactory<String, CompetitionCancelledEvent> factory = new DefaultKafkaConsumerFactory<>(props);
+        return new ConcurrentKafkaListenerContainerFactory<>() {{
+            setConsumerFactory(factory);
+        }};
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, CompetitionAbortedEvent> competitionAbortedFactory() {
+        Map<String, Object> props = baseConsumerConfig();
+        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, CompetitionAbortedEvent.class.getName());
+        props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        ConsumerFactory<String, CompetitionAbortedEvent> factory = new DefaultKafkaConsumerFactory<>(props);
         return new ConcurrentKafkaListenerContainerFactory<>() {{
             setConsumerFactory(factory);
         }};

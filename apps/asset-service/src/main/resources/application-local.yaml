@@ -45,5 +45,7 @@ topics:
     started: competition.started
     finished: competition.finished
     ticked: competition.ticked
+    cancelled: competition.cancelled
+    aborted: competition.aborted
   asset:
     total-calculated: asset.total-calculated
