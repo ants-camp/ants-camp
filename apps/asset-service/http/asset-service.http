@@ -11,18 +11,18 @@ Content-Type: application/json
 }
 
 ### 계좌 조회
-GET http://localhost:8086/api/accounts/9209c108-eac4-467d-a104-3461fed4113e
+GET http://localhost:8086/api/accounts/bd9bac8e-4480-4930-a760-d0c9331fdb01
 X-User-Id: 550e8400-e29b-41d4-a716-446655440000
 
 ### 입금
-POST http://localhost:8086/api/accounts/9209c108-eac4-467d-a104-3461fed4113e/deposit?amount=1000000
+POST http://localhost:8086/api/accounts/bd9bac8e-4480-4930-a760-d0c9331fdb01/deposit?amount=1000000
 
 ### 출금
-POST http://localhost:8086/api/accounts/9209c108-eac4-467d-a104-3461fed4113e/withdraw?amount=500000
+POST http://localhost:8086/api/accounts/bd9bac8e-4480-4930-a760-d0c9331fdb01/withdraw?amount=500000
 
-### 자산 조회
-GET http://localhost:8086/api/assets?accountId=8b63b18a-4a0e-4812-9e6f-7500ddd9c16f
-X-User-Id: 550e8400-e29b-41d4-a716-446655440000
+#### 자산 조회
+#GET http://localhost:8086/api/assets?accountId=bd9bac8e-4480-4930-a760-d0c9331fdb01
+#X-User-Id: 550e8400-e29b-41d4-a716-446655440000
 
 ### 매수
 POST http://localhost:8086/api/holdings/buy

@@ -1,4 +1,4 @@
-package io.antcamp.competitionservice.presentation.dto;
+package io.antcamp.competitionservice.presentation.dto.response;
 
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
@@ -11,6 +11,8 @@ public record CreateCompetitionResponse(
         String name,
         CompetitionType type,
         CompetitionStatus status,
+        String description,
+        int firstSeed,
         LocalDateTime registerStartAt,
         LocalDateTime registerEndAt,
         LocalDateTime competitionStartAt,
@@ -24,6 +26,8 @@ public record CreateCompetitionResponse(
                 competition.getName(),
                 competition.getType(),
                 competition.getStatus(),
+                competition.getDescription(),
+                competition.getFirstSeed(),
                 competition.getRegisterPeriod().getStartAt(),
                 competition.getRegisterPeriod().getEndAt(),
                 competition.getCompetitionPeriod().getStartAt(),

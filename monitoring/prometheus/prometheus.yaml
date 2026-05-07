@@ -18,12 +18,6 @@ scrape_configs:
       - targets:
           - eureka-server:8761
 
-  - job_name: 'antcamp-config-server'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets:
-          - config-server:8888
-
   - job_name: 'antcamp-gateway'
     metrics_path: '/actuator/prometheus'
     static_configs:
@@ -47,18 +41,6 @@ scrape_configs:
     static_configs:
       - targets:
           - asset-service:8086
-
-  - job_name: 'antcamp-stock'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets:
-          - stock-service:8088
-
-  - job_name: 'antcamp-portfolio'
-    metrics_path: '/actuator/prometheus'
-    static_configs:
-      - targets:
-          - portfolio-service:8090
 
   - job_name: 'antcamp-competition'
     metrics_path: '/actuator/prometheus'

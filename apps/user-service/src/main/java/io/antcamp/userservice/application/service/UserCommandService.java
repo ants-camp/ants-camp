@@ -29,7 +29,7 @@ public class UserCommandService {
                 .password(passwordEncoder.encode(request.password()))
                 .name(request.name())
                 .phone(request.phone())
-                .role(RoleType.PLAYER)
+                .role(RoleType.USER)
                 .status(UserStatus.ACTIVE)
                 .build();
 

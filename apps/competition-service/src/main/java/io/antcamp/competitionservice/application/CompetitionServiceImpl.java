@@ -171,10 +171,11 @@ public class CompetitionServiceImpl implements CompetitionService {
 
     @Override
     @Transactional
-    public void deleteCompetition(UUID competitionId, String deletedBy) {
+    public Competition deleteCompetition(UUID competitionId, String deletedBy) {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
         competitionRepository.delete(competition, deletedBy);
+        return competition;
     }
 
     // ── Search ────────────────────────────────────────────────────────────────

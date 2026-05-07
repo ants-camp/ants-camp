@@ -21,11 +21,19 @@ public class CompetitionParticipantEventListener {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCompetitionRegistered(CompetitionRegisteredEvent event) {
+        log.info("[이벤트 발행] CompetitionRegistered | competitionId={} userId={}",
+                event.competitionId(), event.userId());
         competitionEventProducer.publishCompetitionRegistered(event);
+        log.debug("[이벤트 발행 완료] CompetitionRegistered | competitionId={} userId={}",
+                event.competitionId(), event.userId());
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onCompetitionCancelled(CompetitionCancelledEvent event) {
+        log.info("[이벤트 발행] CompetitionCancelled | competitionId={} userId={}",
+                event.competitionId(), event.userId());
         competitionEventProducer.publishCompetitionCancelled(event);
+        log.debug("[이벤트 발행 완료] CompetitionCancelled | competitionId={} userId={}",
+                event.competitionId(), event.userId());
     }
 }
