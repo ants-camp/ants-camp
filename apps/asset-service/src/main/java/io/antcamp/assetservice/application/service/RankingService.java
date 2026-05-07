@@ -5,15 +5,15 @@ import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
 import io.antcamp.assetservice.infrastructure.client.StockPriceClient;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.stereotype.Service;
-
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
@@ -37,7 +37,7 @@ public class RankingService {
             for (Holding holding : holdings) {
                 Long price = priceCache.computeIfAbsent(
                         holding.getStockCode(),
-                        stockCode -> stockPriceClient.getCurrentPrice(stockCode)
+                        stockCode -> stockPriceClient.getCurrentPrice(stockCode, LocalDateTime.now()).getData().longValue()
                 );
                 holdingEvaluationAmount += price * holding.getStockAmount();
             }
