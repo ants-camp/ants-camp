@@ -40,7 +40,7 @@ public class CompetitionParticipant {
                 .build();
     }
 
-    public static CompetitionParticipant from(
+    public static CompetitionParticipant reconstitute(
             UUID participantId,
             UUID userId,
             String nickname,

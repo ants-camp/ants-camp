@@ -88,7 +88,7 @@ public class CompetitionEndedEventConsumer {
                     String cacheKey = cachePrefix + holding.getStockCode();
                     Long price = redisTemplate.opsForValue().get(cacheKey);
                     if (price == null) {
-                        price = stockPriceClient.getPriceAt(holding.getStockCode(), payload.endedAt());
+                        price = stockPriceClient.getPriceAt(holding.getStockCode(), payload.endedAt()).getData().longValue();
                         redisTemplate.opsForValue().set(cacheKey, price, 1, TimeUnit.HOURS);
                     }
                     priceCache.put(holding.getStockCode(), price);

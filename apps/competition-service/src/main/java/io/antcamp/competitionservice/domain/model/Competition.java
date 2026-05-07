@@ -51,7 +51,7 @@ public class Competition {
     }
 
     /**
-     * 영속 데이터로부터 도메인 객체를 복원할 때 사용하는 생성자. 외부에서는 from() 정적 팩토리 메서드를 통해서만 호출 가능.
+     * 영속 데이터로부터 도메인 객체를 복원할 때 사용하는 생성자. 외부에서는 reconstitute() 정적 팩토리 메서드를 통해서만 호출 가능.
      */
     private Competition(
             UUID competitionId,
@@ -100,7 +100,7 @@ public class Competition {
                 .build();
     }
 
-    public static Competition from(
+    public static Competition reconstitute(
             UUID competitionId,
             String name,
             CompetitionType type,
@@ -127,63 +127,59 @@ public class Competition {
     }
 
     // ─── 도메인 행위 ─────────────────────────────────────────────────────
-    // 도메인 상태 위반은 INVALID_INPUT 으로 일괄 처리.
-    // 추후 도메인별 ErrorCode 분리 시 세분화 예정.
 
     public void register() {
         if (!isRegisterable()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_NOT_REGISTERABLE);
         }
         this.participantCount = participantCount.increment();
     }
 
     public void cancelRegister() {
         if (status != CompetitionStatus.PREPARING) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
         }
         this.participantCount = participantCount.decrement();
     }
 
-    // Competition.java 의 startCompetition, finishCompetition 두 메서드만 변경
-
     public void startCompetition() {
         if (status != CompetitionStatus.PREPARING) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
         }
         // [변경] 시간 검증 제거 - 운영자 수동 트리거 정책
         // if (!competitionPeriod.isOngoing()) {
-        //     throw new BusinessException(ErrorCode.INVALID_INPUT);
+        //     throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
         // }
         if (!participantCount.isMetMinimum()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_MIN_PARTICIPANTS_NOT_MET);
         }
         this.status = CompetitionStatus.ONGOING;
     }
 
     public void finishCompetition() {
         if (status != CompetitionStatus.ONGOING) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
         }
         // [변경] 시간 검증 제거 - 운영자 수동 트리거 정책
         // if (competitionPeriod.isOngoing()) {
-        //     throw new BusinessException(ErrorCode.INVALID_INPUT);
+        //     throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
         // }
         this.status = CompetitionStatus.FINISHED;
     }
 
     public void cancelCompetition() {
         if (status == CompetitionStatus.FINISHED) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_ALREADY_FINISHED);
         }
         this.status = CompetitionStatus.CANCELED;
     }
 
     public void publish() {
         if (this.isReadable) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_ALREADY_PUBLISHED);
         }
         if (this.status != CompetitionStatus.PREPARING) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
         }
         this.isReadable = true;
     }
@@ -196,7 +192,7 @@ public class Competition {
             ParticipantCount participantCount
     ) {
         if (this.status == CompetitionStatus.FINISHED || this.status == CompetitionStatus.CANCELED) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_CANNOT_UPDATE);
         }
         this.name = name;
         this.description = description;

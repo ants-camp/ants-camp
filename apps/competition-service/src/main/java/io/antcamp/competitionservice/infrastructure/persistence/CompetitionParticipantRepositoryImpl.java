@@ -39,7 +39,7 @@ public class CompetitionParticipantRepositoryImpl implements CompetitionParticip
     public void delete(CompetitionParticipant participant, String deletedBy) {
         CompetitionParticipantEntity entity = competitionParticipantJpaRepository
                 .findByUserIdAndCompetitionIdWithLock(participant.getUserId(), participant.getCompetitionId())
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_NOT_FOUND));
         entity.softDelete(deletedBy);
     }
 

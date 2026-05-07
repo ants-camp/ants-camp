@@ -107,7 +107,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Transactional
     public Competition startCompetition(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
 
         // 도메인 상태 변경 (PREPARING -> ONGOING)
         // 계좌 생성은 대회 신청 시점에 이미 완료되므로 별도 이벤트 발행 없음
@@ -119,7 +119,7 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Override
     public Competition finishCompetition(UUID competitionId) {
         Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_INPUT));
+                .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
 
         // 1. 도메인 상태 변경 (ONGOING -> FINISHED)
         competition.finishCompetition();

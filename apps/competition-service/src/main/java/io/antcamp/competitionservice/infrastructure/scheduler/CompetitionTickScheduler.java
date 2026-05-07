@@ -29,7 +29,7 @@ public class CompetitionTickScheduler {
             return;
         }
 
-        log.debug("[Scheduler] CompetitionTick 발행 시작. 진행 중인 대회 수={}", ongoingIds.size());
+        log.info("[Scheduler] CompetitionTick 발행 시작. 진행 중인 대회 수={}", ongoingIds.size());
 
         ongoingIds.forEach(competitionId -> {
             try {
