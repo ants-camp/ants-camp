@@ -54,6 +54,13 @@ services:
     environment:
       <<: *java-tz
       SERVER_PORT: 8761
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8761/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - kafka-network
 
@@ -80,15 +87,13 @@ services:
     environment:
       <<: *java-tz
       SERVER_PORT: 8080
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       JWT_SECRET: ${JWT_SECRET}
     env_file:
       - .env
     depends_on:
       eureka-server:
-        condition: service_started
-      user-service:
-        condition: service_started
+        condition: service_healthy
     networks:
       - kafka-network
 
@@ -105,7 +110,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}?currentSchema=${USER_SCHEMA}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION}
       SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
@@ -113,7 +118,7 @@ services:
       - .env
     depends_on:
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
       kafka:
@@ -155,7 +160,7 @@ services:
       redis:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - kafka-network
 
@@ -185,7 +190,7 @@ services:
       kafka:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - kafka-network
 
@@ -216,7 +221,7 @@ services:
       kafka:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - kafka-network
 
@@ -247,7 +252,7 @@ services:
       kafka:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - kafka-network
 
@@ -277,7 +282,7 @@ services:
       postgres:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - kafka-network
 
@@ -312,7 +317,7 @@ services:
       redis:
         condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
     networks:
       - kafka-network
 

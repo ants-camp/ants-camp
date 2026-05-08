@@ -61,19 +61,19 @@ public class GatewaySecurityConfig {
 
                         // 대회 생성/수정/삭제는 관리자 또는 매니저
                         .pathMatchers(
-                                HttpMethod.POST, "/api/contests/**"
+                                HttpMethod.POST, "/api/competitions/**"
                         ).hasAnyRole("ADMIN", "MANAGER")
 
                         .pathMatchers(
-                                HttpMethod.PUT, "/api/contests/**"
+                                HttpMethod.PUT, "/api/competitions/**"
                         ).hasAnyRole("ADMIN", "MANAGER")
 
                         .pathMatchers(
-                                HttpMethod.DELETE, "/api/contests/**"
+                                HttpMethod.DELETE, "/api/competitions/**"
                         ).hasAnyRole("ADMIN", "MANAGER")
 
                         // 일반 조회는 로그인 사용자 모두 가능
-                        .pathMatchers(HttpMethod.GET, "/api/contests/**")
+                        .pathMatchers(HttpMethod.GET, "/api/competitions/**")
                         .hasAnyRole("USER", "MANAGER", "ADMIN")
 
                         // 계좌/거래 API는 로그인 사용자만 가능
