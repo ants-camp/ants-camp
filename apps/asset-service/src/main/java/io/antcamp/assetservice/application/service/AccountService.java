@@ -81,4 +81,14 @@ public class AccountService {
         return accountRepository.findById(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
     }
+
+    @Transactional
+    public void deleteByUserIdAndCompetitionId(UUID userId, UUID competitionId) {
+        accountRepository.deleteByUserIdAndCompetitionId(userId, competitionId);
+    }
+
+    @Transactional
+    public void deleteAllByCompetitionId(UUID competitionId) {
+        accountRepository.deleteAllByCompetitionId(competitionId);
+    }
 }

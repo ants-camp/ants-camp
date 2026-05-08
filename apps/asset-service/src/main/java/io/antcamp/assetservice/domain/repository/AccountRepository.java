@@ -16,4 +16,9 @@ public interface AccountRepository {
 
     List<Account> findAllByCompetitionId(UUID competitionId);
 
+    Optional<Account> findByUserIdAndCompetitionId(UUID userId, UUID competitionId);
+
+    void deleteByUserIdAndCompetitionId(UUID userId, UUID competitionId);
+
+    void deleteAllByCompetitionId(UUID competitionId);
 }

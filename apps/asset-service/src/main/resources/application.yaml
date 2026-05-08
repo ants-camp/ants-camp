@@ -62,5 +62,7 @@ topics:
     started: competition.started
     finished: competition.finished
     ticked: ${COMPETITION_TICKED}
+    cancelled: ${COMPETITION_CANCELLED}
+    aborted: ${COMPETITION_ABORTED}
   asset:
     total-calculated: asset.total-calculated

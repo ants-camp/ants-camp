@@ -45,25 +45,15 @@ public class HoldingEntity extends BaseEntity {
     @Column(nullable = false)
     private Long finalPrice;
 
-    private HoldingEntity(UUID holdingId, UUID accountId, String stockCode,
-                          Integer stockAmount, Long buyPrice, Long finalPrice) {
-        this.holdingId = holdingId;
-        this.accountId = accountId;
-        this.stockCode = stockCode;
-        this.stockAmount = stockAmount;
-        this.buyPrice = buyPrice;
-        this.finalPrice = finalPrice;
-    }
-
     public static HoldingEntity from(Holding holding) {
-        return new HoldingEntity(
-                holding.getHoldingId(),
-                holding.getAccountId(),
-                holding.getStockCode(),
-                holding.getStockAmount(),
-                holding.getBuyPrice(),
-                holding.getFinalPrice()
-        );
+        return HoldingEntity.builder()
+                .holdingId(holding.getHoldingId())
+                .accountId(holding.getAccountId())
+                .stockCode(holding.getStockCode())
+                .stockAmount(holding.getStockAmount())
+                .buyPrice(holding.getBuyPrice())
+                .finalPrice(holding.getFinalPrice())
+                .build();
     }
 
     public Holding toDomain() {
