@@ -54,6 +54,8 @@ public enum ErrorCode {
 
     // ── Trade ────────────────────────────────────────
     TRADE_NOT_FOUND(HttpStatus.NOT_FOUND, "TRADE_NOT_FOUND", "존재하지 않는 매매입니다."),
+    TRADE_ALREADY_PROCESSED(HttpStatus.NOT_FOUND, "TRADE_ALREADY_PROCESSED", "이미 처리된 주문 취소 시도 (PENDING이 아닐 때)입니다."), // 이미 처리된 주문 취소 시도 (PENDING이 아닐 때)
+    INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "INVALID_INPUT_VALUE", "요청 파라미터 오류입니다."),     // 요청 파라미터 오류
 
     // ── Asset ────────────────────────────────────────
     ASSET_SERVICE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "ASSET_SERVICE_ERROR", "자산 서비스 에러입니다."),

@@ -24,12 +24,12 @@ public record MinutePriceRequestHeader(
     public static Map<String, Object> create(String authorization, String appkey, String appsecret) {
         return Map.of(
                 "content-type", "application/json; charset=utf-8",
-                "authorization","Bearer " + authorization,
+                "authorization", authorization,   // 호출부에서 이미 "Bearer <token>" 형태로 전달
                 "appkey", appkey,
                 "appsecret", appsecret,
                 "tr_id", "FHKST03010230",
                 "custtype", "P",
-                "trCont", "N"
+                "tr_cont", "N"                    // "trCont" → "tr_cont" (KIS 헤더 필드명)
         );
     }
 }

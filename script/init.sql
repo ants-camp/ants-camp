@@ -1,7 +1,7 @@
 -- =========================
 -- 1. Schema 생성
 -- =========================
-CREATE SCHEMA IF NOT EXISTS "user";
+CREATE SCHEMA IF NOT EXISTS users;
 CREATE SCHEMA IF NOT EXISTS trade;
 CREATE SCHEMA IF NOT EXISTS asset;
 CREATE SCHEMA IF NOT EXISTS competition;
@@ -16,7 +16,7 @@ DO
 $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'antcamp') THEN
-        CREATE ROLE antcamp LOGIN PASSWORD '***REMOVED***';
+        CREATE ROLE antcamp LOGIN PASSWORD 'p@ssw0rd';
     END IF;
 END
 $$;
@@ -29,7 +29,7 @@ CREATE EXTENSION IF NOT EXISTS hstore;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- =========================
-GRANT USAGE, CREATE ON SCHEMA "user" TO antcamp;
+GRANT USAGE, CREATE ON SCHEMA users TO antcamp;
 GRANT USAGE, CREATE ON SCHEMA trade TO antcamp;
 GRANT USAGE, CREATE ON SCHEMA asset TO antcamp;
 GRANT USAGE, CREATE ON SCHEMA competition TO antcamp;
@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS competition.p_competition_change_notices (
 );
 
 -- user schema
-CREATE TABLE IF NOT EXISTS "user".p_user (
+CREATE TABLE IF NOT EXISTS users.p_user (
     user_id     UUID            NOT NULL,
     email       VARCHAR(255)    NOT NULL,
     password    VARCHAR(255)    NOT NULL,
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS "user".p_user (
     CONSTRAINT uq_user_email UNIQUE (email)
 );
 
-CREATE TABLE IF NOT EXISTS "user".p_refresh_token (
+CREATE TABLE IF NOT EXISTS users.p_refresh_token (
     id          UUID                        NOT NULL,
     user_id     UUID                        NOT NULL,
     token       VARCHAR(500)                NOT NULL,
@@ -353,7 +353,7 @@ CREATE TABLE IF NOT EXISTS assistant.p_pairwise_results (
 -- =========================
 -- 5. 기본 권한 설정 (테이블 자동 권한)
 -- =========================
-ALTER DEFAULT PRIVILEGES IN SCHEMA "user"
+ALTER DEFAULT PRIVILEGES IN SCHEMA users
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
 ALTER DEFAULT PRIVILEGES IN SCHEMA trade
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
