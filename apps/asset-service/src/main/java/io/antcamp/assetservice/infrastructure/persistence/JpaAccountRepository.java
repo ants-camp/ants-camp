@@ -18,4 +18,6 @@ public interface JpaAccountRepository extends JpaRepository<AccountEntity, UUID>
     Optional<AccountEntity> findByIdWithLock(@Param("accountId") UUID accountId);
 
     List<AccountEntity> findAllByCompetitionId(UUID competitionId);
+
+    Optional<AccountEntity> findByUserIdAndCompetitionId(UUID userId, UUID competitionId);
 }

@@ -3,6 +3,7 @@ package io.antcamp.tradeservice.infrastructure.client;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenRequest;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
 import io.antcamp.tradeservice.infrastructure.dto.ApprovalKeyResponse;
+import io.antcamp.tradeservice.infrastructure.dto.ApprovalTokenRequest;
 import io.antcamp.tradeservice.presentation.dto.KisAccessToken;
 import io.antcamp.tradeservice.presentation.dto.MinutePriceRequestHeader;
 import io.antcamp.tradeservice.presentation.dto.MinutePriceRequestParam;
@@ -23,11 +24,18 @@ public interface KisClient {
 
     // WebSocket 접속키 발급 — 응답: {"approval_key": "..."}
     @PostMapping("/oauth2/Approval")
-    ApprovalKeyResponse requestApprovalKey(@RequestBody AccessTokenRequest request);
+    ApprovalKeyResponse requestApprovalKey(@RequestBody ApprovalTokenRequest request);
 
     @GetMapping("/uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice")
     String getMinutePrice(
             @RequestHeader Map<String ,Object> header,
             @RequestParam Map<String ,Object> param
+    );
+
+    // 일/주/월/년봉 — tr_id: FHKST03010100
+    @GetMapping("/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice")
+    String getDailyChart(
+            @RequestHeader Map<String, Object> header,
+            @RequestParam Map<String, Object> param
     );
 }

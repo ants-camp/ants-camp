@@ -8,12 +8,14 @@ import io.antcamp.userservice.domain.model.enums.UserStatus;
 import io.antcamp.userservice.domain.repository.UserRepository;
 import io.antcamp.userservice.presentation.dto.request.UserRegisterRequest;
 import io.antcamp.userservice.presentation.dto.response.UserResponse;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 @Transactional
 public class UserCommandService {
@@ -22,6 +24,7 @@ public class UserCommandService {
     private final PasswordEncoder passwordEncoder;
 
     public UserResponse register(UserRegisterRequest request) {
+        log.info("Registering user with email: {}", request.email());
         validateDuplicateEmail(request.email());
 
         User user = User.builder()
@@ -29,7 +32,7 @@ public class UserCommandService {
                 .password(passwordEncoder.encode(request.password()))
                 .name(request.name())
                 .phone(request.phone())
-                .role(RoleType.USER)
+                .role(RoleType.PLAYER)
                 .status(UserStatus.ACTIVE)
                 .build();
 

@@ -46,7 +46,7 @@ public class CompetitionController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CreateCompetitionResponse create(@RequestBody @Valid CreateCompetitionRequest request) {
+    public CreateCompetitionResponse createCompetition(@RequestBody @Valid CreateCompetitionRequest request) {
         CreateCompetitionCommand command = new CreateCompetitionCommand(
                 request.name(),
                 request.type(),
@@ -64,19 +64,19 @@ public class CompetitionController {
     }
 
     @GetMapping("/{id}")
-    public FindCompetitionResponse findById(@PathVariable UUID id) {
+    public FindCompetitionResponse findCompetitionById(@PathVariable UUID id) {
         Competition competition = competitionService.findById(id);
         return FindCompetitionResponse.from(competition);
     }
 
-    @PatchMapping("/{id}/publish")
+    @PostMapping("/{id}/publications")
     public FindCompetitionResponse openCompetition(@PathVariable UUID id) {
         Competition competition = competitionService.openCompetition(id);
         return FindCompetitionResponse.from(competition);
     }
 
     @PatchMapping("/{id}")
-    public FindCompetitionResponse updateInfo(
+    public FindCompetitionResponse updateCompetitionInfo(
             @PathVariable UUID id,
             @RequestBody @Valid UpdateCompetitionRequest request) {
         UpdateCompetitionCommand command = new UpdateCompetitionCommand(
@@ -98,19 +98,19 @@ public class CompetitionController {
         return FindCompetitionResponse.from(competition);
     }
 
-    @PatchMapping("/{id}/start")
+    @PostMapping("/{id}/starts")
     public FindCompetitionResponse startCompetition(@PathVariable UUID id) {
         Competition competition = competitionService.startCompetition(id);
         return FindCompetitionResponse.from(competition);
     }
 
-    @PatchMapping("/{id}/finish")
+    @PostMapping("/{id}/finishes")
     public FindCompetitionResponse finishCompetition(@PathVariable UUID id) {
         Competition competition = competitionService.finishCompetition(id);
         return FindCompetitionResponse.from(competition);
     }
 
-    @PatchMapping("/{id}/cancel")
+    @PostMapping("/{id}/cancellations")
     public FindCompetitionResponse cancelCompetition(@PathVariable UUID id) {
         Competition competition = competitionService.cancelCompetition(id);
         return FindCompetitionResponse.from(competition);
@@ -124,7 +124,7 @@ public class CompetitionController {
     }
 
     @GetMapping
-    public Page<FindCompetitionResponse> findAll(
+    public Page<FindCompetitionResponse> findAllCompetition(
             @RequestParam(required = false) CompetitionStatus status,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<Competition> competitions;
@@ -139,7 +139,7 @@ public class CompetitionController {
     // ─── 대회 변경 공지 엔드포인트 ────────────────────────────────────────────
 
     @GetMapping("/{id}/change-notices")
-    public List<FindCompetitionChangeNoticeResponse> findChangeNotices(@PathVariable UUID id) {
+    public List<FindCompetitionChangeNoticeResponse> findAllCompetitionChangeNotice(@PathVariable UUID id) {
         return competitionService.findChangeNotices(id)
                 .stream()
                 .map(FindCompetitionChangeNoticeResponse::from)
@@ -172,7 +172,7 @@ public class CompetitionController {
     }
 
     @GetMapping("/{competitionId}/participants")
-    public List<FindCompetitionParticipantResponse> findParticipants(
+    public List<FindCompetitionParticipantResponse> findCompetitionParticipants(
             @PathVariable UUID competitionId
     ) {
         return competitionParticipantService.findAllByCompetitionId(competitionId)

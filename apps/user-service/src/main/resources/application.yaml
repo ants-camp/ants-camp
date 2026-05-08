@@ -1,13 +1,13 @@
 spring:
+
   application:
-    name: user-server
+    name: user-service
 
   datasource:
-    url: jdbc:postgresql://${POSTGRES_HOST:localhost}:${POSTGRES_PORT:5433}/${POSTGRES_DB:antcamp}
+    url: jdbc:postgresql://${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
     driver-class-name: org.postgresql.Driver
-    username: ${POSTGRES_USER:antcamp}
-    password: ${POSTGRES_PASSWORD:***REMOVED***}
-
+    username: ${POSTGRES_USER}
+    password: ${POSTGRES_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -15,7 +15,8 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        default_schema: ${USER_SCHEMA:user}
+        default_schema: ${USER_SCHEMA}
+        globally_quote_identifiers: true  # 추가
 
   cloud:
     config:
@@ -23,14 +24,26 @@ spring:
       import-check:
         enabled: false
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+
+  endpoint:
+    health:
+      show-details: when_authorized
+
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
-  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION}
 
 
 
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     register-with-eureka: true
     fetch-registry: true

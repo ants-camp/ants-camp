@@ -1,5 +1,5 @@
 server:
-  port: 8083
+  port: 8080
 
 jwt:
   secret: ${JWT_SECRET}
@@ -7,22 +7,54 @@ jwt:
 spring:
   cloud:
     gateway:
-      routes:
-        - id: user-service
-          uri: lb://USER-SERVICE
-          predicates:
-            - Path=/api/users/**
-          filters:
-            - CustomAuthFilter
+      server:
+        webflux:
+          routes:
+            - id: user-service
+              uri: lb://USER-SERVICE
+              predicates:
+                - Path=/api/users/**
+              filters:
+                - CustomAuthFilter
 
-        - id: auth-service
-          uri: lb://USER-SERVICE
-          predicates:
-            - Path=/api/auth/**
+            - id: auth-service
+              uri: lb://USER-SERVICE
+              predicates:
+                - Path=/api/auth/**
+
+            - id: competition-service
+              uri: lb://COMPETITION-SERVICE
+              predicates:
+                - Path=/api/competitions/**
+
+            - id: ranking-service
+              uri: lb://RANKING-SERVICE
+              predicates:
+                - Path=/api/rankings/**
+
+            - id: trade-service
+              uri: lb://TRADE-SERVICE
+              predicates:
+                - Path=/api/trades/**
+
+            - id: asset-service
+              uri: lb://ASSET-SERVICE
+              predicates:
+                - Path=/api/assets/**
+
+            - id: assistant-service
+              uri: lb://ASSISTANT-SERVICE
+              predicates:
+                - Path=/api/assistants/**
+
+            - id: notification-service
+              uri: lb://NOTIFICATION-SERVICE
+              predicates:
+                - Path=/api/notifications/**
   application:
     name: api-gateway
   config:
-    import: optional:configserver:http://localhost:8888
+    import: optional:configserver:http://config-server:8888
 
 management:
   endpoints:
@@ -32,3 +64,8 @@ management:
   endpoint:
     health:
       show-details: when_authorized
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/

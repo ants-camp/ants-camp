@@ -22,11 +22,11 @@ public record MinutePriceRequestParam(
     public static Map<String , Object> create(String stockCode, String time, String date) {
         return Map.of(
                 "FID_COND_MRKT_DIV_CODE", "J",
-                "FID_INPUT_ISCD",stockCode,
-                "FID_INPUT_HOUR_1", time,
-                "FID_INPUT_DATE_1",date,
-                "FID_PW_DATA_INCU_YN","Y",
-                "FID_FAKE_TICK_INCU_YN", " "
+                "FID_INPUT_ISCD",          stockCode,
+                "FID_INPUT_HOUR_1",        time,
+                "FID_INPUT_DATE_1",        date,
+                "FID_PW_DATA_INCU_YN",     "Y",   // Y=기준시각 이전 캔들 포함(차트용), N=해당 시각만 → 빈 배열
+                "FID_FAKE_TICK_INCU_YN",   "N"    // 공백(" ") → "N" (KIS 필수 Y/N)
         );
     }
 }
