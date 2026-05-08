@@ -1,9 +1,8 @@
 package io.antcamp.assistantservice.application.dto.command;
 
 import io.antcamp.assistantservice.domain.exception.InvalidDocumentException;
+import io.antcamp.assistantservice.domain.exception.InvalidInputException;
 import io.antcamp.assistantservice.domain.model.DocType;
-
-import java.util.Objects;
 
 public record IngestDocumentCommand(
         String title,
@@ -14,7 +13,7 @@ public record IngestDocumentCommand(
     public IngestDocumentCommand {
         if (title == null || title.isBlank()) throw InvalidDocumentException.titleBlank();
         if (title.length() > 100) throw InvalidDocumentException.titleTooLong();
-        Objects.requireNonNull(type, "문서 타입은 필수입니다.");
+        if (type == null) throw new InvalidInputException();
         if (content == null || content.isBlank()) throw InvalidDocumentException.contentBlank();
     }
 }

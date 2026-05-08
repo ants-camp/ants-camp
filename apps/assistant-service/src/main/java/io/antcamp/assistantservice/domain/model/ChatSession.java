@@ -1,5 +1,6 @@
 package io.antcamp.assistantservice.domain.model;
 
+import io.antcamp.assistantservice.domain.exception.InvalidInputException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,7 +19,7 @@ public class ChatSession {
     private LocalDateTime updatedAt;
 
     public static ChatSession create(UUID userId) {
-        if (userId == null) throw new IllegalArgumentException("사용자 ID는 필수입니다.");
+        if (userId == null) throw new InvalidInputException();
         return ChatSession.builder()
                 .userId(userId)
                 .build();

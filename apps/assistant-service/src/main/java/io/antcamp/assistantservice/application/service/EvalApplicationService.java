@@ -5,8 +5,7 @@ import io.antcamp.assistantservice.application.dto.query.GetEvalResultsQuery;
 import io.antcamp.assistantservice.application.dto.result.EvalResultItemResult;
 import io.antcamp.assistantservice.application.dto.result.EvalResultListResult;
 import io.antcamp.assistantservice.application.dto.result.EvalSummaryResult;
-import common.exception.BusinessException;
-import common.exception.ErrorCode;
+import io.antcamp.assistantservice.domain.exception.EvalRunNotFoundException;
 import io.antcamp.assistantservice.domain.model.*;
 import io.antcamp.assistantservice.domain.repository.EvalRepository;
 import io.antcamp.assistantservice.domain.repository.PromptVersionRepository;
@@ -46,7 +45,7 @@ public class EvalApplicationService {
     }
 
     public EvalRunStatus getRunStatus(UUID evalRunId) {
-        return evalRepository.findRunStatus(evalRunId).orElseThrow(() -> new BusinessException(ErrorCode.EVAL_RUN_NOT_FOUND));
+        return evalRepository.findRunStatus(evalRunId).orElseThrow(EvalRunNotFoundException::new);
     }
 
     public EvalResultListResult getEvalResults(GetEvalResultsQuery query) {
