@@ -23,6 +23,9 @@
 ###
 ###  ✅ 실행 순서
 ###    00-a. 운영자(user0) 로그인
+###    00-reg-a. 유저1 회원가입
+###    00-reg-b. 유저2 회원가입
+###    00-reg-c. 유저3 회원가입
 ###    00-b. 유저1 로그인
 ###    00-c. 유저2 로그인
 ###    00-d. 유저3 로그인
@@ -76,6 +79,76 @@ Content-Type: application/json
     client.global.set("access_token_0", data.accessToken);
     client.global.set("user_id_0", data.user.userId);
     console.log("✅ 운영자(user0) 로그인 완료 | userId:", data.user.userId);
+%}
+
+
+# ================================================================
+#  00-회원가입. 유저1~3 회원가입
+# ================================================================
+
+# ---------------------------------------------------------------
+# 00-reg-a. 유저1 회원가입
+# ---------------------------------------------------------------
+### @name registerUser1
+POST {{gateway_base}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "{{user1_email}}",
+  "password": "{{user1_password}}",
+  "name": "유저1",
+  "phone": "010-1111-0001"
+}
+
+> {%
+    client.test("User1 Register Success", function() {
+        client.assert(response.status === 201, "Register failed: " + response.status);
+    });
+    console.log("✅ 유저1 회원가입 완료");
+%}
+
+
+# ---------------------------------------------------------------
+# 00-reg-b. 유저2 회원가입
+# ---------------------------------------------------------------
+### @name registerUser2
+POST {{gateway_base}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "{{user2_email}}",
+  "password": "{{user2_password}}",
+  "name": "유저2",
+  "phone": "010-1111-0002"
+}
+
+> {%
+    client.test("User2 Register Success", function() {
+        client.assert(response.status === 201, "Register failed: " + response.status);
+    });
+    console.log("✅ 유저2 회원가입 완료");
+%}
+
+
+# ---------------------------------------------------------------
+# 00-reg-c. 유저3 회원가입
+# ---------------------------------------------------------------
+### @name registerUser3
+POST {{gateway_base}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "{{user3_email}}",
+  "password": "{{user3_password}}",
+  "name": "유저3",
+  "phone": "010-1111-0003"
+}
+
+> {%
+    client.test("User3 Register Success", function() {
+        client.assert(response.status === 201, "Register failed: " + response.status);
+    });
+    console.log("✅ 유저3 회원가입 완료");
 %}
 
 
@@ -214,7 +287,7 @@ Authorization: Bearer {{access_token_1}}
 
 {
   "userId": "{{user_id_1}}",
-  "nickname": "투자왕김철수"
+  "nickname": "플레이어1"
 }
 
 > {%
@@ -236,7 +309,8 @@ Authorization: Bearer {{access_token_1}}
 {
   "userId": "{{user_id_1}}",
   "type": "COMPETITION",
-  "initialAmount": 10000000
+  "initialAmount": 10000000,
+  "competitionId": "{{competition_id}}}"
 }
 
 > {%
