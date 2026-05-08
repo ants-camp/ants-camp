@@ -140,7 +140,7 @@ public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
     }
 
     public Competition toDomain() {
-        return Competition.from(
+        return Competition.reconstitute(
                 competitionId,
                 name,
                 type,

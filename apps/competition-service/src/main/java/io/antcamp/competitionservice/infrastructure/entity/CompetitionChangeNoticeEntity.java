@@ -57,7 +57,7 @@ public class CompetitionChangeNoticeEntity extends BaseEntity implements Persist
     }
 
     public CompetitionChangeNotice toDomain() {
-        return CompetitionChangeNotice.from(
+        return CompetitionChangeNotice.reconstitute(
                 noticeId,
                 competitionId,
                 competitionStatus,

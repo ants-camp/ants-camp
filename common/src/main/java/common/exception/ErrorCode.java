@@ -33,6 +33,18 @@ public enum ErrorCode {
 
     // ── Competition ───────────────────────────────────
     COMPETITION_NOT_FOUND(HttpStatus.NOT_FOUND, "COMPETITION_NOT_FOUND", "존재하지 않는 대회입니다."),
+    COMPETITION_PARTICIPANT_NOT_FOUND(HttpStatus.NOT_FOUND, "COMPETITION_PARTICIPANT_NOT_FOUND", "대회 참가 신청 내역이 없습니다."),
+    COMPETITION_ALREADY_REGISTERED(HttpStatus.CONFLICT, "COMPETITION_ALREADY_REGISTERED", "이미 신청한 대회입니다."),
+    COMPETITION_NOT_REGISTERABLE(HttpStatus.BAD_REQUEST, "COMPETITION_NOT_REGISTERABLE", "현재 신청할 수 없는 대회입니다."),
+    COMPETITION_INVALID_STATUS(HttpStatus.CONFLICT, "COMPETITION_INVALID_STATUS", "현재 대회 상태에서 허용되지 않는 작업입니다."),
+    COMPETITION_MIN_PARTICIPANTS_NOT_MET(HttpStatus.BAD_REQUEST, "COMPETITION_MIN_PARTICIPANTS_NOT_MET", "최소 참가자 수를 충족하지 못해 대회를 시작할 수 없습니다."),
+    COMPETITION_ALREADY_FINISHED(HttpStatus.CONFLICT, "COMPETITION_ALREADY_FINISHED", "이미 종료된 대회입니다."),
+    COMPETITION_ALREADY_PUBLISHED(HttpStatus.CONFLICT, "COMPETITION_ALREADY_PUBLISHED", "이미 공개된 대회입니다."),
+    COMPETITION_CANNOT_UPDATE(HttpStatus.CONFLICT, "COMPETITION_CANNOT_UPDATE", "종료되었거나 취소된 대회는 수정할 수 없습니다."),
+
+    // ── Ranking ───────────────────────────────────────
+    RANKING_NOT_FOUND(HttpStatus.NOT_FOUND, "RANKING_NOT_FOUND", "랭킹 정보를 찾을 수 없습니다."),
+    RANKING_ALREADY_FINALIZED(HttpStatus.CONFLICT, "RANKING_ALREADY_FINALIZED", "이미 확정된 랭킹입니다."),
 
     // ── Assistant ─────────────────────────────────────
     DOCUMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "DOCUMENT_NOT_FOUND", "존재하지 않는 문서입니다."),
