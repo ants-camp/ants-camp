@@ -50,26 +50,19 @@ public class Ranking {
                 .build();
     }
 
-    public static Ranking from(UUID rankingId, UUID competitionId, UUID userId,
+    public static Ranking reconstitute(UUID rankingId, UUID competitionId, UUID userId,
                                RankTier rank, LocalDateTime lastUpdatedAt, boolean isFinalized) {
         return new Ranking(rankingId, competitionId, userId, rank, lastUpdatedAt, isFinalized);
     }
 
     // ─── 도메인 행위 ─────────────────────────────────────────────────────
 
-    public void markUpdated() {
-        if (isFinalized) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        this.lastUpdatedAt = LocalDateTime.now();
-    }
-
     /**
      * 대회 종료 시점에 최종 티어를 확정한다. 확정 후에는 변경 불가.
      */
     public void finalize(RankTier tier) {
         if (isFinalized) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.RANKING_ALREADY_FINALIZED);
         }
         this.rank = tier;
         this.isFinalized = true;

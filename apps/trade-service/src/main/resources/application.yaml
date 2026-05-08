@@ -98,10 +98,11 @@ resilience4j:
     instances:
       kisApi:
         max-attempts: 3
-        wait-duration: 500ms
+        wait-duration: 1100ms          # KIS 초당 건수 초과 → 1초 넘게 대기 후 재시도
         enable-exponential-backoff: true
-        exponential-backoff-multiplier: 2
+        exponential-backoff-multiplier: 2  # 1.1s → 2.2s → 4.4s
         retry-exceptions:
           - feign.RetryableException
         ignore-exceptions:
           - io.antcamp.tradeservice.infrastructure.exception.KisApiException
+          - common.exception.BusinessException

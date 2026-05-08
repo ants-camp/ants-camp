@@ -69,7 +69,7 @@ public class RankingEntity extends BaseEntity implements Persistable<UUID> {
     }
 
     public Ranking toDomain() {
-        return Ranking.from(rankingId, competitionId, userId, rank, lastUpdatedAt, isFinalized);
+        return Ranking.reconstitute(rankingId, competitionId, userId, rank, lastUpdatedAt, isFinalized);
     }
 
     public void update(Ranking domain) {

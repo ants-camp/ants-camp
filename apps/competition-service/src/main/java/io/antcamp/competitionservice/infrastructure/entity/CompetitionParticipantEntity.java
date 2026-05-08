@@ -73,7 +73,7 @@ public class CompetitionParticipantEntity extends BaseEntity implements Persista
     }
 
     public CompetitionParticipant toDomain() {
-        return CompetitionParticipant.from(
+        return CompetitionParticipant.reconstitute(
                 participantId,
                 userId,
                 nickname,
