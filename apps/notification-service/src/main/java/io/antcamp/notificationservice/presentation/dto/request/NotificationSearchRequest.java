@@ -1,9 +1,9 @@
 package io.antcamp.notificationservice.presentation.dto.request;
 
+import io.antcamp.notificationservice.application.dto.query.NotificationSearchQuery;
 import io.antcamp.notificationservice.domain.model.AlertSeverity;
 import io.antcamp.notificationservice.domain.model.AlertSource;
 import io.antcamp.notificationservice.domain.model.AlertStatus;
-import io.antcamp.notificationservice.domain.repository.NotificationSearchCriteria;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;
@@ -18,9 +18,9 @@ public record NotificationSearchRequest(
         String actionUserEmail,
         Boolean handledOnly
 ) {
-    public NotificationSearchCriteria toCriteria() {
-        return new NotificationSearchCriteria(
-                status, severity, source, job, from, to, actionUserEmail, handledOnly
+    public NotificationSearchQuery toQuery(int page) {
+        return new NotificationSearchQuery(
+                status, severity, source, job, from, to, actionUserEmail, handledOnly, page
         );
     }
 }

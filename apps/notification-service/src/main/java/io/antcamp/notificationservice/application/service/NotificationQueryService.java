@@ -1,17 +1,17 @@
 package io.antcamp.notificationservice.application.service;
 
+import io.antcamp.notificationservice.application.dto.query.NotificationSearchQuery;
 import io.antcamp.notificationservice.application.dto.response.NotificationDetailResponse;
 import io.antcamp.notificationservice.application.dto.response.NotificationSummaryResponse;
 import io.antcamp.notificationservice.domain.exception.NotificationException;
+import io.antcamp.notificationservice.domain.model.Notification;
 import io.antcamp.notificationservice.domain.repository.NotificationRepository;
-import io.antcamp.notificationservice.domain.repository.NotificationSearchCriteria;
+import io.antcamp.notificationservice.domain.repository.PageResult;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -23,10 +23,13 @@ public class NotificationQueryService {
 
     private final NotificationRepository notificationRepository;
 
-    public Page<NotificationSummaryResponse> search(NotificationSearchCriteria criteria, int page) {
-        PageRequest pageRequest = PageRequest.of(page, PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
-        return notificationRepository.search(criteria, pageRequest)
-                .map(NotificationSummaryResponse::of);
+    public PageResult<NotificationSummaryResponse> search(NotificationSearchQuery query) {
+        PageResult<Notification> result = notificationRepository.search(
+                query.toCriteria(), query.toPagingRequest(PAGE_SIZE));
+        List<NotificationSummaryResponse> content = result.content().stream()
+                .map(NotificationSummaryResponse::of)
+                .toList();
+        return new PageResult<>(content, result.totalElements(), result.totalPages(), result.currentPage());
     }
 
     public NotificationDetailResponse findById(UUID notificationId) {

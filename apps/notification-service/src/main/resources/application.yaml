@@ -17,6 +17,13 @@ spring:
     username: ${POSTGRES_USER}
     password: ${POSTGRES_PASSWORD}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: ${spring.application.name}-hikari
+      maximum-pool-size: 20         # 커넥션 최대 20개
+      minimum-idle: 5
+      connection-timeout: 3000
+      validation-timeout: 2000
+      register-mbeans: true
 
 slack:
   bot-token: ${SLACK_BOT_TOKEN}
@@ -59,3 +66,15 @@ management:
         http.server.requests: true   # P50/P95/P99 히스토그램 활성화 (선결조건: 응답시간 메트릭)
       service-level-objectives:      # 히스토그램 버킷 강제 생성
         http.server.requests: 50ms,100ms,200ms,500ms,1s,2s,5s
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: B3
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT}
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name:-},%X{traceId:-},%X{spanId:-}]"

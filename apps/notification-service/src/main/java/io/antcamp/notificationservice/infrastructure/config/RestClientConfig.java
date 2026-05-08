@@ -1,5 +1,6 @@
 package io.antcamp.notificationservice.infrastructure.config;
 
+import io.micrometer.observation.ObservationRegistry;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -11,13 +12,14 @@ import java.time.Duration;
 public class RestClientConfig {
 
     @Bean
-    public RestClient restClient() {
+    public RestClient restClient(ObservationRegistry registry) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(3));
         factory.setReadTimeout(Duration.ofSeconds(30));
 
         return RestClient.builder()
                 .requestFactory(factory)
+                .observationRegistry(registry)
                 .build();
     }
 }

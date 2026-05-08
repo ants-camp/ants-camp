@@ -83,6 +83,7 @@ public class Notification {
         validateTitle(title);
         validateContent(content);
 
+        LocalDateTime now = LocalDateTime.now();
         return Notification.builder()
                 .channelId(channelId)
                 .job(job)
@@ -94,6 +95,8 @@ public class Notification {
                 .rawPayload(rawPayload)
                 .aiAnalysis(aiAnalysis)
                 .status(AlertStatus.PENDING)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
     }
 
