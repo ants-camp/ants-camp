@@ -59,6 +59,19 @@ public class GatewaySecurityConfig {
                         .pathMatchers("/api/admin/**")
                         .hasRole("ADMIN")
 
+                        // 대회 신청/취소: PLAYER, MANAGER, ADMIN 가능
+                        .pathMatchers(
+                                HttpMethod.POST,
+                                "/api/competitions/*/participants"
+                        )
+                        .hasAnyRole("PLAYER", "MANAGER", "ADMIN")
+
+                        .pathMatchers(
+                                HttpMethod.DELETE,
+                                "/api/competitions/*/participants"
+                        )
+                        .hasAnyRole("PLAYER", "MANAGER", "ADMIN")
+
                         // 대회 생성/수정/삭제는 관리자 또는 매니저
                         .pathMatchers(
                                 HttpMethod.POST, "/api/competitions/**"
@@ -69,19 +82,23 @@ public class GatewaySecurityConfig {
                         ).hasAnyRole("ADMIN", "MANAGER")
 
                         .pathMatchers(
+                                HttpMethod.PATCH, "/api/competitions/**"
+                        ).hasAnyRole("ADMIN", "MANAGER")
+
+                        .pathMatchers(
                                 HttpMethod.DELETE, "/api/competitions/**"
                         ).hasAnyRole("ADMIN", "MANAGER")
 
                         // 일반 조회는 로그인 사용자 모두 가능
                         .pathMatchers(HttpMethod.GET, "/api/competitions/**")
-                        .hasAnyRole("USER", "MANAGER", "ADMIN")
+                        .hasAnyRole("PLAYER", "MANAGER", "ADMIN")
 
                         // 계좌/거래 API는 로그인 사용자만 가능
                         .pathMatchers("/api/accounts/**")
-                        .hasAnyRole("USER", "MANAGER", "ADMIN")
+                        .hasAnyRole("PLAYER", "MANAGER", "ADMIN")
 
                         .pathMatchers("/api/trades/**")
-                        .hasAnyRole("USER", "MANAGER", "ADMIN")
+                        .hasAnyRole("PLAYER", "MANAGER", "ADMIN")
 
                         // 나머지는 인증만 필요
                         .anyExchange().authenticated()
