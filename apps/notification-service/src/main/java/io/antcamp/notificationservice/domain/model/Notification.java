@@ -1,5 +1,6 @@
 package io.antcamp.notificationservice.domain.model;
 
+import io.antcamp.notificationservice.domain.exception.InvalidInputException;
 import io.antcamp.notificationservice.domain.exception.NotificationException;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -137,22 +138,21 @@ public class Notification {
     }
 
     private static void validateChannelId(String channelId) {
-        if (channelId == null || channelId.isBlank()) throw NotificationException.invalidField();
-        if (channelId.length() > 100) throw NotificationException.invalidField();
+        if (channelId == null || channelId.isBlank()) throw new InvalidInputException();
+        if (channelId.length() > 100) throw new InvalidInputException();
     }
 
     private static void validateDeduplicationKey(String deduplicationKey) {
-        if (deduplicationKey == null || deduplicationKey.isBlank())
-            throw NotificationException.invalidField();
-        if (deduplicationKey.length() > 255) throw NotificationException.invalidField();
+        if (deduplicationKey == null || deduplicationKey.isBlank()) throw new InvalidInputException();
+        if (deduplicationKey.length() > 255) throw new InvalidInputException();
     }
 
     private static void validateTitle(String title) {
-        if (title == null || title.isBlank()) throw NotificationException.invalidField();
-        if (title.length() > 255) throw NotificationException.invalidField();
+        if (title == null || title.isBlank()) throw new InvalidInputException();
+        if (title.length() > 255) throw new InvalidInputException();
     }
 
     private static void validateContent(String content) {
-        if (content == null || content.isBlank()) throw NotificationException.invalidField();
+        if (content == null || content.isBlank()) throw new InvalidInputException();
     }
 }

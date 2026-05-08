@@ -18,7 +18,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -80,9 +79,14 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
         for (Map.Entry<String, ContainerNetwork> entry : info.getNetworkSettings().getNetworks().entrySet()) {
             if (!"bridge".equals(entry.getKey())) {
                 try {
+                    String networkId = entry.getValue().getNetworkID();
+                    if (networkId == null) {
+                        log.warn("NetworkID null, 네트워크 연결 스킵: network={}", entry.getKey());
+                        continue;
+                    }
                     dockerClient.connectToNetworkCmd()
                             .withContainerId(newContainerId)
-                            .withNetworkId(Objects.requireNonNull(entry.getValue().getNetworkID()))
+                            .withNetworkId(networkId)
                             .exec();
                     log.info("네트워크 연결 완료: container={}, network={}", containerName, entry.getKey());
                 } catch (Exception e) {

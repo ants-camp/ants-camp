@@ -7,6 +7,15 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME:master}
     password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: org.postgresql.Driver
+    hikari:
+      pool-name: ${spring.application.name}-hikari
+      maximum-pool-size: 10          # DB에 동시에 열 수 있는 최대 커넥션 수 (서비스 수 × 이 값 ≤ DB max_connections)
+      minimum-idle: 10               # 항상 유지할 최소 커넥션 수. maximum-pool-size와 같게 두면 고정 크기 풀로 동작 (HikariCP 권장)
+      connection-timeout: 3000       # 커넥션을 못 받으면 3초 후 에러 반환
+      validation-timeout: 2000       # 커넥션이 살아있는지 확인하는 시간 (connection-timeout보다 작아야 함)
+      max-lifetime: 1800000          # 커넥션 하나의 최대 수명 30분. 이 시간 지나면 교체 (DB가 먼저 끊는 것 방지)
+      keepalive-time: 120000         # 2분마다 idle 커넥션에 쿼리 날려서 방화벽이 연결 끊는 것 방지
+      leak-detection-threshold: 60000 # 커넥션을 1분 넘게 반환 안 하면 경고 로그 출력 (커넥션 누수 감지)
 
   jpa:
     hibernate:
