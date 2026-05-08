@@ -52,15 +52,18 @@ public class AccountRepositoryImpl implements AccountRepository {
 
     @Override
     public void deleteByUserIdAndCompetitionId(UUID userId, UUID competitionId) {
-        AccountEntity entity = jpaAccountRepository
+        jpaAccountRepository
                 .findByUserIdAndCompetitionId(userId, competitionId)
-                .orElseThrow(() -> new AccountNotFoundException("해당 계좌를 찾을 수 없습니다."));
-        entity.softDelete("SYSTEM");
-        jpaAccountRepository.save(entity);
+                .ifPresent(entity -> {
+                    entity.softDelete("SYSTEM");
+                    jpaAccountRepository.save(entity);
+                });
     }
 
     @Override
     public void deleteAllByCompetitionId(UUID competitionId) {
+        //현재 단일 트랜잭션으로 처리 중 - 규모 커질 시 성능 이슈 가능성 있음
+        //계좌별 독립 트랜잭션으로 분리 필요
         List<AccountEntity> entities = jpaAccountRepository.findAllByCompetitionId(competitionId);
         entities.forEach(e -> e.softDelete("SYSTEM"));
         jpaAccountRepository.saveAll(entities);
