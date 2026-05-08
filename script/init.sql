@@ -354,7 +354,48 @@ CREATE TABLE IF NOT EXISTS assistant.p_pairwise_results (
 );
 
 -- =========================
--- 5. 기본 권한 설정 (테이블 자동 권한)
+-- 5. 초기 데이터
+-- =========================
+
+INSERT INTO users.p_user (
+    user_id,
+    email,
+    password,
+    name,
+    role,
+    phone,
+    status,
+    created_at,
+    created_by,
+    updated_at,
+    updated_by,
+    deleted_at,
+    deleted_by
+)
+
+VALUES (
+           gen_random_uuid(),
+           'admin@antcamp.com',
+
+           -- admin123!
+           '$2a$10$w7K6Y1D7d8Q4N8v5mL3A4e6YxM8nK1fP9uV3sR5zQ2bX7cH1jT0aS',
+
+           '관리자',
+           'ADMIN',
+           '010-0000-0000',
+           'ACTIVE',
+
+           now(),
+           'SYSTEM',
+           now(),
+           'SYSTEM',
+           null,
+           null
+       )
+ON CONFLICT (email) DO NOTHING;
+
+-- =========================
+-- 6. 기본 권한 설정 (테이블 자동 권한)
 -- =========================
 ALTER DEFAULT PRIVILEGES IN SCHEMA users
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO antcamp;
