@@ -377,8 +377,8 @@ VALUES (
            gen_random_uuid(),
            'admin@antcamp.com',
 
-           -- admin123!
-           '$2a$10$w7K6Y1D7d8Q4N8v5mL3A4e6YxM8nK1fP9uV3sR5zQ2bX7cH1jT0aS',
+           -- Admin123!
+           '$2a$10$r6ipMPbsU9F7NF9Y0DBahuyRDtfTuB8NpoUWBBQc0uxjcdMYx7Bhy',
 
            '관리자',
            'ADMIN',
