@@ -66,10 +66,6 @@ public class AuthService {
     }
 
     public void logout(LogoutRequest request) {
-        if (!jwtProvider.validateToken(request.refreshToken())) {
-            throw new BusinessException(ErrorCode.INVALID_TOKEN);
-        }
-
         refreshTokenRepository.deleteByToken(request.refreshToken());
     }
 

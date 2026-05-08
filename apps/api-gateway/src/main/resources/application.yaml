@@ -40,7 +40,7 @@ spring:
             - id: asset-service
               uri: lb://ASSET-SERVICE
               predicates:
-                - Path=/api/assets/**
+                - Path=/api/assets/**,/api/accounts/**,/api/holdings/**
 
             - id: assistant-service
               uri: lb://ASSISTANT-SERVICE
