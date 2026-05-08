@@ -1,7 +1,6 @@
 package io.antcamp.assistantservice.application.dto.command;
 
 import io.antcamp.assistantservice.domain.exception.InvalidDocumentException;
-import io.antcamp.assistantservice.domain.exception.InvalidInputException;
 import io.antcamp.assistantservice.domain.model.DocType;
 
 public record IngestDocumentCommand(
