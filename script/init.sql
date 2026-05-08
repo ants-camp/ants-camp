@@ -391,7 +391,8 @@ VALUES (
            'SYSTEM',
            null,
            null
-       );
+       )
+ON CONFLICT (email) DO NOTHING;
 
 -- =========================
 -- 6. 기본 권한 설정 (테이블 자동 권한)
