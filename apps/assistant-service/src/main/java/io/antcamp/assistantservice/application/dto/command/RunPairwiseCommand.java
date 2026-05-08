@@ -1,5 +1,6 @@
 package io.antcamp.assistantservice.application.dto.command;
 
+import io.antcamp.assistantservice.domain.exception.InvalidEvaluationException;
 import io.antcamp.assistantservice.domain.exception.InvalidInputException;
 
 import java.util.List;
@@ -13,6 +14,6 @@ public record RunPairwiseCommand(
     public RunPairwiseCommand {
         if (evalRunIdA == null) throw new InvalidInputException();
         if (evalRunIdB == null) throw new InvalidInputException();
-        if (judgeModels == null || judgeModels.isEmpty()) throw new InvalidInputException();
+        if (judgeModels == null || judgeModels.isEmpty()) throw InvalidEvaluationException.judgeModelsEmpty();
     }
 }

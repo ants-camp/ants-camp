@@ -13,7 +13,7 @@ public record IngestDocumentCommand(
     public IngestDocumentCommand {
         if (title == null || title.isBlank()) throw InvalidDocumentException.titleBlank();
         if (title.length() > 100) throw InvalidDocumentException.titleTooLong();
-        if (type == null) throw new InvalidInputException();
+        if (type == null) throw InvalidDocumentException.typeNull();
         if (content == null || content.isBlank()) throw InvalidDocumentException.contentBlank();
     }
 }

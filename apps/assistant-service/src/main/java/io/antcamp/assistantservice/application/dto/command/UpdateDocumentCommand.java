@@ -17,7 +17,7 @@ public record UpdateDocumentCommand(
         if (documentId == null) throw new InvalidInputException();
         if (title == null || title.isBlank()) throw InvalidDocumentException.titleBlank();
         if (title.length() > 100) throw InvalidDocumentException.titleTooLong();
-        if (type == null) throw new InvalidInputException();
+        if (type == null) throw InvalidDocumentException.typeNull();
         if (content == null || content.isBlank()) throw InvalidDocumentException.contentBlank();
     }
 }
