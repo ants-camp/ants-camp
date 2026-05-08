@@ -21,36 +21,36 @@ spring:
               uri: lb://USER-SERVICE
               predicates:
                 - Path=/api/auth/**
-#
-#            - id: competition-service
-#              uri: lb://COMPETITION-SERVICE
-#              predicates:
-#                - Path=/api/competitions/**
-#
-#            - id: ranking-service
-#              uri: lb://RANKING-SERVICE
-#              predicates:
-#                - Path=/api/rankings/**
 
-#            - id: trade-service
-#              uri: lb://TRADE-SERVICE
-#              predicates:
-#                - Path=/api/trades/**
-#
-#            - id: asset-service
-#              uri: lb://ASSET-SERVICE
-#              predicates:
-#                - Path=/api/assets/**
-#
-#            - id: assistant-service
-#              uri: lb://ASSISTANT-SERVICE
-#              predicates:
-#                - Path=/api/assistants/**
-#
-#            - id: notification-service
-#              uri: lb://NOTIFICATION-SERVICE
-#              predicates:
-#                - Path=/api/notifications/**
+            - id: competition-service
+              uri: lb://COMPETITION-SERVICE
+              predicates:
+                - Path=/api/competitions/**
+
+            - id: ranking-service
+              uri: lb://RANKING-SERVICE
+              predicates:
+                - Path=/api/rankings/**
+
+            - id: trade-service
+              uri: lb://TRADE-SERVICE
+              predicates:
+                - Path=/api/trades/**
+
+            - id: asset-service
+              uri: lb://ASSET-SERVICE
+              predicates:
+                - Path=/api/assets/**
+
+            - id: assistant-service
+              uri: lb://ASSISTANT-SERVICE
+              predicates:
+                - Path=/api/assistants/**
+
+            - id: notification-service
+              uri: lb://NOTIFICATION-SERVICE
+              predicates:
+                - Path=/api/notifications/**
   application:
     name: api-gateway
   config:
