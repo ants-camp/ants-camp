@@ -17,7 +17,7 @@ public class CompetitionEventConsumer {
 
     @Transactional
     @KafkaListener(
-            topics = "${topics.competition.started}",
+            topics = "${topics.competition.registered}",
             groupId = "${spring.kafka.consumer.group-id}",
             containerFactory = "competitionRegisteredFactory"
     )

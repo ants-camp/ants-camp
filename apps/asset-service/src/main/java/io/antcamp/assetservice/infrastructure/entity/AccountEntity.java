@@ -1,18 +1,24 @@
 package io.antcamp.assetservice.infrastructure.entity;
 
+import common.entity.BaseEntity;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.AccountType;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.experimental.SuperBuilder;
+import org.hibernate.annotations.SQLRestriction;
+
 import java.util.UUID;
 
 @Entity
 @Table(name = "p_accounts")
+@SQLRestriction("deleted_at is NULL")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class AccountEntity {
+@SuperBuilder
+public class AccountEntity extends BaseEntity {
 
     @Id
     private UUID accountId;
@@ -39,29 +45,17 @@ public class AccountEntity {
     @Column(nullable = false)
     private boolean isEnded;
 
-    private AccountEntity(UUID accountId, UUID userId, String accountNumber, AccountType type,
-                          Long accountAmount, UUID competitionId, String competitionName, boolean isEnded) {
-        this.accountId = accountId;
-        this.userId = userId;
-        this.accountNumber = accountNumber;
-        this.type = type;
-        this.accountAmount = accountAmount;
-        this.competitionId = competitionId;
-        this.competitionName = competitionName;
-        this.isEnded = isEnded;
-    }
-
     public static AccountEntity from(Account account) {
-        return new AccountEntity(
-                account.getAccountId(),
-                account.getUserId(),
-                account.getAccountNumber(),
-                account.getType(),
-                account.getAccountAmount(),
-                account.getCompetitionId(),
-                account.getCompetitionName(),
-                account.isEnded()
-        );
+        return AccountEntity.builder()
+                .accountId(account.getAccountId())
+                .userId(account.getUserId())
+                .accountNumber(account.getAccountNumber())
+                .type(account.getType())
+                .accountAmount(account.getAccountAmount())
+                .competitionId(account.getCompetitionId())
+                .competitionName(account.getCompetitionName())
+                .isEnded(account.isEnded())
+                .build();
     }
 
     public Account toDomain() {

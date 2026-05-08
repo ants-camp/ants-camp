@@ -86,25 +86,29 @@ public class KisWebSocketHandler extends TextWebSocketHandler {
      * H0STCNT0 필드 파싱 및 STOMP 브로드캐스트
      *
      * 필드 순서 (KIS 개발자센터 문서 기준)
-     *  [0] 종목코드   [1] 체결시간(HHmmss)
-     *  [2] 현재가     [3] 전일대비     [4] 전일대비율
-     *  [5] 체결거래량
+     *  [0]  MKSC_SHRN_ISCD  종목코드
+     *  [1]  STCK_CNTG_HOUR  체결시간(HHmmss)
+     *  [2]  STCK_PRPR       현재가
+     *  [3]  PRDY_VRSS_SIGN  전일대비 부호 (1=상한 2=상승 3=보합 4=하한 5=하락)
+     *  [4]  PRDY_VRSS       전일대비 (원)
+     *  [5]  PRDY_CTRT       전일대비율 (소수점 포함)
+     *  [12] CNTG_VOL        체결거래량
      */
     private void parseAndBroadcastPrice(String rawData) {
         String[] fields = rawData.split("\\^");
-        if (fields.length < 6) {
+        if (fields.length < 13) {
             log.warn("H0STCNT0 필드 부족 ({}개): {}", fields.length, rawData);
             return;
         }
 
         try {
             StockPriceData price = new StockPriceData(
-                    fields[0],                         // stockCode
-                    fields[1],                         // tradeTime (HHmmss)
-                    Long.parseLong(fields[2]),          // currentPrice
-                    Long.parseLong(fields[3]),          // priceChange
-                    new BigDecimal(fields[4]),          // changeRate
-                    Long.parseLong(fields[5])           // volume
+                    fields[0],                          // stockCode
+                    fields[1],                          // tradeTime (HHmmss)
+                    Long.parseLong(fields[2]),           // currentPrice
+                    Long.parseLong(fields[4]),           // priceChange  ← [4] 전일대비(원)
+                    new BigDecimal(fields[5]),           // changeRate   ← [5] 전일대비율(소수)
+                    Long.parseLong(fields[12])           // volume       ← [12] 체결거래량
             );
 
             log.info("[실시간 체결가] {} | {}원 | {}{}원 ({}%)",

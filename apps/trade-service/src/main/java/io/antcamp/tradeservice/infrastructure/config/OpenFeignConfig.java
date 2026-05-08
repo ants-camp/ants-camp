@@ -27,12 +27,20 @@ public class OpenFeignConfig {
 
             try {
                 byte[] body = response.body().asInputStream().readAllBytes();
+                String rawBody = new String(body, java.nio.charset.StandardCharsets.UTF_8);
+
+                // 404 등 비정상 HTTP 상태는 URL + body를 함께 출력
+                if (response.status() == 404) {
+                    log.error("KIS API 404 — url={} body={}",
+                            response.request().url(), rawBody);
+                    return new KisApiException("HTTP_404",
+                            "KIS API 경로 없음 [url=" + response.request().url() + "]");
+                }
+
                 KisErrorResponse error = objectMapper.readValue(body, KisErrorResponse.class);
+                log.error("KIS API 오류 [{}] status={} msg_cd={} msg={}",
+                        methodKey, response.status(), error.msgCd(), error.message());
 
-                log.error("KIS API 오류 [{}] [{}]: {}", methodKey, error.msgCd(), error.message());
-
-                // 재시도 가능한 에러 (토큰 만료, 요청 초과) → RetryableException 으로 감싸기
-                // → Feign Retryer 또는 Resilience4j @Retry 가 자동 재시도
                 if (error.isRetryable()) {
                     return new RetryableException(
                             response.status(),
@@ -45,9 +53,11 @@ public class OpenFeignConfig {
 
                 return new KisApiException(error.msgCd(), error.message());
 
+            } catch (KisApiException e) {
+                throw e;
             } catch (Exception e) {
-                log.error("KIS API 에러 응답 파싱 실패 [{}]: {}", methodKey, e.getMessage());
-                // 파싱 실패 시 기본 FeignException 으로 폴백
+                log.error("KIS API 에러 응답 파싱 실패 [{}] status={}: {}",
+                        methodKey, response.status(), e.getMessage());
                 return new ErrorDecoder.Default().decode(methodKey, response);
             }
         };
