@@ -59,8 +59,8 @@ management:
       
 topics:
   competition:
-    started: competition.started
-    finished: competition.finished
+    registered: ${COMPETITION_REGISTERED}
+    finished: ${COMPETITION_FINISHED}
     ticked: ${COMPETITION_TICKED}
     cancelled: ${COMPETITION_CANCELLED}
     aborted: ${COMPETITION_ABORTED}

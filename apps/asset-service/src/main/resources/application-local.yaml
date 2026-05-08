@@ -42,7 +42,7 @@ spring:
 
 topics:
   competition:
-    started: competition.started
+    registered: competition.registered
     finished: competition.finished
     ticked: competition.ticked
     cancelled: competition.cancelled
