@@ -3,6 +3,7 @@ package io.antcamp.assetservice.presentation.controller;
 import common.dto.ApiResponse;
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
+import io.antcamp.assetservice.application.dto.query.BalanceResult;
 import io.antcamp.assetservice.application.service.AccountService;
 import io.antcamp.assetservice.presentation.dto.response.AccountResponse;
 import io.antcamp.assetservice.presentation.dto.response.BalanceResponse;
@@ -33,8 +34,8 @@ public class AccountController {
             @PathVariable UUID accountId,
             @RequestParam Long amount) {
 
-        BalanceResponse response = accountService.deposit(accountId, amount);
-        return ApiResponse.ok("입금에 성공했습니다.", response);
+        BalanceResult result = accountService.deposit(accountId, amount);
+        return ApiResponse.ok("입금에 성공했습니다.", new BalanceResponse(result.accountId(), result.balance()));
     }
 
     @PostMapping("/{accountId}/withdraw")
@@ -42,8 +43,8 @@ public class AccountController {
             @PathVariable UUID accountId,
             @RequestParam Long amount) {
 
-        BalanceResponse response = accountService.withdraw(accountId, amount);
-        return ApiResponse.ok("출금에 성공했습니다.", response);
+        BalanceResult result = accountService.withdraw(accountId, amount);
+        return ApiResponse.ok("출금에 성공했습니다.", new BalanceResponse(result.accountId(), result.balance()));
     }
 
     @GetMapping("/{accountId}")

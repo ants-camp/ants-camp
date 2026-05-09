@@ -2,12 +2,12 @@ package io.antcamp.assetservice.application.service;
 
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
+import io.antcamp.assetservice.application.dto.query.BalanceResult;
 import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
 import io.antcamp.assetservice.domain.exception.InvalidAmountException;
 import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
-import io.antcamp.assetservice.presentation.dto.response.BalanceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +35,7 @@ public class AccountService {
     }
 
     @Transactional
-    public BalanceResponse deposit(UUID accountId, Long amount) {
+    public BalanceResult deposit(UUID accountId, Long amount) {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
@@ -46,11 +46,11 @@ public class AccountService {
         account.deposit(amount);
         accountRepository.save(account);
 
-        return new BalanceResponse(accountId, account.getAccountAmount());
+        return new BalanceResult (accountId, account.getAccountAmount());
     }
 
     @Transactional
-    public BalanceResponse withdraw(UUID accountId, Long amount) {
+    public BalanceResult  withdraw(UUID accountId, Long amount) {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
@@ -60,7 +60,7 @@ public class AccountService {
 
         account.withdraw(amount);
         accountRepository.save(account);
-        return new BalanceResponse(accountId, account.getAccountAmount());
+        return new BalanceResult (accountId, account.getAccountAmount());
     }
 
     @Transactional(readOnly = true)
