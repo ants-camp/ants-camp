@@ -6,8 +6,8 @@ import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
 import io.antcamp.assetservice.domain.exception.InvalidAmountException;
 import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
-import io.antcamp.assetservice.domain.model.AccountType;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
+import io.antcamp.assetservice.presentation.dto.response.BalanceResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,7 +35,7 @@ public class AccountService {
     }
 
     @Transactional
-    public void deposit(UUID accountId, Long amount) {
+    public BalanceResponse deposit(UUID accountId, Long amount) {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
@@ -45,10 +45,12 @@ public class AccountService {
 
         account.deposit(amount);
         accountRepository.save(account);
+
+        return new BalanceResponse(accountId, account.getAccountAmount());
     }
 
     @Transactional
-    public void withdraw(UUID accountId, Long amount) {
+    public BalanceResponse withdraw(UUID accountId, Long amount) {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
@@ -58,6 +60,7 @@ public class AccountService {
 
         account.withdraw(amount);
         accountRepository.save(account);
+        return new BalanceResponse(accountId, account.getAccountAmount());
     }
 
     @Transactional(readOnly = true)
