@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -51,6 +52,13 @@ public class AccountController {
     ) {
         AccountResult result = accountService.getAccount(accountId, userId);
 
+        return ApiResponse.ok(result);
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<AccountResult>>> getMyAccounts(
+            @RequestHeader("X-User-Id") UUID userId) {
+        List<AccountResult> result = accountService.getAccountsByUserId(userId);
         return ApiResponse.ok(result);
     }
 
