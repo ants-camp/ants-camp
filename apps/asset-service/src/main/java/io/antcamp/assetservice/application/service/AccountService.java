@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -90,5 +91,17 @@ public class AccountService {
     @Transactional
     public void deleteAllByCompetitionId(UUID competitionId) {
         accountRepository.deleteAllByCompetitionId(competitionId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AccountResult> getAccountsByUserId(UUID userId) {
+        return accountRepository.findAllByUserId(userId)
+                .stream()
+                .map(account -> new AccountResult(
+                        account.getAccountId(),
+                        account.getAccountNumber(),
+                        account.getAccountAmount()
+                ))
+                .toList();
     }
 }

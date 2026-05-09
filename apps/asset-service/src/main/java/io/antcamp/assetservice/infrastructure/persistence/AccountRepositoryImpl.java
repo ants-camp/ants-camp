@@ -68,4 +68,12 @@ public class AccountRepositoryImpl implements AccountRepository {
         entities.forEach(e -> e.softDelete("SYSTEM"));
         jpaAccountRepository.saveAll(entities);
     }
+
+    @Override
+    public List<Account> findAllByUserId(UUID userId) {
+        return jpaAccountRepository.findAllByUserId(userId)
+                .stream()
+                .map(AccountEntity::toDomain)
+                .toList();
+    }
 }
