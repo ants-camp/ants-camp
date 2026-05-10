@@ -1,58 +1,242 @@
 ### ============================================================
 ###  거래 시나리오 통합 테스트
 ###
-###  서비스 포트
-###    competition-service → localhost:8092
-###    asset-service       → localhost:8086
-###    ranking-service     → localhost:8094
+###  모든 요청은 Gateway ({{gateway_base}}) 를 통해 라우팅됩니다.
 ###
-###  고정값 (http-client.env.json)
-###    user_id_1 : 550e8400-e29b-41d4-a716-446655440000
-###    user_id_2 : 22222222-2222-2222-2222-222222222222
+###  사용자 구성
+###    user0 : 운영자(admin)  → 대회 생성/관리
+###    user1 : 참가자 1
+###    user2 : 참가자 2
+###    user3 : 참가자 3
+###
+###  자동 세팅값 (로그인 응답에서 자동 캡처)
+###    access_token_0 / user_id_0  ← 00-a. 운영자 로그인
+###    access_token_1 / user_id_1  ← 00-b. 유저1 로그인
+###    access_token_2 / user_id_2  ← 00-c. 유저2 로그인
+###    access_token_3 / user_id_3  ← 00-d. 유저3 로그인
 ###
 ###  자동 세팅값 (응답에서 자동 캡처)
 ###    competition_id  ← 01번 대회 생성 응답
 ###    account_id_1    ← 04번 유저1 계좌 생성 응답
 ###    account_id_2    ← 06번 유저2 계좌 생성 응답
+###    account_id_3    ← 08번 유저3 계좌 생성 응답
 ###
 ###  ✅ 실행 순서
-###    01. 대회 생성
-###    02. 대회 게시
-###    03. 유저1 대회 참가 신청
+###    00-a. 운영자(user0) 로그인
+###    00-reg-a. 유저1 회원가입
+###    00-reg-b. 유저2 회원가입
+###    00-reg-c. 유저3 회원가입
+###    00-b. 유저1 로그인
+###    00-c. 유저2 로그인
+###    00-d. 유저3 로그인
+###    01. 대회 생성                 (유저0(admin) 로그인)
+###    02. 대회 게시                 (유저0(admin) 로그인)
+###    03. 유저1 대회 참가 신청        (유저1 로그인)
 ###    04. 유저1 계좌 생성           → account_id_1 자동 세팅
-###    05. 유저2 대회 참가 신청
+###    05. 유저2 대회 참가 신청        (유저2 로그인)
 ###    06. 유저2 계좌 생성           → account_id_2 자동 세팅
-###    07. 대회 시작
-###    08. 유저1 매수 (삼성전자 10주)
+###    07. 유저3 대회 참가 신청        (유저3 로그인)
+###    08. 유저3 계좌 생성           → account_id_3 자동 세팅
+###    09. 대회 시작                 (유저0(admin) 로그인)
+###    10. 유저1 매수 (삼성전자 10주)   (유저1 로그인)
 ###    ── 1분 경과 후 실행 ──
-###    09. 유저1 자산 조회           → 가격 변화 확인
-###    10. 유저2 자산 조회           → 시드머니 상태 확인
-###    11. 순위 확인                 → 유저1 > 유저2 예상
-###    12. 유저1 매도 (5주)
+###    11. 유저1 자산 조회
+###    12. 유저2 자산 조회
+###    13. 유저3 자산 조회
+###    14. 순위 확인
+###    15. 유저1 매도 (5주)          (유저1 로그인)
 ###    ── 1분 경과 후 실행 ──
-###    13. 유저1 자산 조회
-###    14. 유저2 자산 조회
-###    15. 순위 확인
-###    16. 대회 종료
-###    17. 최종 순위 조회
+###    16. 유저1 자산 조회
+###    17. 유저2 자산 조회
+###    18. 유저3 자산 조회
+###    19. 순위 확인
+###    20. 대회 종료                 (유저0(admin) 로그인)
+###    21. 최종 순위 조회
 ### ============================================================
 
 
 # ================================================================
-#  01~02. 대회 생성 / 게시
+#  00. 로그인 (토큰 + 유저 ID 발급)
+# ================================================================
+
+# ---------------------------------------------------------------
+# 00-a. 운영자(user0) 로그인
+# ---------------------------------------------------------------
+### @name loginUser0
+POST {{gateway_base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{user0_email}}",
+  "password": "{{user0_password}}"
+}
+
+> {%
+    client.test("User0 Login Success", function() {
+        client.assert(response.status === 200, "Login failed: " + response.status);
+    });
+    var data = response.body.data;
+    client.global.set("access_token_0", data.accessToken);
+    client.global.set("user_id_0", data.user.userId);
+    console.log("✅ 운영자(user0) 로그인 완료 | userId:", data.user.userId);
+%}
+
+
+# ================================================================
+#  00-회원가입. 유저1~3 회원가입
+# ================================================================
+
+# ---------------------------------------------------------------
+# 00-reg-a. 유저1 회원가입
+# ---------------------------------------------------------------
+### @name registerUser1
+POST {{gateway_base}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "{{user1_email}}",
+  "password": "{{user1_password}}",
+  "name": "유저1",
+  "phone": "010-1111-0001"
+}
+
+> {%
+    client.test("User1 Register Success", function() {
+        client.assert(response.status === 201, "Register failed: " + response.status);
+    });
+    console.log("✅ 유저1 회원가입 완료");
+%}
+
+
+# ---------------------------------------------------------------
+# 00-reg-b. 유저2 회원가입
+# ---------------------------------------------------------------
+### @name registerUser2
+POST {{gateway_base}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "{{user2_email}}",
+  "password": "{{user2_password}}",
+  "name": "유저2",
+  "phone": "010-1111-0002"
+}
+
+> {%
+    client.test("User2 Register Success", function() {
+        client.assert(response.status === 201, "Register failed: " + response.status);
+    });
+    console.log("✅ 유저2 회원가입 완료");
+%}
+
+
+# ---------------------------------------------------------------
+# 00-reg-c. 유저3 회원가입
+# ---------------------------------------------------------------
+### @name registerUser3
+POST {{gateway_base}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "{{user3_email}}",
+  "password": "{{user3_password}}",
+  "name": "유저3",
+  "phone": "010-1111-0003"
+}
+
+> {%
+    client.test("User3 Register Success", function() {
+        client.assert(response.status === 201, "Register failed: " + response.status);
+    });
+    console.log("✅ 유저3 회원가입 완료");
+%}
+
+
+# ---------------------------------------------------------------
+# 00-b. 유저1 로그인
+# ---------------------------------------------------------------
+### @name loginUser1
+POST {{gateway_base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{user1_email}}",
+  "password": "{{user1_password}}"
+}
+
+> {%
+    client.test("User1 Login Success", function() {
+        client.assert(response.status === 200, "Login failed: " + response.status);
+    });
+    var data = response.body.data;
+    client.global.set("access_token_1", data.accessToken);
+    client.global.set("user_id_1", data.user.userId);
+    console.log("✅ 유저1 로그인 완료 | userId:", data.user.userId);
+%}
+
+
+# ---------------------------------------------------------------
+# 00-c. 유저2 로그인
+# ---------------------------------------------------------------
+### @name loginUser2
+POST {{gateway_base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{user2_email}}",
+  "password": "{{user2_password}}"
+}
+
+> {%
+    client.test("User2 Login Success", function() {
+        client.assert(response.status === 200, "Login failed: " + response.status);
+    });
+    var data = response.body.data;
+    client.global.set("access_token_2", data.accessToken);
+    client.global.set("user_id_2", data.user.userId);
+    console.log("✅ 유저2 로그인 완료 | userId:", data.user.userId);
+%}
+
+
+# ---------------------------------------------------------------
+# 00-d. 유저3 로그인
+# ---------------------------------------------------------------
+### @name loginUser3
+POST {{gateway_base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{user3_email}}",
+  "password": "{{user3_password}}"
+}
+
+> {%
+    client.test("User3 Login Success", function() {
+        client.assert(response.status === 200, "Login failed: " + response.status);
+    });
+    var data = response.body.data;
+    client.global.set("access_token_3", data.accessToken);
+    client.global.set("user_id_3", data.user.userId);
+    console.log("✅ 유저3 로그인 완료 | userId:", data.user.userId);
+%}
+
+
+# ================================================================
+#  01~02. 대회 생성 / 게시  (운영자)
 # ================================================================
 
 # ---------------------------------------------------------------
 # 01. 대회 생성  →  competition_id 자동 세팅
 # ---------------------------------------------------------------
 ### @name createCompetition
-POST {{competition_base}}/api/competitions
+POST {{gateway_base}}/api/competitions
 Content-Type: application/json
+Authorization: Bearer {{access_token_0}}
 
 {
   "name": "2026 거래 테스트 대회",
   "type": "PERSONAL",
-  "description": "유저1 vs 유저2 수익률 대결",
+  "description": "유저1 vs 유저2 vs 유저3 수익률 대결",
   "firstSeed": 10000000,
   "registerStartAt": "2026-01-01T00:00:00",
   "registerEndAt": "2026-12-30T23:59:59",
@@ -63,86 +247,91 @@ Content-Type: application/json
 }
 
 > {%
-  client.test("201 Created", function() {
-    client.assert(response.status === 201, "Expected 201, got " + response.status);
-  });
-  if (response.body.competitionId) {
-    client.global.set("competition_id", response.body.competitionId);
-    console.log("✅ competition_id 세팅:", response.body.competitionId);
-  }
+    client.test("201 Created", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+    var id = response.body.competitionId || (response.body.data && response.body.data.competitionId);
+    if (id) {
+        client.global.set("competition_id", id);
+        console.log("✅ competition_id 세팅:", id);
+    }
 %}
 
 
 # ---------------------------------------------------------------
-# 02. 대회 게시 (PREPARING → PUBLISHED)
+# 02. 대회 게시 (PREPARING → PUBLISHED)  (운영자)
 # ---------------------------------------------------------------
 ### @name publishCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/publish
+POST {{gateway_base}}/api/competitions/{{competition_id}}/publications
+Authorization: Bearer {{access_token_0}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  console.log("✅ 대회 게시 완료. 유저 조회 가능 상태");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("✅ 대회 게시 완료");
 %}
 
 
 # ================================================================
-#  03~06. 대회 참가 신청 + 계좌 생성
+#  03~08. 대회 참가 신청 + 계좌 생성
 # ================================================================
 
 # ---------------------------------------------------------------
-# 03. 유저1 대회 참가 신청  [Kafka: competition.registered 발행]
+# 03. 유저1 대회 참가 신청
 # ---------------------------------------------------------------
 ### @name joinUser1
-POST {{competition_base}}/api/competitions/{{competition_id}}/participants
+POST {{gateway_base}}/api/competitions/{{competition_id}}/participants
 Content-Type: application/json
+Authorization: Bearer {{access_token_1}}
 
 {
   "userId": "{{user_id_1}}",
-  "nickname": "투자왕김철수"
+  "nickname": "플레이어1"
 }
 
 > {%
-  client.test("201 Created", function() {
-    client.assert(response.status === 201, "Expected 201, got " + response.status);
-  });
-  console.log("[Kafka] competition.registered 발행 → 유저1 계좌 자동 생성 트리거");
+    client.test("201 Created", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+    console.log("✅ 유저1 참가 신청 완료");
 %}
 
 
 # ---------------------------------------------------------------
-# 04. 유저1 계좌 생성  →  account_id_1 자동 세팅
-#  ⚠️  03번 실행 후 Kafka 처리 완료를 기다려 계좌가 이미 생성되어 있을 수 있습니다.
-#     이 단계는 account_id 를 확보하기 위한 테스트용 계좌 생성입니다.
+# 04. 유저1 계좌 수동 생성  →  account_id_1 자동 세팅
 # ---------------------------------------------------------------
 ### @name createAccountUser1
-POST {{asset_base}}/api/accounts
+POST {{gateway_base}}/api/accounts
 Content-Type: application/json
+Authorization: Bearer {{access_token_1}}
 
 {
   "userId": "{{user_id_1}}",
   "type": "COMPETITION",
-  "initialAmount": 10000000
+  "initialAmount": 10000000,
+  "competitionId": "{{competition_id}}}"
 }
 
 > {%
-  client.test("201 Created", function() {
-    client.assert(response.status === 201, "Expected 201, got " + response.status);
-  });
-  if (response.body) {
-    client.global.set("account_id_1", response.body);
-    console.log("✅ account_id_1 세팅:", response.body);
-  }
+    client.test("201 Created", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+    var id = response.body.accountId || response.body || (response.body.data && response.body.data.accountId);
+    if (id) {
+        client.global.set("account_id_1", id);
+        console.log("✅ account_id_1 세팅:", id);
+    }
 %}
 
 
 # ---------------------------------------------------------------
-# 05. 유저2 대회 참가 신청  [Kafka: competition.registered 발행]
+# 05. 유저2 대회 참가 신청
 # ---------------------------------------------------------------
 ### @name joinUser2
-POST {{competition_base}}/api/competitions/{{competition_id}}/participants
+POST {{gateway_base}}/api/competitions/{{competition_id}}/participants
 Content-Type: application/json
+Authorization: Bearer {{access_token_2}}
 
 {
   "userId": "{{user_id_2}}",
@@ -150,19 +339,20 @@ Content-Type: application/json
 }
 
 > {%
-  client.test("201 Created", function() {
-    client.assert(response.status === 201, "Expected 201, got " + response.status);
-  });
-  console.log("[Kafka] competition.registered 발행 → 유저2 계좌 자동 생성 트리거");
+    client.test("201 Created", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+    console.log("✅ 유저2 참가 신청 완료");
 %}
 
 
 # ---------------------------------------------------------------
-# 06. 유저2 계좌 생성  →  account_id_2 자동 세팅
+# 06. 유저2 계좌 수동 생성  →  account_id_2 자동 세팅
 # ---------------------------------------------------------------
 ### @name createAccountUser2
-POST {{asset_base}}/api/accounts
+POST {{gateway_base}}/api/accounts
 Content-Type: application/json
+Authorization: Bearer {{access_token_2}}
 
 {
   "userId": "{{user_id_2}}",
@@ -171,47 +361,88 @@ Content-Type: application/json
 }
 
 > {%
-  client.test("201 Created", function() {
-    client.assert(response.status === 201, "Expected 201, got " + response.status);
-  });
-  if (response.body) {
-    client.global.set("account_id_2", response.body);
-    console.log("✅ account_id_2 세팅:", response.body);
-  }
+    client.test("201 Created", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+    var id = response.body.accountId || response.body || (response.body.data && response.body.data.accountId);
+    if (id) {
+        client.global.set("account_id_2", id);
+        console.log("✅ account_id_2 세팅:", id);
+    }
 %}
 
 
-# ================================================================
-#  07. 대회 시작
-# ================================================================
+# ---------------------------------------------------------------
+# 07. 유저3 대회 참가 신청
+# ---------------------------------------------------------------
+### @name joinUser3
+POST {{gateway_base}}/api/competitions/{{competition_id}}/participants
+Content-Type: application/json
+Authorization: Bearer {{access_token_3}}
 
-# ---------------------------------------------------------------
-# 07. 대회 시작 (PUBLISHED → ONGOING)
-# ---------------------------------------------------------------
-### @name startCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/start
+{
+  "userId": "{{user_id_3}}",
+  "nickname": "알고킹박민준"
+}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  client.test("status = ONGOING", function() {
-    client.assert(response.body.status === "ONGOING", "status = " + response.body.status);
-  });
-  console.log("✅ 대회 시작. 이제 거래 가능.");
+    client.test("201 Created", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+    console.log("✅ 유저3 참가 신청 완료");
+%}
+
+
+# ---------------------------------------------------------------
+# 08. 유저3 계좌 수동 생성  →  account_id_3 자동 세팅
+# ---------------------------------------------------------------
+### @name createAccountUser3
+POST {{gateway_base}}/api/accounts
+Content-Type: application/json
+Authorization: Bearer {{access_token_3}}
+
+{
+  "userId": "{{user_id_3}}",
+  "type": "COMPETITION",
+  "initialAmount": 10000000
+}
+
+> {%
+    client.test("201 Created", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+    var id = response.body.accountId || response.body || (response.body.data && response.body.data.accountId);
+    if (id) {
+        client.global.set("account_id_3", id);
+        console.log("✅ account_id_3 세팅:", id);
+    }
 %}
 
 
 # ================================================================
-#  08. 유저1 매수
+#  09. 대회 시작  (운영자)
 # ================================================================
 
-# ---------------------------------------------------------------
-# 08. 유저1 매수 — 삼성전자 10주 @75,000원
-# ---------------------------------------------------------------
+### @name startCompetition
+POST {{gateway_base}}/api/competitions/{{competition_id}}/starts
+Authorization: Bearer {{access_token_0}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("✅ 대회 시작. 이제 거래 가능.");
+%}
+
+
+# ================================================================
+#  10. 유저1 매수
+# ================================================================
+
 ### @name buyStockUser1
-POST {{asset_base}}/api/holdings/buy
+POST {{gateway_base}}/api/holdings/buy
 Content-Type: application/json
+Authorization: Bearer {{access_token_1}}
 X-User-Id: {{user_id_1}}
 
 {
@@ -222,19 +453,22 @@ X-User-Id: {{user_id_1}}
 }
 
 > {%
-  client.test("200 or 201", function() {
-    client.assert(response.status === 200 || response.status === 201,
-      "Expected 200/201, got " + response.status);
-  });
-  console.log("✅ 유저1 매수 완료 — 삼성전자 10주 @75,000원");
-  console.log("⏱  이제 1분 경과를 기다리세요. 스케줄러가 자산을 갱신합니다.");
+    client.test("200 or 201", function() {
+        client.assert(response.status === 200 || response.status === 201,
+            "Expected 200/201, got " + response.status);
+    });
+    console.log("✅ 유저1 매수 완료 — 삼성전자 10주 @75,000원");
+    console.log("⏱  1분 경과 후 11~14번을 실행하세요.");
 %}
 
+
 # ---------------------------------------------------------------
-# [U5] 보유 주식 조회
+# [참고] 유저1 보유 주식 조회
 # ---------------------------------------------------------------
-### @name getHoldings
-GET {{asset_base}}/api/holdings?accountId={{account_id_1}}
+### @name getHoldingsUser1
+GET {{gateway_base}}/api/holdings?accountId={{account_id_1}}
+Authorization: Bearer {{access_token_1}}
+X-User-Id: {{user_id_1}}
 
 > {%
     client.test("200 OK", function() {
@@ -243,78 +477,96 @@ GET {{asset_base}}/api/holdings?accountId={{account_id_1}}
     console.log("보유 주식:", JSON.stringify(response.body, null, 2));
 %}
 
+
 # ================================================================
-#  ── 1분 경과 ──
-#
-#  내부 스케줄러(매 1분)가 보유 주식 현재가 기준으로 총자산을 재계산합니다.
-#  아래 09~11번은 1분 후에 실행하세요.
+#  ── 1분 경과 ──  스케줄러가 총자산 재계산
+#  아래 11~14번은 1분 후에 실행하세요.
 # ================================================================
 
 # ---------------------------------------------------------------
-# 09. 유저1 자산 조회 — 매수 후 가격 변화 확인
+# 11. 유저1 자산 조회 (매수 후)
 # ---------------------------------------------------------------
 ### @name getAssetUser1_after_buy
-GET {{asset_base}}/api/accounts/{{account_id_1}}
+GET {{gateway_base}}/api/accounts/{{account_id_1}}
+Authorization: Bearer {{access_token_1}}
 X-User-Id: {{user_id_1}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  console.log("=== 유저1 자산 (매수 후) ===");
-  console.log("계좌번호:", response.body.data.accountNumber);
-  console.log("현금 잔액:", response.body.data.accountAmount, "원");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저1 자산 (매수 후) ===");
+    console.log(JSON.stringify(response.body, null, 2));
 %}
 
 
 # ---------------------------------------------------------------
-# 10. 유저2 자산 조회 — 시드머니 그대로 (거래 없음)
+# 12. 유저2 자산 조회 (매수 후)
 # ---------------------------------------------------------------
 ### @name getAssetUser2_after_buy
-GET {{asset_base}}/api/accounts/{{account_id_2}}
+GET {{gateway_base}}/api/accounts/{{account_id_2}}
+Authorization: Bearer {{access_token_2}}
 X-User-Id: {{user_id_2}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  console.log("=== 유저2 자산 (시드머니 상태) ===");
-  console.log("계좌번호:", response.body.data.accountNumber);
-  console.log("현금 잔액:", response.body.data.accountAmount, "원");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저2 자산 (시드머니 상태) ===");
+    console.log(JSON.stringify(response.body, null, 2));
 %}
 
 
 # ---------------------------------------------------------------
-# 11. 순위 확인 — 유저1 vs 유저2 (매수 후)
+# 13. 유저3 자산 조회 (매수 후)
 # ---------------------------------------------------------------
-### @name getRankings_after_buy
-GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
+### @name getAssetUser3_after_buy
+GET {{gateway_base}}/api/accounts/{{account_id_3}}
+Authorization: Bearer {{access_token_3}}
+X-User-Id: {{user_id_3}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  console.log("=== 순위 (유저1 매수 후) ===");
-  if (Array.isArray(response.body)) {
-    response.body.forEach(function(r) {
-      console.log("  " + r.rank + "위", r.nickname, "| 총자산:", r.totalAsset, "| 수익률:", r.rateOfReturn + "%");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
-  } else {
+    console.log("=== 유저3 자산 (시드머니 상태) ===");
     console.log(JSON.stringify(response.body, null, 2));
-  }
+%}
+
+
+# ---------------------------------------------------------------
+# 14. 순위 확인 (매수 후)
+# ---------------------------------------------------------------
+### @name getRankings_after_buy
+GET {{gateway_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
+Authorization: Bearer {{access_token_0}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 순위 (유저1 매수 후) ===");
+    var data = Array.isArray(response.body) ? response.body
+        : (response.body.data || response.body);
+    if (Array.isArray(data)) {
+        data.forEach(function(r) {
+            console.log("  " + r.rank + "위", r.nickname,
+                "| 총자산:", r.totalAsset, "| 수익률:", r.rateOfReturn + "%");
+        });
+    } else {
+        console.log(JSON.stringify(data, null, 2));
+    }
 %}
 
 
 # ================================================================
-#  12. 유저1 매도
+#  15. 유저1 매도
 # ================================================================
 
-# ---------------------------------------------------------------
-# 12. 유저1 매도 — 삼성전자 5주
-# ---------------------------------------------------------------
 ### @name sellStockUser1
-POST {{asset_base}}/api/holdings/sell
+POST {{gateway_base}}/api/holdings/sell
 Content-Type: application/json
+Authorization: Bearer {{access_token_1}}
 X-User-Id: {{user_id_1}}
 
 {
@@ -324,117 +576,137 @@ X-User-Id: {{user_id_1}}
 }
 
 > {%
-  client.test("200 or 201", function() {
-    client.assert(response.status === 200 || response.status === 201,
-      "Expected 200/201, got " + response.status);
-  });
-  console.log("✅ 유저1 매도 완료 — 삼성전자 5주");
-  console.log("⏱  이제 1분 경과를 기다리세요. 스케줄러가 자산을 갱신합니다.");
+    client.test("200 or 201", function() {
+        client.assert(response.status === 200 || response.status === 201,
+            "Expected 200/201, got " + response.status);
+    });
+    console.log("✅ 유저1 매도 완료 — 삼성전자 5주");
+    console.log("⏱  1분 경과 후 16~19번을 실행하세요.");
 %}
 
 
 # ================================================================
-#  ── 1분 경과 ──
-#
-#  스케줄러가 갱신한 총자산 기준으로 순위가 변동됩니다.
-#  아래 13~15번은 1분 후에 실행하세요.
+#  ── 1분 경과 ──  스케줄러가 총자산 재계산
+#  아래 16~19번은 1분 후에 실행하세요.
 # ================================================================
 
 # ---------------------------------------------------------------
-# 13. 유저1 자산 조회 — 매도 후
+# 16. 유저1 자산 조회 (매도 후)
 # ---------------------------------------------------------------
 ### @name getAssetUser1_after_sell
-GET {{asset_base}}/api/accounts/{{account_id_1}}
+GET {{gateway_base}}/api/accounts/{{account_id_1}}
+Authorization: Bearer {{access_token_1}}
 X-User-Id: {{user_id_1}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  console.log("=== 유저1 자산 (매도 후) ===");
-  console.log("계좌번호:", response.body.data.accountNumber);
-  console.log("현금 잔액:", response.body.data.accountAmount, "원");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저1 자산 (매도 후) ===");
+    console.log(JSON.stringify(response.body, null, 2));
 %}
 
 
 # ---------------------------------------------------------------
-# 14. 유저2 자산 조회 — 여전히 시드머니
+# 17. 유저2 자산 조회 (매도 후)
 # ---------------------------------------------------------------
 ### @name getAssetUser2_after_sell
-GET {{asset_base}}/api/accounts/{{account_id_2}}
+GET {{gateway_base}}/api/accounts/{{account_id_2}}
+Authorization: Bearer {{access_token_2}}
 X-User-Id: {{user_id_2}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  console.log("=== 유저2 자산 (매도 후) ===");
-  console.log("계좌번호:", response.body.data.accountNumber);
-  console.log("현금 잔액:", response.body.data.accountAmount, "원");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저2 자산 (매도 후) ===");
+    console.log(JSON.stringify(response.body, null, 2));
 %}
 
 
 # ---------------------------------------------------------------
-# 15. 순위 확인 — 유저1 vs 유저2 (매도 후)
+# 18. 유저3 자산 조회 (매도 후)
+# ---------------------------------------------------------------
+### @name getAssetUser3_after_sell
+GET {{gateway_base}}/api/accounts/{{account_id_3}}
+Authorization: Bearer {{access_token_3}}
+X-User-Id: {{user_id_3}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저3 자산 (매도 후) ===");
+    console.log(JSON.stringify(response.body, null, 2));
+%}
+
+
+# ---------------------------------------------------------------
+# 19. 순위 확인 (매도 후)
 # ---------------------------------------------------------------
 ### @name getRankings_after_sell
-GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
+GET {{gateway_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
+Authorization: Bearer {{access_token_0}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  console.log("=== 순위 (유저1 매도 후) ===");
-  if (Array.isArray(response.body)) {
-    response.body.forEach(function(r) {
-      console.log("  " + r.rank + "위", r.nickname, "| 총자산:", r.totalAsset, "| 수익률:", r.rateOfReturn + "%");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
-  } else {
-    console.log(JSON.stringify(response.body, null, 2));
-  }
+    console.log("=== 순위 (유저1 매도 후) ===");
+    var data = Array.isArray(response.body) ? response.body
+        : (response.body.data || response.body);
+    if (Array.isArray(data)) {
+        data.forEach(function(r) {
+            console.log("  " + r.rank + "위", r.nickname,
+                "| 총자산:", r.totalAsset, "| 수익률:", r.rateOfReturn + "%");
+        });
+    } else {
+        console.log(JSON.stringify(data, null, 2));
+    }
 %}
 
 
 # ================================================================
-#  16~17. 대회 종료 / 최종 순위
+#  20~21. 대회 종료 / 최종 순위  (운영자)
 # ================================================================
 
 # ---------------------------------------------------------------
-# 16. 대회 종료 (ONGOING → FINISHED)
-#  → Kafka: competition.finished 발행 → 최종 자산 계산 → 순위 확정
-#  ⚠️  17번은 Kafka 비동기 처리 완료 후 실행하세요 (수 초 소요).
+# 20. 대회 종료 (ONGOING → FINISHED)
+#  ⚠️  21번은 Kafka 비동기 처리 완료 후 실행 (수 초 소요)
 # ---------------------------------------------------------------
 ### @name finishCompetition
-PATCH {{competition_base}}/api/competitions/{{competition_id}}/finish
+POST {{gateway_base}}/api/competitions/{{competition_id}}/finishes
+Authorization: Bearer {{access_token_0}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  client.test("status = FINISHED", function() {
-    client.assert(response.body.status === "FINISHED", "status = " + response.body.status);
-  });
-  console.log("✅ 대회 종료.");
-  console.log("[Kafka] competition.finished → 최종 자산 계산 및 순위 확정 트리거");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("✅ 대회 종료.");
+    console.log("[Kafka] competition.finished → 최종 자산 계산 및 순위 확정 트리거");
 %}
 
 
 # ---------------------------------------------------------------
-# 17. 최종 순위 조회
+# 21. 최종 순위 조회
 # ---------------------------------------------------------------
 ### @name getFinalRankings
-GET {{ranking_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
+GET {{gateway_base}}/api/rankings/competitions/{{competition_id}}?page=0&size=20
+Authorization: Bearer {{access_token_0}}
 
 > {%
-  client.test("200 OK", function() {
-    client.assert(response.status === 200, "Expected 200, got " + response.status);
-  });
-  console.log("=== 최종 순위 ===");
-  if (Array.isArray(response.body)) {
-    response.body.forEach(function(r) {
-      console.log("  " + r.rank + "위", r.nickname, "| 총자산:", r.totalAsset, "| 수익률:", r.rateOfReturn + "%");
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
     });
-  } else {
-    console.log(JSON.stringify(response.body, null, 2));
-  }
+    console.log("=== 최종 순위 ===");
+    var data = Array.isArray(response.body) ? response.body
+        : (response.body.data || response.body);
+    if (Array.isArray(data)) {
+        data.forEach(function(r) {
+            console.log("  " + r.rank + "위", r.nickname,
+                "| 총자산:", r.totalAsset, "| 수익률:", r.rateOfReturn + "%");
+        });
+    } else {
+        console.log(JSON.stringify(data, null, 2));
+    }
 %}

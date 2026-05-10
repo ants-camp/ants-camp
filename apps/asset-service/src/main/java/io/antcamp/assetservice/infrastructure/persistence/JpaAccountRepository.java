@@ -20,4 +20,6 @@ public interface JpaAccountRepository extends JpaRepository<AccountEntity, UUID>
     List<AccountEntity> findAllByCompetitionId(UUID competitionId);
 
     Optional<AccountEntity> findByUserIdAndCompetitionId(UUID userId, UUID competitionId);
+
+    List<AccountEntity> findAllByUserId(UUID userId);
 }

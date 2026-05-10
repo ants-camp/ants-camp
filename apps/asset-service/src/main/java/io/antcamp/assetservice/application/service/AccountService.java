@@ -2,16 +2,17 @@ package io.antcamp.assetservice.application.service;
 
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
+import io.antcamp.assetservice.application.dto.query.BalanceResult;
 import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
 import io.antcamp.assetservice.domain.exception.InvalidAmountException;
 import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
-import io.antcamp.assetservice.domain.model.AccountType;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -35,7 +36,7 @@ public class AccountService {
     }
 
     @Transactional
-    public void deposit(UUID accountId, Long amount) {
+    public BalanceResult deposit(UUID accountId, Long amount) {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
@@ -45,10 +46,12 @@ public class AccountService {
 
         account.deposit(amount);
         accountRepository.save(account);
+
+        return new BalanceResult (accountId, account.getAccountAmount());
     }
 
     @Transactional
-    public void withdraw(UUID accountId, Long amount) {
+    public BalanceResult  withdraw(UUID accountId, Long amount) {
         Account account = accountRepository.findByIdWithLock(accountId)
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
 
@@ -58,6 +61,7 @@ public class AccountService {
 
         account.withdraw(amount);
         accountRepository.save(account);
+        return new BalanceResult (accountId, account.getAccountAmount());
     }
 
     @Transactional(readOnly = true)
@@ -90,5 +94,17 @@ public class AccountService {
     @Transactional
     public void deleteAllByCompetitionId(UUID competitionId) {
         accountRepository.deleteAllByCompetitionId(competitionId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AccountResult> getAccountsByUserId(UUID userId) {
+        return accountRepository.findAllByUserId(userId)
+                .stream()
+                .map(account -> new AccountResult(
+                        account.getAccountId(),
+                        account.getAccountNumber(),
+                        account.getAccountAmount()
+                ))
+                .toList();
     }
 }
