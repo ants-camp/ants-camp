@@ -12,30 +12,30 @@ public class CompetitionParticipant {
 
     private final UUID participantId;
     private final UUID userId;
-    private final String nickname;
+    private final String username;
     private final UUID competitionId;
 
     @Builder(access = AccessLevel.PRIVATE)
     private CompetitionParticipant(
             UUID participantId,
             UUID userId,
-            String nickname,
+            String username,
             UUID competitionId
     ) {
         this.participantId = participantId;
         this.userId = userId;
-        this.nickname = nickname;
+        this.username = username;
         this.competitionId = competitionId;
         validate();
     }
 
     // ─── 정적 팩토리 메서드 ───────────────────────────────────────────────
 
-    public static CompetitionParticipant create(UUID userId, String nickname, UUID competitionId) {
+    public static CompetitionParticipant create(UUID userId, String username, UUID competitionId) {
         return CompetitionParticipant.builder()
                 .participantId(UUID.randomUUID())
                 .userId(userId)
-                .nickname(nickname)
+                .username(username)
                 .competitionId(competitionId)
                 .build();
     }
@@ -43,13 +43,13 @@ public class CompetitionParticipant {
     public static CompetitionParticipant reconstitute(
             UUID participantId,
             UUID userId,
-            String nickname,
+            String username,
             UUID competitionId
     ) {
         return CompetitionParticipant.builder()
                 .participantId(participantId)
                 .userId(userId)
-                .nickname(nickname)
+                .username(username)
                 .competitionId(competitionId)
                 .build();
     }
@@ -67,7 +67,7 @@ public class CompetitionParticipant {
         if (userId == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        if (nickname == null || nickname.isBlank()) {
+        if (username == null || username.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (competitionId == null) {

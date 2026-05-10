@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS competition.p_competitions (
 CREATE TABLE IF NOT EXISTS competition.p_competition_participant (
     participant_id  UUID            NOT NULL,
     user_id         UUID            NOT NULL,
-    nickname        VARCHAR(100)    NOT NULL,
+    username        VARCHAR(100)    NOT NULL,
     competition_id  UUID            NOT NULL,
     created_at      TIMESTAMP       NOT NULL,
     created_by      VARCHAR(255)    NOT NULL,
