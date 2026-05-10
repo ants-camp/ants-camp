@@ -15,28 +15,31 @@ public class EvalRun {
     private List<String> questions;
     private List<String> judgeModels;
     private UUID promptVersionId;
+    private String ragModel;
     private String memo;
     private EvalRunStatus status;
 
     public static EvalRun create(List<String> questions, List<String> judgeModels,
-                                  UUID promptVersionId, String memo) {
+                                  UUID promptVersionId, String ragModel, String memo) {
         return EvalRun.builder()
                 .evalRunId(UUID.randomUUID())
                 .questions(List.copyOf(questions))
                 .judgeModels(List.copyOf(judgeModels))
                 .promptVersionId(promptVersionId)
+                .ragModel(ragModel)
                 .memo(memo)
                 .status(EvalRunStatus.PENDING)
                 .build();
     }
 
     public static EvalRun restore(UUID evalRunId, List<String> questions, List<String> judgeModels,
-                                   UUID promptVersionId, String memo, EvalRunStatus status) {
+                                   UUID promptVersionId, String ragModel, String memo, EvalRunStatus status) {
         return EvalRun.builder()
                 .evalRunId(evalRunId)
                 .questions(questions)
                 .judgeModels(judgeModels)
                 .promptVersionId(promptVersionId)
+                .ragModel(ragModel)
                 .memo(memo)
                 .status(status)
                 .build();

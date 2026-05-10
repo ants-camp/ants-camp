@@ -50,7 +50,7 @@ spring:
             - id: notification-service
               uri: lb://NOTIFICATION-SERVICE
               predicates:
-                - Path=/api/notifications/admin/**
+                - Path=/api/notifications/**
   application:
     name: api-gateway
   config:

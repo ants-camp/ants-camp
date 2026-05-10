@@ -43,6 +43,8 @@ public class PairwiseController {
     ) {
         managerRoleGuard.require(role);
         PairwiseSummary summary = pairwiseApplicationService.getSummary(evalRunIdA, evalRunIdB);
-        return ApiResponse.ok(PairwiseSummaryResponse.from(summary));
+        String ragModelA = pairwiseApplicationService.getRagModel(evalRunIdA);
+        String ragModelB = pairwiseApplicationService.getRagModel(evalRunIdB);
+        return ApiResponse.ok(PairwiseSummaryResponse.from(summary, ragModelA, ragModelB));
     }
 }

@@ -59,6 +59,7 @@ public enum ErrorCode {
     EVAL_JUDGE_MODELS_EMPTY(HttpStatus.BAD_REQUEST, "EVAL_JUDGE_MODELS_EMPTY", "평가 모델은 최소 1개 이상이어야 합니다."),
     EVAL_TOO_MANY_COMBINATIONS(HttpStatus.BAD_REQUEST, "EVAL_TOO_MANY_COMBINATIONS", "질문 × 모델 조합이 허용 한도를 초과했습니다."),
     EVAL_RUN_NOT_FOUND(HttpStatus.NOT_FOUND, "EVAL_RUN_NOT_FOUND", "존재하지 않는 평가 실행입니다."),
+    EVAL_SAME_RUN_CONFIG(HttpStatus.BAD_REQUEST, "EVAL_SAME_RUN_CONFIG", "모델과 프롬프트 버전이 동일한 Run은 비교할 수 없습니다."),
     PROMPT_VERSION_NAME_BLANK(HttpStatus.BAD_REQUEST, "PROMPT_VERSION_NAME_BLANK", "프롬프트 버전 이름은 비어있을 수 없습니다."),
     PROMPT_VERSION_CONTENT_BLANK(HttpStatus.BAD_REQUEST, "PROMPT_VERSION_CONTENT_BLANK", "프롬프트 내용은 비어있을 수 없습니다."),
 

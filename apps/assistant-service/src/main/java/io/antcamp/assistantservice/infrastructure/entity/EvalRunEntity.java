@@ -38,6 +38,9 @@ public class EvalRunEntity extends BaseEntity {
     @Column(name = "prompt_version_id")
     private UUID promptVersionId;
 
+    @Column(name = "rag_model", nullable = false, length = 50)
+    private String ragModel;
+
     @Column(name = "memo", columnDefinition = "TEXT")
     private String memo;
 
@@ -51,6 +54,7 @@ public class EvalRunEntity extends BaseEntity {
                 .questions(JsonConverter.toJson(domain.getQuestions()))
                 .judgeModels(JsonConverter.toJson(domain.getJudgeModels()))
                 .promptVersionId(domain.getPromptVersionId())
+                .ragModel(domain.getRagModel())
                 .memo(domain.getMemo())
                 .status(domain.getStatus())
                 .build();
@@ -59,6 +63,6 @@ public class EvalRunEntity extends BaseEntity {
     public EvalRun toDomain() {
         List<String> questionTexts = JsonConverter.fromJson(this.questions, new TypeReference<>() {});
         List<String> judgeModels = JsonConverter.fromJson(this.judgeModels, new TypeReference<>() {});
-        return EvalRun.restore(this.evalRunId, questionTexts, judgeModels, this.promptVersionId, this.memo, this.status);
+        return EvalRun.restore(this.evalRunId, questionTexts, judgeModels, this.promptVersionId, this.ragModel, this.memo, this.status);
     }
 }

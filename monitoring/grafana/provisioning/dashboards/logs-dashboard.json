@@ -30,9 +30,9 @@
         "name": "search",
         "label": "로그 검색",
         "type": "textbox",
-        "current": { "selected": false, "text": "", "value": "" },
-        "options": [{ "selected": true, "text": "", "value": "" }],
-        "query": ""
+        "current": { "selected": true, "text": ".", "value": "." },
+        "options": [{ "selected": true, "text": ".", "value": "." }],
+        "query": "."
       }
     ]
   },
@@ -55,7 +55,7 @@
       },
       "targets": [
         {
-          "expr": "{job=\"$job\"} |~ \"(?i)${search:regex}\"",
+          "expr": "{job=\"$job\"} |~ \"(?i)${search}\"",
           "legendFormat": ""
         }
       ]

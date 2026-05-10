@@ -52,7 +52,9 @@ public class GatewaySecurityConfig {
                         .pathMatchers(
                                 "/api/auth/**",
                                 "/api/public/**",
-                                "/api/users/register"
+                                "/api/users/register",
+                                "/api/notifications/prometheus",
+                                "/api/notifications/interactions"
                         ).permitAll()
 
                         // 관리자 전용 API

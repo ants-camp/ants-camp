@@ -8,7 +8,7 @@
     {
       "type": "link",
       "title": "🔎 로그 전용 보기",
-      "url": "/d/logs-dashboard/logs-dashboard?var-job=${job}&var-search=${search}",
+      "url": "/d/logs-dashboard/logs-dashboard?var-job=${job}",
       "keepTime": true,
       "targetBlank": true
     }
@@ -25,14 +25,6 @@
         "includeAll": false,
         "multi": false,
         "sort": 1
-      },
-      {
-        "name": "search",
-        "label": "로그 검색",
-        "type": "textbox",
-        "current": { "selected": false, "text": "", "value": "" },
-        "options": [{ "selected": true, "text": "", "value": "" }],
-        "query": ""
       }
     ]
   },
@@ -524,37 +516,6 @@
           }
         }
       }
-    },
-    {
-      "id": 102,
-      "type": "row",
-      "title": "🔎 로그",
-      "collapsed": false,
-      "gridPos": { "x": 0, "y": 49, "w": 24, "h": 1 },
-      "panels": []
-    },
-    {
-      "id": 8,
-      "title": "로그",
-      "type": "logs",
-      "gridPos": { "x": 0, "y": 50, "w": 24, "h": 12 },
-      "datasource": { "type": "loki", "uid": "loki" },
-      "options": {
-        "showTime": true,
-        "showLabels": false,
-        "showCommonLabels": false,
-        "wrapLogMessage": true,
-        "prettifyLogMessage": false,
-        "enableLogDetails": true,
-        "sortOrder": "Ascending",
-        "dedupStrategy": "none"
-      },
-      "targets": [
-        {
-          "expr": "{job=\"$job\"} |~ \"(?i)${search:regex}\"",
-          "legendFormat": ""
-        }
-      ]
     }
   ]
 }

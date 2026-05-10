@@ -3,6 +3,7 @@ package io.antcamp.assistantservice.application.service;
 import io.antcamp.assistantservice.application.dto.command.SendMessageCommand;
 import io.antcamp.assistantservice.application.dto.result.SendMessageResult;
 import io.antcamp.assistantservice.application.port.ChatPort;
+import io.antcamp.assistantservice.application.port.EvalRagPort;
 import io.antcamp.assistantservice.application.port.LlmPort;
 import io.antcamp.assistantservice.application.port.ResponseCachePort;
 import io.antcamp.assistantservice.application.port.VectorStorePort;
@@ -32,6 +33,7 @@ public class RagApplicationService {
     private final VectorStorePort vectorStorePort;
     private final LlmPort llmPort;
     private final ResponseCachePort responseCachePort;
+    private final EvalRagPort evalRagPort;
 
     private static final int TOP_K = 5;
     private static final String ERROR_RESPONSE = "죄송합니다. 일시적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.";
@@ -93,7 +95,7 @@ public class RagApplicationService {
             int topK
     ) {}
 
-    public EvalRagResult runRagForEval(String question, String promptTemplate) {
+    public EvalRagResult runRagForEval(String question, String promptTemplate, String ragModel) {
         List<VectorStorePort.SearchedChunk> searchedChunks;
         try {
             searchedChunks = vectorStorePort.search(question, TOP_K);
@@ -102,11 +104,18 @@ public class RagApplicationService {
             searchedChunks = List.of();
         }
         String contextText = buildChunksText(searchedChunks);
-        // null이면 기본 프롬프트 템플릿 사용
         String template = (promptTemplate != null) ? promptTemplate : SYSTEM_PROMPT_TEMPLATE;
         String systemPrompt = template.formatted(contextText);
         long start = System.currentTimeMillis();
-        LlmPort.LlmResult llmResult = llmPort.chatAnswer(systemPrompt, question, List.of());
+        EvalRagPort.EvalRagResult llmResult;
+        try {
+            llmResult = evalRagPort.generate(ragModel, systemPrompt, question);
+        } catch (Exception e) {
+            log.warn("평가용 LLM 호출 실패: question={}, ragModel={}", question, ragModel, e);
+            int elapsed = (int) (System.currentTimeMillis() - start);
+            return new EvalRagResult(question, buildRetrievedChunks(searchedChunks), systemPrompt,
+                    ragModel, "[LLM 오류] " + e.getMessage(), elapsed, 0, 0, contextText, TOP_K);
+        }
         int latencyMs = (int) (System.currentTimeMillis() - start);
         return new EvalRagResult(
                 question,
