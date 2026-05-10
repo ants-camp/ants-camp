@@ -37,7 +37,15 @@ public class EvalApplicationService {
                 .orElse(null);
 
         // ragModel 미지정 시 기본 설정 모델 사용
-        String resolvedRagModel = command.ragModel() != null ? command.ragModel() : llmConfig.modelName();
+        String resolvedRagModel;
+        if (command.ragModel() == null || command.ragModel().isBlank()) {
+            resolvedRagModel = llmConfig.modelName();
+        } else {
+            resolvedRagModel = command.ragModel().trim();
+            if (resolvedRagModel.length() > 50) {
+                throw new IllegalArgumentException("ragModel 값이 50자를 초과합니다: " + resolvedRagModel.length() + "자");
+            }
+        }
 
         List<String> questionTexts = command.questions().stream()
                 .map(EvalQuestion::question)
