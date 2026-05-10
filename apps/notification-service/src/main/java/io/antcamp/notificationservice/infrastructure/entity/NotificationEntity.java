@@ -102,7 +102,9 @@ public class NotificationEntity extends BaseEntity {
                 this.status,
                 this.slackMessageTs,
                 this.resolutionAction,
-                this.actionUserEmail
+                this.actionUserEmail,
+                this.getCreatedAt(),
+                this.getUpdatedAt()
         );
     }
 }

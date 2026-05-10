@@ -2,6 +2,7 @@ package io.antcamp.notificationservice.infrastructure.client.slack;
 
 import io.antcamp.notificationservice.application.port.ActionResult;
 import io.antcamp.notificationservice.application.port.AlertPort;
+import io.antcamp.notificationservice.domain.exception.SlackApiException;
 import io.antcamp.notificationservice.domain.model.Notification;
 import io.antcamp.notificationservice.domain.model.ResolutionAction;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,8 @@ public class SlackApiClient implements AlertPort {
 
         SlackResponse response = post(CHAT_POST_MESSAGE_URL, body);
         if (response == null || !response.ok()) {
-            throw new RuntimeException("Slack 전송 실패: " + (response != null ? response.error() : "null response"));
+            log.error("Slack 전송 실패: error={}", response != null ? response.error() : "null response");
+            throw new SlackApiException();
         }
 
         log.info("Slack 전송 완료: title={}, ts={}", notification.getTitle(), response.ts());
@@ -60,7 +62,8 @@ public class SlackApiClient implements AlertPort {
 
         SlackResponse response = post(CHAT_POST_MESSAGE_URL, body);
         if (response == null || !response.ok()) {
-            throw new RuntimeException("스레드 답글 전송 실패: " + (response != null ? response.error() : "null response"));
+            log.error("스레드 답글 전송 실패: error={}", response != null ? response.error() : "null response");
+            throw new SlackApiException();
         }
     }
 

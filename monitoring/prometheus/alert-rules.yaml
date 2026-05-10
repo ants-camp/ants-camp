@@ -3,31 +3,30 @@ groups:
     rules:
       - alert: HttpErrorOccurred
         expr: |
-          sum by (application, job, status) (increase(http_server_requests_seconds_count{status=~"[45].."}[5m])) > 0
-        for: 0m
+          sum by (job, status, uri, exception) (increase(http_server_requests_seconds_count{status=~"[45].."}[5m])) > 5
+        for: 2m
         labels:
           severity: warning
         annotations:
-          summary: "{{ $labels.application }} HTTP {{ $labels.status }} 에러 발생"
-          description: "최근 5분간 {{ $labels.application }} 서비스에서 {{ $labels.status }} 에러가 {{ $value | printf \"%.0f\" }}건 발생했습니다."
+          summary: "{{ $labels.job }} HTTP {{ $labels.status }} 에러 발생"
+          description: "최근 5분간 {{ $labels.job }} 서비스에서 {{ $labels.uri }}에 {{ $labels.status }} 에러가 {{ $value | printf \"%.0f\" }}건 발생했습니다. 예외: {{ $labels.exception }}"
 
 # 운영 기준
-      # todo : 개발중엔 ServiceDown 비활성화 함.
-#      - alert: ServiceDown
-#        expr: up == 0
-#        for: 1m
-#        labels:
-#          severity: critical
-#        annotations:
-#          summary: "서비스 다운: {{ $labels.job }}"
-
-      - alert: HighCPU
-        expr: process_cpu_usage > 0.5
+      - alert: ServiceDown
+        expr: up == 0
         for: 1m
         labels:
           severity: critical
         annotations:
-          summary: "CPU 50% 초과: {{ $labels.job }}"
+          summary: "서비스 다운: {{ $labels.job }}"
+
+      - alert: HighCPU
+        expr: process_cpu_usage > 0.8
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "CPU 80% 초과: {{ $labels.job }}"
 
       - alert: HighMemory
         expr: (jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0) > 0.8
@@ -36,3 +35,27 @@ groups:
           severity: warning
         annotations:
           summary: "JVM Heap 80% 초과: {{ $labels.job }}"
+
+      - alert: HighGcOverhead
+        expr: jvm_gc_overhead_percent > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} GC overhead 10% 초과"
+
+      - alert: ConnectionPoolNearExhaustion
+        expr: hikaricp_connections_active / hikaricp_connections_max > 0.9
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} 커넥션 풀 90% 이상 사용 중"
+
+      - alert: ConnectionPoolPending
+        expr: hikaricp_connections_pending > 3
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} 커넥션 획득 대기 발생 — 풀 고갈 임박"

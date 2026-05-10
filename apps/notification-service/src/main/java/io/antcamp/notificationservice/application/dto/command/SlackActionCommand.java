@@ -1,5 +1,6 @@
 package io.antcamp.notificationservice.application.dto.command;
 
+import io.antcamp.notificationservice.domain.exception.InvalidInputException;
 import io.antcamp.notificationservice.domain.model.ResolutionAction;
 
 import java.util.UUID;
@@ -10,9 +11,9 @@ public record SlackActionCommand(
         ResolutionAction action
 ) {
     public SlackActionCommand {
-        if (notificationId == null) throw new IllegalArgumentException("notificationId는 필수입니다.");
-        if (slackUserId == null || slackUserId.isBlank()) throw new IllegalArgumentException("slackUserId는 필수입니다.");
-        if (action == null) throw new IllegalArgumentException("action은 필수입니다.");
+        if (notificationId == null) throw new InvalidInputException();
+        if (slackUserId == null || slackUserId.isBlank()) throw new InvalidInputException();
+        if (action == null) throw new InvalidInputException();
     }
 
     public static SlackActionCommand of(UUID notificationId, String slackUserId, String actionValue) {

@@ -396,6 +396,15 @@ services:
     networks:
       - kafka-network
 
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: antcamp-zipkin
+    ports:
+      - "${ZIPKIN_PORT}:9411"
+    networks:
+      - kafka-network
+    restart: unless-stopped
+
   prometheus:
     image: prom/prometheus:v2.53.0
     container_name: prometheus
