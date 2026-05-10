@@ -135,17 +135,19 @@ public class RagApplicationService {
     private SendMessageResult generateBotResponse(ChatMessage userMessage, List<LlmPort.HistoryMessage> llmHistory) {
         UUID chatSessionId = userMessage.getChatSessionId();
 
-        // 질문과 유사한 답변이 캐시에 있는지 확인
-        try {
-            Optional<ResponseCachePort.CachedEntry> cached = responseCachePort.findSimilar(userMessage.getContent());
-            if (cached.isPresent()) {
-                log.info("캐시 히트: sessionId={}", chatSessionId);
-                userMessage.complete();
-                return SendMessageResult.from(chatPort.saveCachedBotResult(
-                        userMessage, chatSessionId, cached.get().answer(), cached.get().sources()));
+        // 첫 턴에서만 캐시 조회 — 후속 질문은 이전 문맥에 의존하므로 캐시 히트 시 오답 반환 위험
+        if (llmHistory.isEmpty()) {
+            try {
+                Optional<ResponseCachePort.CachedEntry> cached = responseCachePort.findSimilar(userMessage.getContent());
+                if (cached.isPresent()) {
+                    log.info("캐시 히트: sessionId={}", chatSessionId);
+                    userMessage.complete();
+                    return SendMessageResult.from(chatPort.saveCachedBotResult(
+                            userMessage, chatSessionId, cached.get().answer(), cached.get().sources()));
+                }
+            } catch (Exception e) {
+                log.warn("캐시 조회 실패, RAG 파이프라인으로 진행: sessionId={}", chatSessionId, e);
             }
-        } catch (Exception e) {
-            log.warn("캐시 조회 실패, RAG 파이프라인으로 진행: sessionId={}", chatSessionId, e);
         }
 
         List<VectorStorePort.SearchedChunk> searchedChunks;
@@ -170,11 +172,13 @@ public class RagApplicationService {
 
         List<SourceReference> sources = buildSources(searchedChunks);
 
-        // 캐시 미스 — 다음 유사 요청에 재사용하기 위해 저장
-        try {
-            responseCachePort.store(userMessage.getContent(), llmResult.content(), sources);
-        } catch (Exception e) {
-            log.warn("캐시 저장 실패, 무시하고 계속 진행: sessionId={}", chatSessionId, e);
+        // 첫 턴에서만 캐시 저장 — 문맥 의존 답변은 캐시 오염 방지
+        if (llmHistory.isEmpty()) {
+            try {
+                responseCachePort.store(userMessage.getContent(), llmResult.content(), sources);
+            } catch (Exception e) {
+                log.warn("캐시 저장 실패, 무시하고 계속 진행: sessionId={}", chatSessionId, e);
+            }
         }
 
         ChatPort.BotResultContext ctx = new ChatPort.BotResultContext(

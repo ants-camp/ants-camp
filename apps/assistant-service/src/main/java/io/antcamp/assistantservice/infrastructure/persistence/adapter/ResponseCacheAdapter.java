@@ -68,6 +68,8 @@ public class ResponseCacheAdapter implements ResponseCachePort {
     public void store(String question, String answer, List<SourceReference> sources) {
         String vectorStr = toVectorString(embeddingModel.embed(question));
         LocalDateTime expiresAt = LocalDateTime.now().plusHours(config.ttlHours());
+        // 캐시 일정 주기로 삭제
+        jdbcTemplate.update("DELETE FROM p_response_cache WHERE expires_at <= NOW()");
         jdbcTemplate.update(
                 """
                 INSERT INTO p_response_cache
@@ -77,7 +79,7 @@ public class ResponseCacheAdapter implements ResponseCachePort {
                 UUID.randomUUID(), question, vectorStr,
                 answer, JsonConverter.toJson(sources), expiresAt
         );
-        log.debug("응답 캐시 저장: question={}", question);
+        log.debug("응답 캐시 저장: questionLength={}", question.length());
     }
 
     private String toVectorString(float[] embedding) {
