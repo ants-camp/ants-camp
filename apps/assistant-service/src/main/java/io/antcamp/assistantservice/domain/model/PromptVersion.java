@@ -1,5 +1,6 @@
 package io.antcamp.assistantservice.domain.model;
 
+import io.antcamp.assistantservice.domain.exception.InvalidPromptVersionException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -15,6 +16,8 @@ public class PromptVersion {
     private String content; // 실제 시스템 프롬프트 템플릿 (%s 자리에 청크가 들어감)
 
     public static PromptVersion create(String name, String content) {
+        if (name == null || name.isBlank()) throw InvalidPromptVersionException.nameBlank();
+        if (content == null || content.isBlank()) throw InvalidPromptVersionException.contentBlank();
         return PromptVersion.builder()
                 .promptVersionId(UUID.randomUUID())
                 .name(name)

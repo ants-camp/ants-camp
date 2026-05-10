@@ -18,6 +18,6 @@ public class InvalidEvaluationException extends BusinessException {
     }
 
     public static InvalidEvaluationException tooManyCombinations() {
-        throw new InvalidEvaluationException(ErrorCode.EVAL_TOO_MANY_COMBINATIONS);
+        return new InvalidEvaluationException(ErrorCode.EVAL_TOO_MANY_COMBINATIONS);
     }
 }
