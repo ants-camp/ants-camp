@@ -76,7 +76,7 @@ public class JudgeLlmAdapter implements JudgeLlmPort {
     private final Map<Provider, ChatModel> modelRegistry;
     private final ObjectMapper objectMapper;
 
-    public JudgeLlmAdapter(OpenAiChatModel openAiModel,
+    public JudgeLlmAdapter(@Qualifier("openAiChatModel") OpenAiChatModel openAiModel,
                            @Autowired(required = false) AnthropicChatModel anthropicModel,
                            @Autowired(required = false) @Qualifier("geminiChatModel") ChatModel geminiModel,
                            ObjectMapper objectMapper) {

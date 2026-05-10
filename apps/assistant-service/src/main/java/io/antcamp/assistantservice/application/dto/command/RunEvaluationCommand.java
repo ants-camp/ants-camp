@@ -10,6 +10,7 @@ public record RunEvaluationCommand(
         List<EvalQuestion> questions,
         List<String> judgeModels,
         UUID promptVersionId,
+        String ragModel,
         String memo
 ) {
     private static final int MAX_COMBINATIONS = 100; // 질문 × judge 최대 조합 수
