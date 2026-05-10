@@ -307,6 +307,7 @@ CREATE TABLE IF NOT EXISTS assistant.p_eval_runs (
     eval_run_id         UUID            NOT NULL,
     questions           JSONB           NOT NULL,
     judge_models        JSONB           NOT NULL,
+    rag_model           VARCHAR(50)     NOT NULL,
     prompt_version_id   UUID,
     memo                TEXT,
     status              VARCHAR(20)     NOT NULL,
