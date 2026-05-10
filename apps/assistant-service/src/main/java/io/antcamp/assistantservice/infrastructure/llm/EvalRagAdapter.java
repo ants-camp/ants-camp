@@ -49,7 +49,11 @@ public class EvalRagAdapter implements EvalRagPort {
         Prompt prompt = buildPrompt(provider, ragModel, systemPrompt, question);
         ChatResponse response = model.call(prompt);
 
-        String content = response.getResult().getOutput().getText();
+        var llmResult = response.getResult();
+        if (llmResult == null || llmResult.getOutput() == null) {
+            throw new IllegalStateException("LLM 응답이 비어 있습니다: ragModel=" + ragModel);
+        }
+        String content = llmResult.getOutput().getText();
         Usage usage = response.getMetadata().getUsage();
         int promptTokens = (usage != null && usage.getPromptTokens() != null) ? usage.getPromptTokens() : 0;
         int completionTokens = (usage != null && usage.getCompletionTokens() != null) ? usage.getCompletionTokens() : 0;

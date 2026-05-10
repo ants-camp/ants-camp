@@ -28,7 +28,9 @@ public class PairwiseApplicationService {
                 .orElseThrow(EvalRunNotFoundException::new);
 
         // 모델과 프롬프트 버전이 모두 동일하면 비교 의미 없음
-        if (runA.getRagModel().equalsIgnoreCase(runB.getRagModel()) &&
+        if ((runA.getRagModel() != null
+                        ? runA.getRagModel().equalsIgnoreCase(runB.getRagModel())
+                        : runB.getRagModel() == null) &&
                 Objects.equals(runA.getPromptVersionId(), runB.getPromptVersionId())) {
             throw InvalidEvaluationException.sameRunConfig();
         }

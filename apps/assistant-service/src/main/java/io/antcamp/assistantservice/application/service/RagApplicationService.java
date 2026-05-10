@@ -107,7 +107,15 @@ public class RagApplicationService {
         String template = (promptTemplate != null) ? promptTemplate : SYSTEM_PROMPT_TEMPLATE;
         String systemPrompt = template.formatted(contextText);
         long start = System.currentTimeMillis();
-        EvalRagPort.EvalRagResult llmResult = evalRagPort.generate(ragModel, systemPrompt, question);
+        EvalRagPort.EvalRagResult llmResult;
+        try {
+            llmResult = evalRagPort.generate(ragModel, systemPrompt, question);
+        } catch (Exception e) {
+            log.warn("평가용 LLM 호출 실패: question={}, ragModel={}", question, ragModel, e);
+            int elapsed = (int) (System.currentTimeMillis() - start);
+            return new EvalRagResult(question, buildRetrievedChunks(searchedChunks), systemPrompt,
+                    ragModel, "[LLM 오류] " + e.getMessage(), elapsed, 0, 0, contextText, TOP_K);
+        }
         int latencyMs = (int) (System.currentTimeMillis() - start);
         return new EvalRagResult(
                 question,
