@@ -1,21 +1,23 @@
 package io.antcamp.competitionservice.presentation;
 
+import common.dto.ApiResponse;
 import io.antcamp.competitionservice.application.CompetitionParticipantService;
 import io.antcamp.competitionservice.application.CompetitionService;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
+import io.antcamp.competitionservice.application.dto.CancelCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.presentation.dto.request.CreateCompetitionRequest;
-import io.antcamp.competitionservice.presentation.dto.request.JoinCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.request.UpdateCompetitionRequest;
-import common.dto.ApiResponse;
 import io.antcamp.competitionservice.presentation.dto.response.CreateCompetitionResponse;
 import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionChangeNoticeResponse;
 import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionParticipantResponse;
 import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionResponse;
 import jakarta.validation.Valid;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -45,7 +48,8 @@ public class CompetitionController {
     // ─── 대회 엔드포인트 ──────────────────────────────────────────────────────
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CreateCompetitionResponse>> createCompetition(@RequestBody @Valid CreateCompetitionRequest request) {
+    public ResponseEntity<ApiResponse<CreateCompetitionResponse>> createCompetition(
+            @RequestBody @Valid CreateCompetitionRequest request) {
         CreateCompetitionCommand command = new CreateCompetitionCommand(
                 request.name(),
                 request.type(),
@@ -77,6 +81,7 @@ public class CompetitionController {
     @PatchMapping("/{id}")
     public ResponseEntity<ApiResponse<FindCompetitionResponse>> updateCompetitionInfo(
             @PathVariable UUID id,
+            @RequestHeader("X-User-Id") UUID updatedBy,
             @RequestBody @Valid UpdateCompetitionRequest request) {
         UpdateCompetitionCommand command = new UpdateCompetitionCommand(
                 id,
@@ -91,7 +96,7 @@ public class CompetitionController {
                 request.beforeContents(),
                 request.afterContents(),
                 request.reason(),
-                request.updatedBy()
+                updatedBy.toString()
         );
         Competition competition = competitionService.updateInfo(command);
         return ApiResponse.ok(FindCompetitionResponse.from(competition));
@@ -118,8 +123,9 @@ public class CompetitionController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<FindCompetitionResponse>> deleteCompetition(
             @PathVariable UUID id,
-            @RequestParam String deletedBy) {
-        return ApiResponse.ok("대회가 삭제되었습니다.", FindCompetitionResponse.from(competitionService.deleteCompetition(id, deletedBy)));
+            @RequestHeader("X-User-Id") UUID deletedBy) {
+        return ApiResponse.ok("대회가 삭제되었습니다.",
+                FindCompetitionResponse.from(competitionService.deleteCompetition(id, deletedBy.toString())));
     }
 
     @GetMapping
@@ -138,7 +144,8 @@ public class CompetitionController {
     // ─── 대회 변경 공지 엔드포인트 ────────────────────────────────────────────
 
     @GetMapping("/{id}/change-notices")
-    public ResponseEntity<ApiResponse<List<FindCompetitionChangeNoticeResponse>>> findAllCompetitionChangeNotice(@PathVariable UUID id) {
+    public ResponseEntity<ApiResponse<List<FindCompetitionChangeNoticeResponse>>> findAllCompetitionChangeNotice(
+            @PathVariable UUID id) {
         return ApiResponse.ok(competitionService.findChangeNotices(id)
                 .stream()
                 .map(FindCompetitionChangeNoticeResponse::from)
@@ -151,24 +158,26 @@ public class CompetitionController {
     @PostMapping("/{competitionId}/participants")
     public ResponseEntity<ApiResponse<FindCompetitionParticipantResponse>> registerCompetition(
             @PathVariable UUID competitionId,
-            @RequestBody @Valid JoinCompetitionRequest request
+            @RequestHeader("X-User-Id") UUID userId,
+            @RequestHeader("X-User-Name") String encodedUsername
     ) {
+        String username = URLDecoder.decode(encodedUsername, StandardCharsets.UTF_8);
         return ApiResponse.created("대회 신청이 완료되었습니다.",
                 FindCompetitionParticipantResponse.from(
                         competitionParticipantService.registerCompetition(
-                                new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()))));
+                                new JoinCompetitionCommand(competitionId, userId, username))));
     }
 
     // 대회 신청 취소 ( 대회 신청 기간에 취소 가능 )
     @DeleteMapping("/{competitionId}/participants")
     public ResponseEntity<ApiResponse<FindCompetitionParticipantResponse>> cancelRegistration(
             @PathVariable UUID competitionId,
-            @RequestBody @Valid JoinCompetitionRequest request
+            @RequestHeader("X-User-Id") UUID userId
     ) {
         return ApiResponse.ok("대회 신청이 취소되었습니다.",
                 FindCompetitionParticipantResponse.from(
                         competitionParticipantService.cancelRegistration(
-                                new JoinCompetitionCommand(competitionId, request.userId(), request.nickname()))));
+                                new CancelCompetitionCommand(competitionId, userId))));
     }
 
     @GetMapping("/{competitionId}/participants")

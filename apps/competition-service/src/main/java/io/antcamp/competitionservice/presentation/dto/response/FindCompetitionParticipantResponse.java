@@ -10,14 +10,14 @@ import java.util.UUID;
 public record FindCompetitionParticipantResponse(
         UUID participantId,
         UUID userId,
-        String nickname,
+        String username,
         UUID competitionId
 ) {
     public static FindCompetitionParticipantResponse from(CompetitionParticipant participant) {
         return new FindCompetitionParticipantResponse(
                 participant.getParticipantId(),
                 participant.getUserId(),
-                participant.getNickname(),
+                participant.getUsername(),
                 participant.getCompetitionId()
         );
     }
