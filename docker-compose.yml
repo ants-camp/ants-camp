@@ -323,6 +323,7 @@ services:
       LOKI_URL: http://loki:${LOKI_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${SPRING_DATA_REDIS_PORT}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     env_file:
       - .env
     volumes:
@@ -334,6 +335,8 @@ services:
       redis:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      zipkin:
         condition: service_healthy
     networks:
       - kafka-network
@@ -395,15 +398,6 @@ services:
         condition: service_healthy
     networks:
       - kafka-network
-
-  zipkin:
-    image: openzipkin/zipkin:3
-    container_name: antcamp-zipkin
-    ports:
-      - "${ZIPKIN_PORT}:9411"
-    networks:
-      - kafka-network
-    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:v2.53.0
