@@ -27,7 +27,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class DocumentApplicationService {
 
-    private static final int PAGE_SIZE = 20;
+    private static final int PAGE_SIZE = 30;
 
     private final KnowledgeDocumentRepository documentRepository;
     private final IngestPort ingestPort;

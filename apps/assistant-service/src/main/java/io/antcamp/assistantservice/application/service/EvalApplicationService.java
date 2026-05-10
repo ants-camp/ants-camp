@@ -21,7 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EvalApplicationService {
 
-    private static final int PAGE_SIZE = 20;
+    private static final int PAGE_SIZE = 30;
 
     private final EvalProcessor evalProcessor;
     private final EvalRepository evalRepository;

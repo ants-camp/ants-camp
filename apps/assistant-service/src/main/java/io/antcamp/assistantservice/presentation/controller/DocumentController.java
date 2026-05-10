@@ -38,7 +38,7 @@ public class DocumentController {
                         new IngestDocumentCommand(request.title(), request.type(), request.content())
                 )
         );
-        return ApiResponse.created("문서 등록이 요청되었습니다. 처리 중입니다.", response);
+        return ApiResponse.accepted("문서 등록이 요청되었습니다. 처리 중입니다.", response);
     }
 
     @GetMapping("/{documentId}")

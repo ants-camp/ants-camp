@@ -261,6 +261,11 @@ services:
     container_name: antcamp-zipkin
     ports:
       - "${ZIPKIN_PORT}:9411"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:9411/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
     networks:
       - kafka-network
     restart: unless-stopped

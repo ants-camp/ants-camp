@@ -47,7 +47,7 @@ public class EvalController {
                         request.judgeModels(),
                         request.promptVersionId(),
                         request.memo()));
-        return ApiResponse.created("평가 파이프라인이 시작되었습니다.", new RunEvaluationResponse(runId));
+        return ApiResponse.accepted("평가 파이프라인이 시작되었습니다.", new RunEvaluationResponse(runId));
     }
 
     @GetMapping("/{evalRunId}/status")

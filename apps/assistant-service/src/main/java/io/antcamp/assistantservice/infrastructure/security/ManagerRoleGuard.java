@@ -8,7 +8,7 @@ import java.util.Set;
 @Component
 public class ManagerRoleGuard {
 
-    private static final Set<String> ALLOWED_ROLES = Set.of("MANAGER", "MASTER");
+    private static final Set<String> ALLOWED_ROLES = Set.of("ADMIN", "MANAGER");
 
     public void require(String role) {
         if (role == null || !ALLOWED_ROLES.contains(role.toUpperCase())) {

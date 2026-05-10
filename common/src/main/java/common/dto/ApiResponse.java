@@ -47,6 +47,14 @@ public class ApiResponse<T> {
                 .body(new ApiResponse<>(201, "SUCCESS", message, data));
     }
 
+    // ── 비동기 처리 수락 응답 (HTTP 202 Accepted) ──────────────────
+
+    public static <T> ResponseEntity<ApiResponse<T>> accepted(String message, T data) {
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(new ApiResponse<>(202, "SUCCESS", message, data));
+    }
+
     // ── 실패 응답 (GlobalExceptionHandler용) ────────────────────
 
     public static ResponseEntity<ApiResponse<?>> error(ErrorCode errorCode) {
