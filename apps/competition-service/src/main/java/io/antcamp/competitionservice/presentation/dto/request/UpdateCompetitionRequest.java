@@ -34,7 +34,6 @@ public record UpdateCompetitionRequest(
         // isReadable = true일 때만 필요 (nullable)
         String beforeContents,
         String afterContents,
-        String reason,
-        String updatedBy
+        String reason
 ) {
 }

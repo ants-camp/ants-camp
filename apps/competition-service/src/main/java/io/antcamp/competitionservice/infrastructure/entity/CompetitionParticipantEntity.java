@@ -43,8 +43,8 @@ public class CompetitionParticipantEntity extends BaseEntity implements Persista
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "nickname", nullable = false, length = 100)
-    private String nickname;
+    @Column(name = "username", nullable = false, length = 100)
+    private String username;
 
     @Column(name = "competition_id", nullable = false)
     private UUID competitionId;
@@ -53,12 +53,12 @@ public class CompetitionParticipantEntity extends BaseEntity implements Persista
     private CompetitionParticipantEntity(
             UUID participantId,
             UUID userId,
-            String nickname,
+            String username,
             UUID competitionId
     ) {
         this.participantId = participantId;
         this.userId = userId;
-        this.nickname = nickname;
+        this.username = username;
         this.competitionId = competitionId;
         validate();
     }
@@ -67,7 +67,7 @@ public class CompetitionParticipantEntity extends BaseEntity implements Persista
         return CompetitionParticipantEntity.builder()
                 .participantId(domain.getParticipantId())
                 .userId(domain.getUserId())
-                .nickname(domain.getNickname())
+                .username(domain.getUsername())
                 .competitionId(domain.getCompetitionId())
                 .build();
     }
@@ -76,7 +76,7 @@ public class CompetitionParticipantEntity extends BaseEntity implements Persista
         return CompetitionParticipant.reconstitute(
                 participantId,
                 userId,
-                nickname,
+                username,
                 competitionId
         );
     }
@@ -88,7 +88,7 @@ public class CompetitionParticipantEntity extends BaseEntity implements Persista
         if (userId == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        if (nickname == null || nickname.isBlank()) {
+        if (username == null || username.isBlank()) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (competitionId == null) {
