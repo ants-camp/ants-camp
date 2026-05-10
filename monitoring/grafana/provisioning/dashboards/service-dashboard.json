@@ -8,7 +8,7 @@
     {
       "type": "link",
       "title": "🔎 로그 전용 보기",
-      "url": "/d/logs-dashboard/logs-dashboard?var-job=${job}&var-search=${search}",
+      "url": "/d/logs-dashboard/logs-dashboard?var-job=${job}",
       "keepTime": true,
       "targetBlank": true
     }
