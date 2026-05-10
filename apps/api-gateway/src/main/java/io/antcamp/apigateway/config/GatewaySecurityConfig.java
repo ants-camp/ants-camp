@@ -89,9 +89,9 @@ public class GatewaySecurityConfig {
                                 HttpMethod.DELETE, "/api/competitions/**"
                         ).hasAnyRole("ADMIN", "MANAGER")
 
-                        // 일반 조회는 로그인 사용자 모두 가능
-                        .pathMatchers(HttpMethod.GET, "/api/competitions/**")
-                        .hasAnyRole("PLAYER", "MANAGER", "ADMIN")
+//                        // 일반 조회는 로그인 사용자 모두 가능
+//                        .pathMatchers(HttpMethod.GET, "/api/competitions/**")
+//                        .hasAnyRole("PLAYER", "MANAGER", "ADMIN")
 
                         // 계좌/거래 API는 로그인 사용자만 가능
                         .pathMatchers("/api/accounts/**")
