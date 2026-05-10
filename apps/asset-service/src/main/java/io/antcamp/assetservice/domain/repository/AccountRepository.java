@@ -21,4 +21,6 @@ public interface AccountRepository {
     void deleteByUserIdAndCompetitionId(UUID userId, UUID competitionId);
 
     void deleteAllByCompetitionId(UUID competitionId);
+
+    List<Account> findAllByUserId(UUID userId);
 }

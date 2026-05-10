@@ -31,7 +31,7 @@ public class PairwiseController {
         managerRoleGuard.require(role);
         pairwiseApplicationService.runPairwise(
                 new RunPairwiseCommand(request.evalRunIdA(), request.evalRunIdB(), request.judgeModels()));
-        return ApiResponse.created("Pairwise 비교가 시작되었습니다.", null);
+        return ApiResponse.accepted("Pairwise 비교가 시작되었습니다.", null);
     }
 
     // Pairwise 결과 집계 조회

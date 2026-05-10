@@ -16,6 +16,10 @@ public interface ChatPort {
 
     ChatMessage saveErrorBotResult(ChatMessage completedUserMessage, UUID chatSessionId, String errorMessage);
 
+    // 캐시 히트 시: RAG 쿼리 저장 없이 봇 메시지만 저장
+    ChatMessage saveCachedBotResult(ChatMessage completedUserMessage, UUID chatSessionId,
+                                    String content, List<SourceReference> sources);
+
     record BotResultContext(
             String userQuery,
             List<RetrievedChunk> retrievedChunks,

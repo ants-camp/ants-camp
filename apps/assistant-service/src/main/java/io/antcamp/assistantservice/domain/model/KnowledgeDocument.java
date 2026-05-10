@@ -54,6 +54,7 @@ public class KnowledgeDocument {
 
     public void update(String title, DocType type, String content) {
         if (title == null || title.isBlank()) throw InvalidDocumentException.titleBlank();
+        if (title.length() > 100) throw InvalidDocumentException.titleTooLong();
         if (content == null || content.isBlank()) throw InvalidDocumentException.contentBlank();
         this.title = title;
         this.type = type;

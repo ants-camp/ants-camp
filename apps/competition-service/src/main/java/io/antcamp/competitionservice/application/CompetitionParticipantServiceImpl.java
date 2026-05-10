@@ -2,6 +2,7 @@ package io.antcamp.competitionservice.application;
 
 import common.exception.BusinessException;
 import common.exception.ErrorCode;
+import io.antcamp.competitionservice.application.dto.CancelCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.domain.event.CompetitionCancelledEvent;
 import io.antcamp.competitionservice.domain.event.CompetitionRegisteredEvent;
@@ -42,7 +43,7 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
         // 3. 대회 참여자 저장
         CompetitionParticipant participant = CompetitionParticipant.create(
                 command.userId(),
-                command.nickname(),
+                command.username(),
                 command.competitionId()
         );
         CompetitionParticipant saved = competitionParticipantRepository.save(participant);
@@ -60,7 +61,7 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
     }
 
     @Transactional
-    public CompetitionParticipant cancelRegistration(JoinCompetitionCommand command) {
+    public CompetitionParticipant cancelRegistration(CancelCompetitionCommand command) {
         // 1. 대회 조회 (Competition 비관적 락 - 참가자 수 동시성 제어)
         Competition competition = competitionRepository.findByIdWithLock(command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
@@ -72,7 +73,7 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
                 .findByUserIdAndCompetitionId(command.userId(), command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_NOT_FOUND));
 
-        // 3. 참여자 소프트 삭제 (deletedBy는 임시로 userId 사용 - 추후 인증 연동 시 교체)
+        // 3. 참여자 소프트 삭제
         competitionParticipantRepository.delete(participant, command.userId().toString());
 
         // 4. Spring 내부 이벤트 발행 → DB 커밋 완료 후 리스너가 Kafka로 전달
