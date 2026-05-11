@@ -1,7 +1,5 @@
 package io.antcamp.competitionservice.domain.model;
 
-import common.exception.BusinessException;
-import common.exception.ErrorCode;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
@@ -26,7 +24,6 @@ public class CompetitionParticipant {
         this.userId = userId;
         this.username = username;
         this.competitionId = competitionId;
-        validate();
     }
 
     // ─── 정적 팩토리 메서드 ───────────────────────────────────────────────
@@ -58,20 +55,5 @@ public class CompetitionParticipant {
 
     public boolean isSameCompetition(UUID competitionId) {
         return this.competitionId.equals(competitionId);
-    }
-
-    private void validate() {
-        if (participantId == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (userId == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (username == null || username.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (competitionId == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
     }
 }

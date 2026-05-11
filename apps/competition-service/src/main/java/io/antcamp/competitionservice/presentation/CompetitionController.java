@@ -3,12 +3,14 @@ package io.antcamp.competitionservice.presentation;
 import common.dto.CommonResponse;
 import io.antcamp.competitionservice.application.CompetitionParticipantService;
 import io.antcamp.competitionservice.application.CompetitionService;
-import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.CancelCompetitionCommand;
+import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
+import io.antcamp.competitionservice.infrastructure.scheduler.CompetitionTickScheduler;
+import io.antcamp.competitionservice.presentation.docs.CompetitionControllerDocs;
 import io.antcamp.competitionservice.presentation.dto.request.CreateCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.request.UpdateCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.response.CreateCompetitionResponse;
@@ -20,7 +22,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
-import io.antcamp.competitionservice.presentation.docs.CompetitionControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +44,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/competitions")
 public class CompetitionController implements CompetitionControllerDocs {
 
+    private final CompetitionTickScheduler competitionTickScheduler;
     private final CompetitionService competitionService;
     private final CompetitionParticipantService competitionParticipantService;
 
@@ -189,5 +191,10 @@ public class CompetitionController implements CompetitionControllerDocs {
                 .stream()
                 .map(FindCompetitionParticipantResponse::from)
                 .toList());
+    }
+
+    @PostMapping("/refresh")
+    public void publishCompetitionTicks() {
+        competitionTickScheduler.publishCompetitionTicks();
     }
 }

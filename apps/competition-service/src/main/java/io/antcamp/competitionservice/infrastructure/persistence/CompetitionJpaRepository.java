@@ -3,6 +3,7 @@ package io.antcamp.competitionservice.infrastructure.persistence;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.infrastructure.entity.CompetitionEntity;
 import jakarta.persistence.LockModeType;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,4 +30,16 @@ public interface CompetitionJpaRepository extends JpaRepository<CompetitionEntit
      */
     @Query("SELECT c.competitionId FROM CompetitionEntity c WHERE c.status = :status")
     List<UUID> findAllOngoingIds(@Param("status") CompetitionStatus status);
+
+    /**
+     * 자동 시작 대상 조회. PREPARING 상태이며 대회 시작 시간이 현재 시각 이전인 대회 ID 목록.
+     */
+    @Query("SELECT c.competitionId FROM CompetitionEntity c WHERE c.status = 'PREPARING' AND c.competitionStartAt <= :now")
+    List<UUID> findAllIdsReadyToStart(@Param("now") LocalDateTime now);
+
+    /**
+     * 자동 종료 대상 조회. ONGOING 상태이며 대회 종료 시간이 현재 시각 이전인 대회 ID 목록.
+     */
+    @Query("SELECT c.competitionId FROM CompetitionEntity c WHERE c.status = 'ONGOING' AND c.competitionEndAt <= :now")
+    List<UUID> findAllIdsReadyToFinish(@Param("now") LocalDateTime now);
 }

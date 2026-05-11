@@ -94,13 +94,13 @@ public class CompetitionChangeNotice {
             String reason
     ) {
         if (beforeContents == null || beforeContents.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_CHANGE_NOTICE_BEFORE_CONTENTS_REQUIRED);
         }
         if (afterContents == null || afterContents.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_CHANGE_NOTICE_AFTER_CONTENTS_REQUIRED);
         }
         if (reason == null || reason.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_CHANGE_NOTICE_REASON_REQUIRED);
         }
     }
 }
