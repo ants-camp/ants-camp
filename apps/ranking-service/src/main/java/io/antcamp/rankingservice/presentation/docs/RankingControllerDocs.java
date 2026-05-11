@@ -1,5 +1,6 @@
 package io.antcamp.rankingservice.presentation.docs;
 
+import common.dto.CommonResponse;
 import io.antcamp.rankingservice.presentation.dto.FinalizeRankingsResponse;
 import io.antcamp.rankingservice.presentation.dto.MyRankingResponse;
 import io.antcamp.rankingservice.presentation.dto.RankingResponse;
@@ -10,6 +11,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,7 +48,7 @@ public interface RankingControllerDocs {
                                     }""")))
     })
     @GetMapping("/competitions/{competitionId}/users/{userId}")
-    MyRankingResponse findMyRanking(
+    ResponseEntity<CommonResponse<MyRankingResponse>> findMyRanking(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID competitionId,
             @Parameter(description = "사용자 UUID", required = true) @PathVariable UUID userId);
 
@@ -70,7 +72,7 @@ public interface RankingControllerDocs {
                                     }""")))
     })
     @PostMapping("/competitions/{competitionId}/finalize")
-    FinalizeRankingsResponse finalizeRankings(
+    ResponseEntity<CommonResponse<FinalizeRankingsResponse>> finalizeRankings(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID competitionId);
 
     @Operation(summary = "대회 전체 랭킹 조회 (페이지)", description = "수익률 기준 내림차순으로 랭킹을 페이지 조회합니다.")
@@ -107,7 +109,7 @@ public interface RankingControllerDocs {
                                     }""")))
     })
     @GetMapping("/competitions/{competitionId}")
-    List<RankingResponse> findTopRankings(
+    ResponseEntity<CommonResponse<List<RankingResponse>>> findTopRankings(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID competitionId,
             @Parameter(description = "페이지 번호 (0부터 시작, 기본 0)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (기본 20)") @RequestParam(defaultValue = "20") int size);
