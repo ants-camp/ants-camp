@@ -64,10 +64,7 @@ public class JudgeLlmAdapter implements JudgeLlmPort {
     // Pairwise: 두 응답을 비교하여 어느 쪽이 더 나은지 판정
     private static final String JUDGE_PAIRWISE_PROMPT = """
             당신은 RAG 응답 품질 비교 전문가입니다.
-            아래 두 AI 응답 중 어느 쪽이 질문에 더 정확하고 충실하게 답변
-            
-            
-            했는지 판정하세요.
+            아래 두 AI 응답 중 어느 쪽이 질문에 더 정확하고 충실하게 답변했는지 판정하세요.
 
             판정 기준: 관련성, 사실적 정확성, 컨텍스트 활용도
             결과: "A", "B", "TIE" 중 하나만 반환하세요. 다른 텍스트는 절대 포함하지 마세요.
