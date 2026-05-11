@@ -20,6 +20,7 @@ public class CompetitionTickedEventConsumer {
             containerFactory = "competitionTickedFactory"
     )
     public void handleCompetitionTicked(CompetitionTicked payload) {
+        log.info("[Kafka] CompetitionTickedEvent 수신. competitionId={}", payload.competitionId());
         rankingService.updateRanking(payload.competitionId());
     }
 }
