@@ -76,6 +76,13 @@ services:
       SERVER_PORT: 8888
       CONFIG_GIT_URI: ${CONFIG_GIT_URI}
       CONFIG_GIT_BRANCH: ${CONFIG_GIT_BRANCH}
+      SPRING_CLOUD_CONFIG_ENABLED: "false"
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     networks:
       - kafka-network
 
@@ -115,7 +122,7 @@ services:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
       JWT_SECRET: ${JWT_SECRET}
       JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
     env_file:
       - .env
     depends_on:
@@ -124,6 +131,8 @@ services:
       postgres:
         condition: service_healthy
       kafka:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - kafka-network
@@ -151,7 +160,7 @@ services:
       KIS_APP_KEY: ${KIS_APP_KEY}
       KIS_APP_SECRET: ${KIS_APP_SECRET}
       KIS_APP_ACCESS: ${KIS_APP_ACCESS}
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
     env_file:
       - .env
     volumes:
@@ -162,6 +171,8 @@ services:
       redis:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - kafka-network
@@ -180,6 +191,8 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
+
     env_file:
       - .env
     volumes:
@@ -192,6 +205,8 @@ services:
       kafka:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - kafka-network
@@ -211,6 +226,8 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
+
     env_file:
       - .env
     volumes:
@@ -223,6 +240,8 @@ services:
       kafka:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - kafka-network
@@ -242,6 +261,8 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
+
     env_file:
       - .env
     volumes:
@@ -254,6 +275,8 @@ services:
       kafka:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - kafka-network
@@ -291,6 +314,7 @@ services:
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
     env_file:
       - .env
     volumes:
@@ -301,6 +325,8 @@ services:
       eureka-server:
         condition: service_healthy
       zipkin:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - kafka-network
@@ -326,6 +352,7 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: ${SPRING_DATA_REDIS_PORT}
       ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
+      CONFIG_SERVER_URL: ${CONFIG_SERVER_URL}
     env_file:
       - .env
     volumes:
@@ -339,6 +366,8 @@ services:
       eureka-server:
         condition: service_healthy
       zipkin:
+        condition: service_healthy
+      config-server:
         condition: service_healthy
     networks:
       - kafka-network
