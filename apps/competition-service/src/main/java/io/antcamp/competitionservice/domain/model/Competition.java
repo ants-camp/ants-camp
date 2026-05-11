@@ -212,29 +212,17 @@ public class Competition {
      * 객체 생성 시점에 필수 필드 및 도메인 규칙을 검증한다. 빌더 방식의 단점(필수값 누락 시에도 객체가 생성되는 문제)을 보완.
      */
     private void validate() {
-        if (name == null || name.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (type == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (description == null || description.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (firstSeed <= 0) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
         if (registerPeriod == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (competitionPeriod == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
-        if (registerPeriod.getEndAt().isAfter(competitionPeriod.getStartAt())) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
         if (participantCount == null) {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
+        }
+        if (registerPeriod.getEndAt().isAfter(competitionPeriod.getStartAt())) {
+            throw new BusinessException(ErrorCode.COMPETITION_REGISTER_END_AFTER_COMPETITION_START);
         }
     }
 }

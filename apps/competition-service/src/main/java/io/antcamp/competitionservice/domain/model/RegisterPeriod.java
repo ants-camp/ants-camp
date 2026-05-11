@@ -17,7 +17,7 @@ public class RegisterPeriod {
             throw new BusinessException(ErrorCode.INVALID_INPUT);
         }
         if (startAt.isAfter(endAt)) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_REGISTER_PERIOD_START_AFTER_END);
         }
         this.startAt = startAt;
         this.endAt = endAt;
