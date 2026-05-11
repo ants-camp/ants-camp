@@ -30,7 +30,7 @@ import java.util.List;
 @EnableWebFluxSecurity
 public class GatewaySecurityConfig {
 
-    @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
+    @Value("${cors.allowed-origins:http://localhost:8080,http://localhost:3001}")
     private String allowedOrigins;
 
     @Value("${jwt.secret}")
