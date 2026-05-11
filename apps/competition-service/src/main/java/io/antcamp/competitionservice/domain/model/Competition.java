@@ -137,14 +137,14 @@ public class Competition {
 
     public void cancelRegister() {
         if (status != CompetitionStatus.PREPARING) {
-            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
+            throw new BusinessException(ErrorCode.COMPETITION_CANNOT_CANCEL_REGISTRATION);
         }
         this.participantCount = participantCount.decrement();
     }
 
     public void startCompetition() {
         if (status != CompetitionStatus.PREPARING) {
-            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
+            throw new BusinessException(ErrorCode.COMPETITION_CANNOT_START);
         }
         // [변경] 시간 검증 제거 - 운영자 수동 트리거 정책
         // if (!competitionPeriod.isOngoing()) {
@@ -158,7 +158,7 @@ public class Competition {
 
     public void finishCompetition() {
         if (status != CompetitionStatus.ONGOING) {
-            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
+            throw new BusinessException(ErrorCode.COMPETITION_CANNOT_FINISH);
         }
         // [변경] 시간 검증 제거 - 운영자 수동 트리거 정책
         // if (competitionPeriod.isOngoing()) {
@@ -179,7 +179,7 @@ public class Competition {
             throw new BusinessException(ErrorCode.COMPETITION_ALREADY_PUBLISHED);
         }
         if (this.status != CompetitionStatus.PREPARING) {
-            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
+            throw new BusinessException(ErrorCode.COMPETITION_CANNOT_PUBLISH);
         }
         this.isReadable = true;
     }
@@ -212,29 +212,8 @@ public class Competition {
      * 객체 생성 시점에 필수 필드 및 도메인 규칙을 검증한다. 빌더 방식의 단점(필수값 누락 시에도 객체가 생성되는 문제)을 보완.
      */
     private void validate() {
-        if (name == null || name.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (type == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (description == null || description.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (firstSeed <= 0) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (registerPeriod == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (competitionPeriod == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
         if (registerPeriod.getEndAt().isAfter(competitionPeriod.getStartAt())) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (participantCount == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_REGISTER_END_AFTER_COMPETITION_START);
         }
     }
 }
