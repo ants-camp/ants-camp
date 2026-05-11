@@ -52,8 +52,8 @@ public interface ChatControllerDocs {
     })
     @PostMapping
     ResponseEntity<CommonResponse<ChatSessionResponse>> createSession(
-            @Parameter(description = "X-User-Role", in = ParameterIn.HEADER, required = true)
-            @RequestHeader("X-User-Role") String role,
+            @Parameter(description = "X-Role", in = ParameterIn.HEADER, required = true)
+            @RequestHeader("X-Role") String role,
             @Parameter(description = "X-User-Id", in = ParameterIn.HEADER, required = true)
             @RequestHeader("X-User-Id") UUID userId);
 
@@ -85,8 +85,8 @@ public interface ChatControllerDocs {
     })
     @GetMapping
     ResponseEntity<CommonResponse<ChatSessionListResponse>> getSessions(
-            @Parameter(description = "X-User-Role", in = ParameterIn.HEADER, required = true)
-            @RequestHeader("X-User-Role") String role,
+            @Parameter(description = "X-Role", in = ParameterIn.HEADER, required = true)
+            @RequestHeader("X-Role") String role,
             @Parameter(description = "X-User-Id", in = ParameterIn.HEADER, required = true)
             @RequestHeader("X-User-Id") UUID userId,
             @Parameter(description = "검색 키워드") @RequestParam(required = false) String keyword,
@@ -115,8 +115,8 @@ public interface ChatControllerDocs {
     })
     @GetMapping("/{chatSessionId}/messages")
     ResponseEntity<CommonResponse<List<ChatMessageResponse>>> getMessages(
-            @Parameter(description = "X-User-Role", in = ParameterIn.HEADER, required = true)
-            @RequestHeader("X-User-Role") String role,
+            @Parameter(description = "X-Role", in = ParameterIn.HEADER, required = true)
+            @RequestHeader("X-Role") String role,
             @Parameter(description = "X-User-Id", in = ParameterIn.HEADER, required = true)
             @RequestHeader("X-User-Id") UUID userId,
             @Parameter(description = "챗 세션 UUID", required = true) @PathVariable UUID chatSessionId);
@@ -150,8 +150,8 @@ public interface ChatControllerDocs {
     })
     @PostMapping("/{chatSessionId}/messages")
     ResponseEntity<CommonResponse<SendMessageResponse>> sendMessage(
-            @Parameter(description = "X-User-Role", in = ParameterIn.HEADER, required = true)
-            @RequestHeader("X-User-Role") String role,
+            @Parameter(description = "X-Role", in = ParameterIn.HEADER, required = true)
+            @RequestHeader("X-Role") String role,
             @Parameter(description = "X-User-Id", in = ParameterIn.HEADER, required = true)
             @RequestHeader("X-User-Id") UUID userId,
             @Parameter(description = "챗 세션 UUID", required = true) @PathVariable UUID chatSessionId,

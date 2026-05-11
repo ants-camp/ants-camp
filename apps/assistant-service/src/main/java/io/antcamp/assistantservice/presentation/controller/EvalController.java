@@ -37,7 +37,7 @@ public class EvalController {
 
     @PostMapping
     public ResponseEntity<CommonResponse<RunEvaluationResponse>> runEvaluation(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @Valid @RequestBody RunEvaluationRequest request
     ) {
         managerRoleGuard.require(role);
@@ -53,7 +53,7 @@ public class EvalController {
 
     @GetMapping("/{evalRunId}/status")
     public ResponseEntity<CommonResponse<EvalRunStatus>> getRunStatus(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @PathVariable UUID evalRunId
     ) {
         managerRoleGuard.require(role);
@@ -62,7 +62,7 @@ public class EvalController {
 
     @PostMapping("/questions/generate")
     public ResponseEntity<CommonResponse<GeneratedQuestionsResponse>> generateQuestions(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @Valid @RequestBody GenerateQuestionsRequest request
     ) {
         managerRoleGuard.require(role);
@@ -72,7 +72,7 @@ public class EvalController {
 
     @GetMapping
     public ResponseEntity<CommonResponse<EvalResultListResponse>> getEvalResults(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @RequestParam(required = false) String judgeModel,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastUpdatedAt,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,

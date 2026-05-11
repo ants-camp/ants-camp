@@ -22,7 +22,7 @@ public class PromptVersionController {
 
     @PostMapping
     public ResponseEntity<CommonResponse<PromptVersionResponse>> create(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @Valid @RequestBody SavePromptVersionRequest request
     ) {
         managerRoleGuard.require(role);
@@ -33,7 +33,7 @@ public class PromptVersionController {
 
     @GetMapping
     public ResponseEntity<CommonResponse<List<PromptVersionResponse>>> list(
-            @RequestHeader("X-User-Role") String role
+            @RequestHeader("X-Role") String role
     ) {
         managerRoleGuard.require(role);
         List<PromptVersionResponse> responses = promptVersionApplicationService.findAll().stream()

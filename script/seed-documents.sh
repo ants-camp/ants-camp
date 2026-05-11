@@ -56,7 +56,7 @@ for i in $(seq 1 60); do
 done
 
 # ---- 헬퍼: 문서 등록 / 조회 / 폴링 -----------------------------------------
-H_ROLE=(-H "X-User-Role: $USER_ROLE")
+H_ROLE=(-H "X-Role: $USER_ROLE")
 H_JSON=(-H 'Content-Type: application/json')
 
 list_titles() {
@@ -316,5 +316,5 @@ fi
 echo
 ok "시드 완료. 다음 명령으로 확인:"
 printf '  %s\n' \
-  "curl -sS -H 'X-User-Role: $USER_ROLE' '$ASSISTANT_URL/api/assistants/documents' | jq" \
+  "curl -sS -H 'X-Role: $USER_ROLE' '$ASSISTANT_URL/api/assistants/documents' | jq" \
   "브라우저: $ASSISTANT_URL/chat-test"
