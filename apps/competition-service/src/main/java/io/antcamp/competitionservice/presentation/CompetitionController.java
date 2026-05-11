@@ -17,6 +17,7 @@ import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionRe
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.UUID;
+import io.antcamp.competitionservice.presentation.docs.CompetitionControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -37,7 +38,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/competitions")
-public class CompetitionController {
+public class CompetitionController implements CompetitionControllerDocs {
 
     private final CompetitionService competitionService;
     private final CompetitionParticipantService competitionParticipantService;

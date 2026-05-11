@@ -6,6 +6,7 @@ import io.antcamp.notificationservice.application.dto.command.SlackActionCommand
 import io.antcamp.notificationservice.application.service.NotificationApplicationService;
 import io.antcamp.notificationservice.presentation.dto.request.PrometheusWebhookRequest;
 import io.antcamp.notificationservice.presentation.dto.request.SlackInteractivePayload;
+import io.antcamp.notificationservice.presentation.controller.docs.NotificationControllerDocs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -22,7 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-public class NotificationController {
+public class NotificationController implements NotificationControllerDocs {
 
     private final NotificationApplicationService notificationApplicationService;
     private final ObjectMapper objectMapper;

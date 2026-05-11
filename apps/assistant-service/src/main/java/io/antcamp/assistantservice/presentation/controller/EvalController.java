@@ -1,6 +1,6 @@
 package io.antcamp.assistantservice.presentation.controller;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.assistantservice.application.dto.command.RunEvaluationCommand;
 import io.antcamp.assistantservice.application.dto.query.GetEvalResultsQuery;
 import io.antcamp.assistantservice.application.dto.result.EvalResultListResult;
@@ -36,7 +36,7 @@ public class EvalController {
     private final ManagerRoleGuard managerRoleGuard;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<RunEvaluationResponse>> runEvaluation(
+    public ResponseEntity<CommonResponse<RunEvaluationResponse>> runEvaluation(
             @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody RunEvaluationRequest request
     ) {
@@ -47,30 +47,30 @@ public class EvalController {
                         request.judgeModels(),
                         request.promptVersionId(),
                         request.memo()));
-        return ApiResponse.created("평가 파이프라인이 시작되었습니다.", new RunEvaluationResponse(runId));
+        return CommonResponse.created("평가 파이프라인이 시작되었습니다.", new RunEvaluationResponse(runId));
     }
 
     @GetMapping("/{evalRunId}/status")
-    public ResponseEntity<ApiResponse<EvalRunStatus>> getRunStatus(
+    public ResponseEntity<CommonResponse<EvalRunStatus>> getRunStatus(
             @RequestHeader("X-User-Role") String role,
             @PathVariable UUID evalRunId
     ) {
         managerRoleGuard.require(role);
-        return ApiResponse.ok(evalApplicationService.getRunStatus(evalRunId));
+        return CommonResponse.ok(evalApplicationService.getRunStatus(evalRunId));
     }
 
     @PostMapping("/questions/generate")
-    public ResponseEntity<ApiResponse<GeneratedQuestionsResponse>> generateQuestions(
+    public ResponseEntity<CommonResponse<GeneratedQuestionsResponse>> generateQuestions(
             @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody GenerateQuestionsRequest request
     ) {
         managerRoleGuard.require(role);
         List<EvalQuestion> questions = questionGenerationService.generateQuestions(request.count());
-        return ApiResponse.ok("질문 자동 생성 완료.", GeneratedQuestionsResponse.from(questions));
+        return CommonResponse.ok("질문 자동 생성 완료.", GeneratedQuestionsResponse.from(questions));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<EvalResultListResponse>> getEvalResults(
+    public ResponseEntity<CommonResponse<EvalResultListResponse>> getEvalResults(
             @RequestHeader("X-User-Role") String role,
             @RequestParam(required = false) String judgeModel,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastUpdatedAt,
@@ -80,6 +80,6 @@ public class EvalController {
         managerRoleGuard.require(role);
         EvalResultListResult result = evalApplicationService.getEvalResults(
                 new GetEvalResultsQuery(judgeModel, lastUpdatedAt, startDate, endDate));
-        return ApiResponse.ok(EvalResultListResponse.from(result));
+        return CommonResponse.ok(EvalResultListResponse.from(result));
     }
 }

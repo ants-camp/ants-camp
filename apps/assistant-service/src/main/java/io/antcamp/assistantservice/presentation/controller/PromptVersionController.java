@@ -1,6 +1,6 @@
 package io.antcamp.assistantservice.presentation.controller;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.assistantservice.application.service.PromptVersionApplicationService;
 import io.antcamp.assistantservice.infrastructure.security.ManagerRoleGuard;
 import io.antcamp.assistantservice.presentation.dto.request.SavePromptVersionRequest;
@@ -21,24 +21,24 @@ public class PromptVersionController {
     private final ManagerRoleGuard managerRoleGuard;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<PromptVersionResponse>> create(
+    public ResponseEntity<CommonResponse<PromptVersionResponse>> create(
             @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody SavePromptVersionRequest request
     ) {
         managerRoleGuard.require(role);
         PromptVersionResponse response = PromptVersionResponse.from(
                 promptVersionApplicationService.save(request.name(), request.content()));
-        return ApiResponse.created("프롬프트 버전이 저장되었습니다.", response);
+        return CommonResponse.created("프롬프트 버전이 저장되었습니다.", response);
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<PromptVersionResponse>>> list(
+    public ResponseEntity<CommonResponse<List<PromptVersionResponse>>> list(
             @RequestHeader("X-User-Role") String role
     ) {
         managerRoleGuard.require(role);
         List<PromptVersionResponse> responses = promptVersionApplicationService.findAll().stream()
                 .map(PromptVersionResponse::from)
                 .toList();
-        return ApiResponse.ok(responses);
+        return CommonResponse.ok(responses);
     }
 }

@@ -1,6 +1,6 @@
 package io.antcamp.assistantservice.presentation.controller;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.assistantservice.application.dto.command.SendMessageCommand;
 import io.antcamp.assistantservice.application.dto.result.ChatMessageResult;
 import io.antcamp.assistantservice.application.dto.result.ChatSessionResult;
@@ -14,6 +14,7 @@ import io.antcamp.assistantservice.presentation.dto.response.ChatSessionListResp
 import io.antcamp.assistantservice.presentation.dto.response.ChatSessionResponse;
 import io.antcamp.assistantservice.presentation.dto.response.SendMessageResponse;
 import jakarta.validation.Valid;
+import io.antcamp.assistantservice.presentation.controller.docs.ChatControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -26,24 +27,24 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/assistants/sessions")
 @RequiredArgsConstructor
-public class ChatController {
+public class ChatController implements ChatControllerDocs {
 
     private final ChatApplicationService chatApplicationService;
     private final RagApplicationService ragApplicationService;
     private final PlayerRoleGuard playerRoleGuard;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<ChatSessionResponse>> createSession(
+    public ResponseEntity<CommonResponse<ChatSessionResponse>> createSession(
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") UUID userId
     ) {
         playerRoleGuard.require(role);
         ChatSessionResult result = chatApplicationService.createSession(userId);
-        return ApiResponse.created("세션이 생성되었습니다.", ChatSessionResponse.from(result));
+        return CommonResponse.created("세션이 생성되었습니다.", ChatSessionResponse.from(result));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<ChatSessionListResponse>> getSessions(
+    public ResponseEntity<CommonResponse<ChatSessionListResponse>> getSessions(
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") UUID userId,
             @RequestParam(required = false) String keyword,
@@ -52,11 +53,11 @@ public class ChatController {
         playerRoleGuard.require(role);
         CursorSlice<ChatSessionResult, LocalDateTime> slice =
                 chatApplicationService.getSessions(userId, keyword, lastUpdatedAt);
-        return ApiResponse.ok(ChatSessionListResponse.from(slice));
+        return CommonResponse.ok(ChatSessionListResponse.from(slice));
     }
 
     @GetMapping("/{chatSessionId}/messages")
-    public ResponseEntity<ApiResponse<List<ChatMessageResponse>>> getMessages(
+    public ResponseEntity<CommonResponse<List<ChatMessageResponse>>> getMessages(
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") UUID userId,
             @PathVariable UUID chatSessionId
@@ -64,11 +65,11 @@ public class ChatController {
         playerRoleGuard.require(role);
         List<ChatMessageResult> results = chatApplicationService.getMessages(chatSessionId, userId);
         List<ChatMessageResponse> responses = results.stream().map(ChatMessageResponse::from).toList();
-        return ApiResponse.ok(responses);
+        return CommonResponse.ok(responses);
     }
 
     @PostMapping("/{chatSessionId}/messages")
-    public ResponseEntity<ApiResponse<SendMessageResponse>> sendMessage(
+    public ResponseEntity<CommonResponse<SendMessageResponse>> sendMessage(
             @RequestHeader("X-User-Role") String role,
             @RequestHeader("X-User-Id") UUID userId,
             @PathVariable UUID chatSessionId,
@@ -77,6 +78,6 @@ public class ChatController {
         playerRoleGuard.require(role);
         SendMessageCommand command = new SendMessageCommand(chatSessionId, userId, request.content());
         SendMessageResponse response = SendMessageResponse.from(ragApplicationService.sendMessage(command));
-        return ApiResponse.created("답변이 생성되었습니다.", response);
+        return CommonResponse.created("답변이 생성되었습니다.", response);
     }
 }

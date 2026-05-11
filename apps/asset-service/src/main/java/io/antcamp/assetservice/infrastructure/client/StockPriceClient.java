@@ -1,6 +1,6 @@
 package io.antcamp.assetservice.infrastructure.client;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import java.time.LocalDateTime;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -11,13 +11,13 @@ import org.springframework.web.bind.annotation.RequestParam;
 public interface StockPriceClient {
 
     @GetMapping("/api/trades/minute-price")
-    ApiResponse<Double> getPriceAt(
+    CommonResponse<Double> getPriceAt(
             @RequestParam("stock_code") String stockCode,
             @RequestParam("date_time") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime at
     );
 
     @GetMapping("/api/trades/now-price")
-    ApiResponse<Double> getCurrentPrice(
+    CommonResponse<Double> getCurrentPrice(
             @RequestParam("stock_code") String stockCode,
             @RequestParam("date_time") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime
     );
