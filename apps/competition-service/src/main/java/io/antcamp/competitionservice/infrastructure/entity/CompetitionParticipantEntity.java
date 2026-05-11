@@ -1,8 +1,6 @@
 package io.antcamp.competitionservice.infrastructure.entity;
 
 import common.entity.BaseEntity;
-import common.exception.BusinessException;
-import common.exception.ErrorCode;
 import io.antcamp.competitionservice.domain.model.CompetitionParticipant;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -60,7 +58,6 @@ public class CompetitionParticipantEntity extends BaseEntity implements Persista
         this.userId = userId;
         this.username = username;
         this.competitionId = competitionId;
-        validate();
     }
 
     public static CompetitionParticipantEntity from(CompetitionParticipant domain) {
@@ -79,21 +76,6 @@ public class CompetitionParticipantEntity extends BaseEntity implements Persista
                 username,
                 competitionId
         );
-    }
-
-    private void validate() {
-        if (participantId == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (userId == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (username == null || username.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (competitionId == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
     }
 
     @Override

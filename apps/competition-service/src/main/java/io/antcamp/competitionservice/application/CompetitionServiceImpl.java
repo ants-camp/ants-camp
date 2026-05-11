@@ -40,6 +40,14 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Override
     @Transactional
     public Competition create(CreateCompetitionCommand command) {
+        LocalDateTime now = LocalDateTime.now();
+        if (command.registerStartAt().isBefore(now)) {
+            throw new BusinessException(ErrorCode.COMPETITION_REGISTER_START_IN_PAST);
+        }
+        if (command.competitionStartAt().isBefore(now)) {
+            throw new BusinessException(ErrorCode.COMPETITION_PERIOD_START_IN_PAST);
+        }
+
         Competition competition = Competition.createCompetition(
                 command.name(),
                 command.type(),
