@@ -34,7 +34,7 @@ public class CompetitionEventConsumer {
                 payload.competitionId(),
                 payload.competitionName()
         );
-        log.info("[Kafka] 대회 등록 계좌 생성 완료. userId={}, competitionId={}", payload.userId(), payload.competitionId());
         accountService.createAccount(command);
+        log.info("[Kafka] 대회 등록 계좌 생성 완료. userId={}, competitionId={}", payload.userId(), payload.competitionId());
     }
 }

@@ -38,7 +38,7 @@ public class AccountService {
         );
         UUID createdId = accountRepository.save(newAccount).getAccountId();
         log.info("[Account] 계좌 생성 완료. accountId={}", createdId);
-        return accountRepository.save(newAccount).getAccountId();
+        return createdId;
     }
 
     @Transactional
