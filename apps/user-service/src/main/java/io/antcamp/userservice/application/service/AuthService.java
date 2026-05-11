@@ -3,9 +3,8 @@ package io.antcamp.userservice.application.service;
 import common.exception.BusinessException;
 import common.exception.ErrorCode;
 import io.antcamp.userservice.domain.model.JwtProvider;
-import io.antcamp.userservice.domain.model.RefreshToken;
 import io.antcamp.userservice.domain.model.User;
-import io.antcamp.userservice.domain.repository.RefreshTokenRepository;
+import io.antcamp.userservice.domain.repository.RefreshTokenRedisRepository;
 import io.antcamp.userservice.domain.repository.UserRepository;
 import io.antcamp.userservice.presentation.dto.request.LoginRequest;
 import io.antcamp.userservice.presentation.dto.request.LogoutRequest;
@@ -26,7 +25,7 @@ import java.util.UUID;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshTokenRedisRepository refreshTokenRedisRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
@@ -46,17 +45,11 @@ public class AuthService {
         String refreshToken = jwtProvider.createRefreshToken(user);
         Instant refreshTokenExpiresAt = jwtProvider.getExpiration(refreshToken);
 
-        refreshTokenRepository.findByUserId(user.getUserId())
-                .ifPresentOrElse(
-                        savedToken -> savedToken.updateToken(refreshToken, refreshTokenExpiresAt),
-                        () -> refreshTokenRepository.save(
-                                RefreshToken.builder()
-                                        .userId(user.getUserId())
-                                        .token(refreshToken)
-                                        .expiresAt(refreshTokenExpiresAt)
-                                        .build()
-                        )
-                );
+        refreshTokenRedisRepository.save(
+                user.getUserId(),
+                refreshToken,
+                refreshTokenExpiresAt
+        );
 
         return new LoginResponse(
                 accessToken,
@@ -66,7 +59,15 @@ public class AuthService {
     }
 
     public void logout(LogoutRequest request) {
-        refreshTokenRepository.deleteByToken(request.refreshToken());
+        String refreshToken = request.refreshToken();
+
+        if (!jwtProvider.validateToken(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        }
+
+        UUID userId = jwtProvider.getUserId(refreshToken);
+
+        refreshTokenRedisRepository.deleteByUserId(userId);
     }
 
     public LoginResponse reissue(ReissueRequest request) {
@@ -76,15 +77,14 @@ public class AuthService {
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
-        RefreshToken savedRefreshToken = refreshTokenRepository.findByToken(refreshToken)
+        UUID userId = jwtProvider.getUserId(refreshToken);
+
+        String savedRefreshToken = refreshTokenRedisRepository.findByUserId(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
 
-        if (savedRefreshToken.isExpired()) {
-            refreshTokenRepository.delete(savedRefreshToken);
-            throw new BusinessException(ErrorCode.EXPIRED_TOKEN);
+        if (!savedRefreshToken.equals(refreshToken)) {
+            throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
-
-        UUID userId = jwtProvider.getUserId(refreshToken);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.USER_NOT_FOUND));
@@ -97,7 +97,11 @@ public class AuthService {
         String newRefreshToken = jwtProvider.createRefreshToken(user);
         Instant newRefreshTokenExpiresAt = jwtProvider.getExpiration(newRefreshToken);
 
-        savedRefreshToken.updateToken(newRefreshToken, newRefreshTokenExpiresAt);
+        refreshTokenRedisRepository.save(
+                user.getUserId(),
+                newRefreshToken,
+                newRefreshTokenExpiresAt
+        );
 
         return new LoginResponse(
                 newAccessToken,
