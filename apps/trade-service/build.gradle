@@ -64,6 +64,9 @@ dependencies {
     // ── Eureka Client ────────────────────────────────────
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
 
+    // config
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+
     // ── Swagger ──────────────────────────────────────────
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.16'
 
