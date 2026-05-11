@@ -1,12 +1,12 @@
 package io.antcamp.assetservice.presentation.controller;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.assetservice.application.dto.command.BuyHoldingCommand;
 import io.antcamp.assetservice.application.dto.command.SellHoldingCommand;
-import io.antcamp.assetservice.application.dto.query.HoldingResult;
 import io.antcamp.assetservice.application.dto.query.TradeResult;
 import io.antcamp.assetservice.application.service.HoldingService;
 import io.antcamp.assetservice.presentation.dto.response.HoldingResponse;
+import io.antcamp.assetservice.presentation.controller.docs.HoldingControllerDocs;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +18,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/holdings")
 @RequiredArgsConstructor
-public class HoldingController {
+public class HoldingController implements HoldingControllerDocs {
 
     private final HoldingService holdingService;
 
@@ -39,7 +39,7 @@ public class HoldingController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<List<HoldingResponse>>> getHoldings(
+    public ResponseEntity<CommonResponse<List<HoldingResponse>>> getHoldings(
             @RequestParam UUID accountId,
             @RequestHeader("X-User-Id") UUID userId) {
         List<HoldingResponse> response = holdingService.getHoldings(accountId, userId)
@@ -47,6 +47,6 @@ public class HoldingController {
                 .map(HoldingResponse::from)
                 .toList();
 
-        return ApiResponse.ok(response);
+        return CommonResponse.ok(response);
     }
 }

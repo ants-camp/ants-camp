@@ -1,10 +1,11 @@
 package io.antcamp.tradeservice.presentation;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.tradeservice.application.service.TradeService;
 import io.antcamp.tradeservice.infrastructure.annotation.LoginAccount;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
 import io.antcamp.tradeservice.presentation.dto.*;
+import io.antcamp.tradeservice.presentation.docs.TradeControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -17,15 +18,15 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/trades")
-public class TradeController {
+public class TradeController implements TradeControllerDocs {
 
     private final TradeService tradeService;
 
     // ── 토큰 ──────────────────────────────────────────────────────────────
 
     @PostMapping("/access-token")
-    public ResponseEntity<ApiResponse<AccessTokenResponse>> getKisAccessToken() {
-        return ApiResponse.ok(tradeService.requestAccessToken());
+    public ResponseEntity<CommonResponse<AccessTokenResponse>> getKisAccessToken() {
+        return CommonResponse.ok(tradeService.requestAccessToken());
     }
 
     // ── 가격 조회 ──────────────────────────────────────────────────────────
@@ -35,30 +36,30 @@ public class TradeController {
      * date_time 생략 시 현재 시각 기준
      */
     @GetMapping("/minute-price")
-    public ResponseEntity<ApiResponse<Double>> getMinutePrice(
+    public ResponseEntity<CommonResponse<Double>> getMinutePrice(
             @RequestParam("stock_code") String stockCode,
             @RequestParam(value = "date_time", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime
     ) {
-        return ApiResponse.ok(tradeService.getMinutePrice(stockCode, orNow(dateTime)));
+        return CommonResponse.ok(tradeService.getMinutePrice(stockCode, orNow(dateTime)));
     }
 
     @GetMapping("/now-price")
-    public ResponseEntity<ApiResponse<Double>> getNowPrice(
+    public ResponseEntity<CommonResponse<Double>> getNowPrice(
             @RequestParam("stock_code") String stockCode,
             @RequestParam(value = "date_time", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime
     ) {
-        return ApiResponse.ok(tradeService.getNowPrice(stockCode, orNow(dateTime)));
+        return CommonResponse.ok(tradeService.getNowPrice(stockCode, orNow(dateTime)));
     }
 
     @GetMapping("/price")
-    public ResponseEntity<ApiResponse<MinutePriceResponse>> getPrice(
+    public ResponseEntity<CommonResponse<MinutePriceResponse>> getPrice(
             @RequestParam("stock_code") String stockCode,
             @RequestParam(value = "date_time", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime
     ) {
-        return ApiResponse.ok(tradeService.getPrice(stockCode, orNow(dateTime)));
+        return CommonResponse.ok(tradeService.getPrice(stockCode, orNow(dateTime)));
     }
 
     /**
@@ -66,22 +67,22 @@ public class TradeController {
      * period: D=일봉 W=주봉 M=월봉 Y=년봉
      */
     @GetMapping("/chart")
-    public ResponseEntity<ApiResponse<DailyChartResponse>> getDailyChart(
+    public ResponseEntity<CommonResponse<DailyChartResponse>> getDailyChart(
             @RequestParam("stock_code") String stockCode,
             @RequestParam("start_date") String startDate,
             @RequestParam("end_date")   String endDate,
             @RequestParam(value = "period", defaultValue = "D") String period
     ) {
-        return ApiResponse.ok(tradeService.getDailyChart(stockCode, startDate, endDate, period));
+        return CommonResponse.ok(tradeService.getDailyChart(stockCode, startDate, endDate, period));
     }
 
     @PostMapping("/stock-price-list")
-    public ResponseEntity<ApiResponse<StockPriceList>> stockPriceList(
+    public ResponseEntity<CommonResponse<StockPriceList>> stockPriceList(
             @RequestBody StockList stockList,
             @RequestParam(value = "date_time", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime dateTime
     ) {
-        return ApiResponse.ok(tradeService.stockPriceList(stockList, orNow(dateTime)));
+        return CommonResponse.ok(tradeService.stockPriceList(stockList, orNow(dateTime)));
     }
 
     // ── 주문 (시장가 / 지정가 통합) ────────────────────────────────────────
@@ -100,11 +101,11 @@ public class TradeController {
      *   PENDING   — 조건 미충족, 미체결 대기 (tradeId 포함)
      */
     @PostMapping("/order")
-    public ResponseEntity<ApiResponse<TradeOrderResponse>> placeOrder(
+    public ResponseEntity<CommonResponse<TradeOrderResponse>> placeOrder(
             @RequestBody TradeOrderRequest request,
             @LoginAccount UUID accountId
     ) {
-        return ApiResponse.ok(tradeService.placeOrder(request, accountId));
+        return CommonResponse.ok(tradeService.placeOrder(request, accountId));
     }
 
     /**
@@ -113,11 +114,11 @@ public class TradeController {
      * 본인 주문만 취소 가능.
      */
     @DeleteMapping("/order/{tradeId}")
-    public ResponseEntity<ApiResponse<TradeOrderResponse>> cancelOrder(
+    public ResponseEntity<CommonResponse<TradeOrderResponse>> cancelOrder(
             @PathVariable UUID tradeId,
             @LoginAccount UUID accountId
     ) {
-        return ApiResponse.ok(tradeService.cancelOrder(tradeId, accountId));
+        return CommonResponse.ok(tradeService.cancelOrder(tradeId, accountId));
     }
 
     /**
@@ -125,10 +126,10 @@ public class TradeController {
      * 내 미체결 주문 목록 조회.
      */
     @GetMapping("/pending")
-    public ResponseEntity<ApiResponse<List<PendingOrderResponse>>> getPendingOrders(
+    public ResponseEntity<CommonResponse<List<PendingOrderResponse>>> getPendingOrders(
             @LoginAccount UUID accountId
     ) {
-        return ApiResponse.ok(tradeService.getPendingOrders(accountId));
+        return CommonResponse.ok(tradeService.getPendingOrders(accountId));
     }
 
     // ── 레거시 엔드포인트 (하위 호환) ─────────────────────────────────────
@@ -139,11 +140,11 @@ public class TradeController {
      */
     @Deprecated
     @PostMapping("/buy")
-    public ResponseEntity<ApiResponse<BuyStockResponse>> buyStock(
+    public ResponseEntity<CommonResponse<BuyStockResponse>> buyStock(
             @RequestBody BuyStockRequest request,
             @LoginAccount UUID accountId
     ) {
-        return ApiResponse.ok(tradeService.buyStock(LocalDateTime.now(),
+        return CommonResponse.ok(tradeService.buyStock(LocalDateTime.now(),
                 request.stockCode(), request.stockAmount(), accountId));
     }
 
@@ -152,11 +153,11 @@ public class TradeController {
      */
     @Deprecated
     @PostMapping("/sell")
-    public ResponseEntity<ApiResponse<SellStockResponse>> sellStock(
+    public ResponseEntity<CommonResponse<SellStockResponse>> sellStock(
             @RequestBody BuyStockRequest request,
             @LoginAccount UUID accountId
     ) {
-        return ApiResponse.ok(tradeService.sellStock(LocalDateTime.now(),
+        return CommonResponse.ok(tradeService.sellStock(LocalDateTime.now(),
                 request.stockCode(), request.stockAmount(), accountId));
     }
 

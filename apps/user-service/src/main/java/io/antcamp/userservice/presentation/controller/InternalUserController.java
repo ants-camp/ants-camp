@@ -1,9 +1,10 @@
 package io.antcamp.userservice.presentation.controller;
 
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.userservice.application.service.UserQueryService;
 import io.antcamp.userservice.presentation.dto.response.InternalUserResponse;
+import io.antcamp.userservice.presentation.controller.docs.InternalUserControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,16 +17,16 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/internal/users")
 @RequiredArgsConstructor
-public class InternalUserController {
+public class InternalUserController implements InternalUserControllerDocs {
 
     private final UserQueryService userQueryService;
 
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<InternalUserResponse>> getUser(
+    public ResponseEntity<CommonResponse<InternalUserResponse>> getUser(
             @PathVariable UUID userId
     ) {
         InternalUserResponse response = userQueryService.getInternalUser(userId);
-        return ApiResponse.ok("사용자 인증 정보 조회에 성공했습니다.", response);
+        return CommonResponse.ok("사용자 인증 정보 조회에 성공했습니다.", response);
     }
 }

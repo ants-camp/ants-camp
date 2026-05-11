@@ -1,7 +1,7 @@
 package io.antcamp.notificationservice.presentation.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.notificationservice.application.dto.command.PrometheusAlertCommand;
 import io.antcamp.notificationservice.application.dto.command.SlackActionCommand;
 import io.antcamp.notificationservice.application.dto.response.NotificationDetailResponse;
@@ -12,6 +12,7 @@ import io.antcamp.notificationservice.domain.repository.PageResult;
 import io.antcamp.notificationservice.presentation.dto.request.NotificationSearchRequest;
 import io.antcamp.notificationservice.presentation.dto.request.PrometheusWebhookRequest;
 import io.antcamp.notificationservice.presentation.dto.request.SlackInteractivePayload;
+import io.antcamp.notificationservice.presentation.controller.docs.NotificationControllerDocs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,7 +29,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor
-public class NotificationController {
+public class NotificationController implements NotificationControllerDocs {
 
     private final NotificationApplicationService notificationApplicationService;
     private final NotificationQueryService notificationQueryService;
@@ -106,13 +107,13 @@ public class NotificationController {
      * 알림 목록 조회
      */
     @GetMapping("/admin")
-    public ResponseEntity<ApiResponse<PageResult<NotificationSummaryResponse>>> list(
+    public ResponseEntity<CommonResponse<PageResult<NotificationSummaryResponse>>> list(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-Role", required = false) String role,
             @ModelAttribute NotificationSearchRequest request,
             @RequestParam(defaultValue = "0") int page) {
         log.info("알림 목록 조회: userId={}, role={}", userId, role);
-        return ApiResponse.ok("알림 목록 조회에 성공했습니다.",
+        return CommonResponse.ok("알림 목록 조회에 성공했습니다.",
                 notificationQueryService.search(request.toQuery(page)));
     }
 
@@ -120,12 +121,12 @@ public class NotificationController {
      * 알림 상세 조회
      */
     @GetMapping("/admin/{notificationId}")
-    public ResponseEntity<ApiResponse<NotificationDetailResponse>> detail(
+    public ResponseEntity<CommonResponse<NotificationDetailResponse>> detail(
             @RequestHeader(value = "X-User-Id", required = false) String userId,
             @RequestHeader(value = "X-Role", required = false) String role,
             @PathVariable UUID notificationId) {
         log.info("알림 상세 조회: userId={}, role={}, notificationId={}", userId, role, notificationId);
-        return ApiResponse.ok("알림 상세 조회에 성공했습니다.",
+        return CommonResponse.ok("알림 상세 조회에 성공했습니다.",
                 notificationQueryService.findById(notificationId));
     }
 
