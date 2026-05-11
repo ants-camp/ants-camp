@@ -6,8 +6,8 @@ spring:
     config:
       server:
         git:
-          uri: ${CONFIG_GIT_URI}
-          default-label: ${CONFIG_GIT_BRANCH}
+          uri: ${CONFIG_GIT_URI:https://github.com/ants-camp/ants-camp-config.git}
+          default-label: ${CONFIG_GIT_BRANCH:dev}
           clone-on-start: true
 
 management:
