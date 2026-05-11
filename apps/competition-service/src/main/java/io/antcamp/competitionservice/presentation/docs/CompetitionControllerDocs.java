@@ -1,8 +1,8 @@
 package io.antcamp.competitionservice.presentation.docs;
 
+import common.dto.CommonResponse;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.presentation.dto.request.CreateCompetitionRequest;
-import io.antcamp.competitionservice.presentation.dto.request.JoinCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.request.UpdateCompetitionRequest;
 import io.antcamp.competitionservice.presentation.dto.response.CreateCompetitionResponse;
 import io.antcamp.competitionservice.presentation.dto.response.FindCompetitionChangeNoticeResponse;
@@ -18,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -57,7 +58,7 @@ public interface CompetitionControllerDocs {
                                     }""")))
     })
     @PostMapping
-    CreateCompetitionResponse createCompetition(@RequestBody @Valid CreateCompetitionRequest request);
+    ResponseEntity<CommonResponse<CreateCompetitionResponse>> createCompetition(@RequestBody @Valid CreateCompetitionRequest request);
 
     @Operation(summary = "대회 단건 조회")
     @ApiResponses({
@@ -81,7 +82,7 @@ public interface CompetitionControllerDocs {
                                     }""")))
     })
     @GetMapping("/{id}")
-    FindCompetitionResponse findCompetitionById(
+    ResponseEntity<CommonResponse<FindCompetitionResponse>> findCompetitionById(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID id);
 
     @Operation(summary = "대회 공개 (DRAFT → OPEN)")
@@ -96,24 +97,9 @@ public interface CompetitionControllerDocs {
                                     {"status":409,"code":"COMPETITION_ALREADY_PUBLISHED","message":"이미 공개된 대회입니다.","data":null}""")))
     })
     @PostMapping("/{id}/publications")
-    FindCompetitionResponse openCompetition(
+    ResponseEntity<CommonResponse<FindCompetitionResponse>> openCompetition(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID id);
 
-    @Operation(summary = "대회 정보 수정")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "수정 성공",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "성공", value = """
-                                    {"competitionId":"550e8400-...","name":"수정된 대회명","status":"OPEN"}"""))),
-            @ApiResponse(responseCode = "409", description = "종료·취소된 대회는 수정 불가",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "실패", value = """
-                                    {"status":409,"code":"COMPETITION_CANNOT_UPDATE","message":"종료되었거나 취소된 대회는 수정할 수 없습니다.","data":null}""")))
-    })
-    @PatchMapping("/{id}")
-    FindCompetitionResponse updateCompetitionInfo(
-            @Parameter(description = "대회 UUID", required = true) @PathVariable UUID id,
-            @RequestBody @Valid UpdateCompetitionRequest request);
 
     @Operation(summary = "대회 시작 (OPEN → IN_PROGRESS)")
     @ApiResponses({
@@ -127,7 +113,7 @@ public interface CompetitionControllerDocs {
                                     {"status":400,"code":"COMPETITION_MIN_PARTICIPANTS_NOT_MET","message":"최소 참가자 수를 충족하지 못해 대회를 시작할 수 없습니다.","data":null}""")))
     })
     @PostMapping("/{id}/starts")
-    FindCompetitionResponse startCompetition(
+    ResponseEntity<CommonResponse<FindCompetitionResponse>> startCompetition(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID id);
 
     @Operation(summary = "대회 종료 (IN_PROGRESS → FINISHED)")
@@ -142,7 +128,7 @@ public interface CompetitionControllerDocs {
                                     {"status":409,"code":"COMPETITION_ALREADY_FINISHED","message":"이미 종료된 대회입니다.","data":null}""")))
     })
     @PostMapping("/{id}/finishes")
-    FindCompetitionResponse finishCompetition(
+    ResponseEntity<CommonResponse<FindCompetitionResponse>> finishCompetition(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID id);
 
     @Operation(summary = "대회 취소 (→ CANCELLED)")
@@ -157,7 +143,7 @@ public interface CompetitionControllerDocs {
                                     {"status":409,"code":"COMPETITION_INVALID_STATUS","message":"현재 대회 상태에서 허용되지 않는 작업입니다.","data":null}""")))
     })
     @PostMapping("/{id}/cancellations")
-    FindCompetitionResponse cancelCompetition(
+    ResponseEntity<CommonResponse<FindCompetitionResponse>> cancelCompetition(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID id);
 
     @Operation(summary = "대회 삭제 (소프트 삭제)")
@@ -172,9 +158,9 @@ public interface CompetitionControllerDocs {
                                     {"status":404,"code":"COMPETITION_NOT_FOUND","message":"존재하지 않는 대회입니다.","data":null}""")))
     })
     @DeleteMapping("/{id}")
-    FindCompetitionResponse deleteCompetition(
+    ResponseEntity<CommonResponse<FindCompetitionResponse>> deleteCompetition(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID id,
-            @Parameter(description = "삭제 요청자 식별자", required = true) @RequestParam String deletedBy);
+            @Parameter(description = "삭제 요청자 식별자", required = true) @RequestHeader UUID deletedBy);
 
     @Operation(summary = "대회 목록 조회 (페이지)", description = "status 파라미터로 필터링 가능. 생략 시 전체 반환.")
     @ApiResponses({
@@ -194,7 +180,7 @@ public interface CompetitionControllerDocs {
                                     {"status":400,"code":"INVALID_INPUT","message":"입력값이 유효하지 않습니다.","data":null}""")))
     })
     @GetMapping
-    Page<FindCompetitionResponse> findAllCompetition(
+    ResponseEntity<CommonResponse<Page<FindCompetitionResponse>>> findAllCompetition(
             @Parameter(description = "대회 상태 필터 (DRAFT/OPEN/IN_PROGRESS/FINISHED/CANCELLED)")
             @RequestParam(required = false) CompetitionStatus status,
             Pageable pageable);
@@ -220,54 +206,10 @@ public interface CompetitionControllerDocs {
                                     {"status":404,"code":"COMPETITION_NOT_FOUND","message":"존재하지 않는 대회입니다.","data":null}""")))
     })
     @GetMapping("/{id}/change-notices")
-    List<FindCompetitionChangeNoticeResponse> findAllCompetitionChangeNotice(
+    ResponseEntity<CommonResponse<List<FindCompetitionChangeNoticeResponse>>> findAllCompetitionChangeNotice(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID id);
 
     // ─── 참가자 ───────────────────────────────────────────────────────────────
-
-    @Operation(summary = "대회 참가 신청", description = "대회 신청 기간 내에만 신청 가능합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "201", description = "참가 신청 성공",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "성공", value = """
-                                    {
-                                      "participantId": "participant-uuid-...",
-                                      "competitionId": "550e8400-...",
-                                      "userId": "user-uuid-...",
-                                      "nickname": "투자왕",
-                                      "registeredAt": "2026-05-11T14:00:00"
-                                    }"""))),
-            @ApiResponse(responseCode = "409", description = "이미 신청한 대회",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "실패", value = """
-                                    {"status":409,"code":"COMPETITION_ALREADY_REGISTERED","message":"이미 신청한 대회입니다.","data":null}""")))
-    })
-    @PostMapping("/{competitionId}/participants")
-    FindCompetitionParticipantResponse registerCompetition(
-            @Parameter(description = "대회 UUID", required = true) @PathVariable UUID competitionId,
-            @RequestBody @Valid JoinCompetitionRequest request);
-
-    @Operation(summary = "대회 참가 취소", description = "대회 신청 기간 내에만 취소 가능합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "참가 취소 성공",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "성공", value = """
-                                    {
-                                      "participantId": "participant-uuid-...",
-                                      "competitionId": "550e8400-...",
-                                      "userId": "user-uuid-...",
-                                      "nickname": "투자왕",
-                                      "cancelledAt": "2026-05-12T10:00:00"
-                                    }"""))),
-            @ApiResponse(responseCode = "404", description = "참가 신청 내역 없음",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "실패", value = """
-                                    {"status":404,"code":"COMPETITION_PARTICIPANT_NOT_FOUND","message":"대회 참가 신청 내역이 없습니다.","data":null}""")))
-    })
-    @DeleteMapping("/{competitionId}/participants")
-    FindCompetitionParticipantResponse cancelRegistration(
-            @Parameter(description = "대회 UUID", required = true) @PathVariable UUID competitionId,
-            @RequestBody @Valid JoinCompetitionRequest request);
 
     @Operation(summary = "대회 참가자 목록 조회")
     @ApiResponses({
@@ -288,6 +230,6 @@ public interface CompetitionControllerDocs {
                                     {"status":404,"code":"COMPETITION_NOT_FOUND","message":"존재하지 않는 대회입니다.","data":null}""")))
     })
     @GetMapping("/{competitionId}/participants")
-    List<FindCompetitionParticipantResponse> findCompetitionParticipants(
+    ResponseEntity<CommonResponse<List<FindCompetitionParticipantResponse>>> findCompetitionParticipants(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID competitionId);
 }

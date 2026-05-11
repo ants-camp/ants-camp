@@ -9,9 +9,7 @@ import com.github.dockerjava.api.model.ContainerNetwork;
 import com.github.dockerjava.api.model.ExposedPort;
 import io.antcamp.notificationservice.application.port.RestartPort;
 import io.antcamp.notificationservice.application.port.RollbackPort;
-import io.antcamp.notificationservice.domain.exception.ContainerNotFoundException;
-import io.antcamp.notificationservice.domain.exception.InfrastructureServiceException;
-import io.antcamp.notificationservice.infrastructure.config.NotificationProperties;
+import io.antcamp.notificationservice.domain.exception.DockerOperationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
@@ -20,7 +18,6 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -30,11 +27,9 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
 
     private final DockerClient dockerClient;
     private final Environment environment;
-    private final NotificationProperties properties;
 
     @Override
     public void restart(String job) {
-        validateJobAllowed(job);
         String containerName = toContainerName(job);
         log.info("재시작 시작: job={}", job);
         String containerId = findContainerId(containerName);
@@ -50,7 +45,6 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
 
     @Override
     public void rollback(String job) {
-        validateJobAllowed(job);
         String rollbackImage = getRollbackImage(job);
         String containerName = toContainerName(job);
         log.info("롤백 시작: job={}, image={}", job, rollbackImage);
@@ -85,9 +79,14 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
         for (Map.Entry<String, ContainerNetwork> entry : info.getNetworkSettings().getNetworks().entrySet()) {
             if (!"bridge".equals(entry.getKey())) {
                 try {
+                    String networkId = entry.getValue().getNetworkID();
+                    if (networkId == null) {
+                        log.warn("NetworkID null, 네트워크 연결 스킵: network={}", entry.getKey());
+                        continue;
+                    }
                     dockerClient.connectToNetworkCmd()
                             .withContainerId(newContainerId)
-                            .withNetworkId(Objects.requireNonNull(entry.getValue().getNetworkID()))
+                            .withNetworkId(networkId)
                             .exec();
                     log.info("네트워크 연결 완료: container={}, network={}", containerName, entry.getKey());
                 } catch (Exception e) {
@@ -144,14 +143,18 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
                 .stream()
                 .findFirst()
                 .map(Container::getId)
-                .orElseThrow(() -> new ContainerNotFoundException("컨테이너를 찾을 수 없습니다: " + containerName));
+                .orElseThrow(() -> {
+                    log.warn("컨테이너를 찾을 수 없음: container={}", containerName);
+                    return DockerOperationException.containerNotFound();
+                });
     }
 
     private String getRollbackImage(String job) {
         String envKey = "ROLLBACK_IMAGE_" + job.replace("antcamp-", "").replace("-", "_").toUpperCase(Locale.ROOT);
         String image = environment.getProperty(envKey);
         if (image == null || image.isBlank()) {
-            throw new IllegalStateException("롤백 이미지 미설정: " + envKey);
+            log.error("롤백 이미지 미설정: envKey={}", envKey);
+            throw DockerOperationException.rollbackImageNotConfigured();
         }
         return image;
     }
@@ -170,14 +173,9 @@ public class DockerOperationClient implements RestartPort, RollbackPort {
                 log.info("롤백 이미지 풀링 완료: {}", image);
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                throw new RuntimeException("이미지 풀링 중단: " + image, ie);
+                log.error("이미지 풀링 중단: image={}", image, ie);
+                throw DockerOperationException.operationFailed();
             }
-        }
-    }
-
-    private void validateJobAllowed(String job) {
-        if (properties.infrastructureJobs().contains(job)) {
-            throw new InfrastructureServiceException("인프라 서비스는 조작할 수 없습니다: " + job);
         }
     }
 

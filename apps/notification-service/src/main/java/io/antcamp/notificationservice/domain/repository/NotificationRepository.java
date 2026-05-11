@@ -12,4 +12,6 @@ public interface NotificationRepository {
     Optional<Notification> findById(UUID notificationId);
 
     Optional<Notification> findByIdForUpdate(UUID notificationId);
+
+    PageResult<Notification> search(NotificationSearchCriteria criteria, PagingRequest pagingRequest);
 }

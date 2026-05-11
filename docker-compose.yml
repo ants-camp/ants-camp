@@ -256,6 +256,20 @@ services:
     networks:
       - kafka-network
 
+  zipkin:
+    image: openzipkin/zipkin:3
+    container_name: antcamp-zipkin
+    ports:
+      - "${ZIPKIN_PORT}:9411"
+    healthcheck:
+      test: [ "CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:9411/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - kafka-network
+    restart: unless-stopped
+
   assistant-service:
     build:
       context: .
@@ -274,6 +288,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     env_file:
       - .env
     volumes:
@@ -282,6 +297,8 @@ services:
       postgres:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      zipkin:
         condition: service_healthy
     networks:
       - kafka-network
@@ -306,6 +323,7 @@ services:
       LOKI_URL: http://loki:${LOKI_PORT}
       REDIS_HOST: redis
       REDIS_PORT: ${SPRING_DATA_REDIS_PORT}
+      ZIPKIN_ENDPOINT: http://zipkin:9411/api/v2/spans
     env_file:
       - .env
     volumes:
@@ -317,6 +335,8 @@ services:
       redis:
         condition: service_healthy
       eureka-server:
+        condition: service_healthy
+      zipkin:
         condition: service_healthy
     networks:
       - kafka-network

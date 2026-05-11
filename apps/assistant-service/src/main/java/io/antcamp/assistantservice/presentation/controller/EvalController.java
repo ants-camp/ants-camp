@@ -46,6 +46,7 @@ public class EvalController {
                         request.questions().stream().map(EvalQuestionRequest::toDomain).toList(),
                         request.judgeModels(),
                         request.promptVersionId(),
+                        request.ragModel(),
                         request.memo()));
         return CommonResponse.created("평가 파이프라인이 시작되었습니다.", new RunEvaluationResponse(runId));
     }

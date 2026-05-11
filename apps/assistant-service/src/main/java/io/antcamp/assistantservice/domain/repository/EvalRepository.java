@@ -17,6 +17,8 @@ public interface EvalRepository {
 
     EvalRun saveEvalRun(EvalRun evalRun);
 
+    Optional<EvalRun> findEvalRunById(UUID evalRunId);
+
     void markRunning(UUID evalRunId);
 
     void markCompleted(UUID evalRunId);

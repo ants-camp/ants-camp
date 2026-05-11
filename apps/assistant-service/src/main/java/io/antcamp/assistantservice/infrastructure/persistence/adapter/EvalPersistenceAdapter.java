@@ -42,6 +42,11 @@ public class EvalPersistenceAdapter implements EvalRepository {
         return jpaEvalRunRepository.save(EvalRunEntity.from(evalRun)).toDomain();
     }
 
+    @Override
+    public Optional<EvalRun> findEvalRunById(UUID evalRunId) {
+        return jpaEvalRunRepository.findById(evalRunId).map(EvalRunEntity::toDomain);
+    }
+
     @Transactional
     @Override
     public void markRunning(UUID evalRunId) {

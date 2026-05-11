@@ -1,6 +1,7 @@
 package io.antcamp.notificationservice.infrastructure.client.redis;
 
 import io.antcamp.notificationservice.application.port.CachePort;
+import io.antcamp.notificationservice.domain.exception.InvalidCachePatternException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisCallback;
@@ -24,7 +25,8 @@ public class CacheApiClient implements CachePort {
     public void clear(String job) {
         String suffix = stripJobPrefix(job);
         if (suffix.isBlank()) {
-            throw new IllegalArgumentException("캐시 패턴 생성 실패 (빈 suffix): job=" + job);
+            log.warn("캐시 패턴 생성 실패 (빈 suffix): job={}", job);
+            throw new InvalidCachePatternException();
         }
         String pattern = suffix + "*";
 

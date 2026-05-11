@@ -14,11 +14,10 @@ import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatModel;
-import org.springframework.ai.vertexai.gemini.VertexAiGeminiChatOptions;
 import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -77,9 +76,9 @@ public class JudgeLlmAdapter implements JudgeLlmPort {
     private final Map<Provider, ChatModel> modelRegistry;
     private final ObjectMapper objectMapper;
 
-    public JudgeLlmAdapter(OpenAiChatModel openAiModel,
+    public JudgeLlmAdapter(@Qualifier("openAiChatModel") OpenAiChatModel openAiModel,
                            @Autowired(required = false) AnthropicChatModel anthropicModel,
-                           @Autowired(required = false) VertexAiGeminiChatModel geminiModel,
+                           @Autowired(required = false) @Qualifier("geminiChatModel") ChatModel geminiModel,
                            ObjectMapper objectMapper) {
         Map<Provider, ChatModel> registry = new EnumMap<>(Provider.class);
         registry.put(Provider.OPENAI, openAiModel);
@@ -185,7 +184,7 @@ public class JudgeLlmAdapter implements JudgeLlmPort {
             case ANTHROPIC -> new Prompt(messages,
                     AnthropicChatOptions.builder().model(judgeModel).temperature(0.0).build());
             case GEMINI    -> new Prompt(messages,
-                    VertexAiGeminiChatOptions.builder().model(judgeModel).temperature(0.0).build());
+                    OpenAiChatOptions.builder().model(judgeModel).temperature(0.0).build());
             default        -> new Prompt(messages,
                     OpenAiChatOptions.builder().model(judgeModel).temperature(0.0).build());
         };

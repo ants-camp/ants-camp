@@ -20,4 +20,8 @@ public class InvalidDocumentException extends BusinessException {
     public static InvalidDocumentException contentBlank() {
         return new InvalidDocumentException(ErrorCode.DOCUMENT_CONTENT_BLANK);
     }
+
+    public static InvalidDocumentException typeNull() {
+        return new InvalidDocumentException(ErrorCode.DOCUMENT_TYPE_NULL);
+    }
 }

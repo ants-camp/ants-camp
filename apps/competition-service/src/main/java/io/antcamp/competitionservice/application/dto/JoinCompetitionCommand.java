@@ -5,6 +5,5 @@ import java.util.UUID;
 public record JoinCompetitionCommand(
         UUID competitionId,
         UUID userId,
-        String nickname
-) {
+        String username) {
 }

@@ -1,10 +1,12 @@
 package io.antcamp.notificationservice.domain.model;
 
-import io.antcamp.notificationservice.domain.exception.AlreadyHandledException;
+import io.antcamp.notificationservice.domain.exception.InvalidInputException;
+import io.antcamp.notificationservice.domain.exception.NotificationException;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -25,6 +27,8 @@ public class Notification {
     private String slackMessageTs;
     private ResolutionAction actionButton;
     private String actionUserEmail;
+    private final LocalDateTime createdAt;
+    private final LocalDateTime updatedAt;
 
     public static Notification restore(
             UUID notificationId,
@@ -40,7 +44,9 @@ public class Notification {
             AlertStatus status,
             String slackMessageTs,
             ResolutionAction actionButton,
-            String actionUserEmail
+            String actionUserEmail,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt
     ) {
         return Notification.builder()
                 .notificationId(notificationId)
@@ -57,6 +63,8 @@ public class Notification {
                 .slackMessageTs(slackMessageTs)
                 .actionButton(actionButton)
                 .actionUserEmail(actionUserEmail)
+                .createdAt(createdAt)
+                .updatedAt(updatedAt)
                 .build();
     }
 
@@ -76,6 +84,7 @@ public class Notification {
         validateTitle(title);
         validateContent(content);
 
+        LocalDateTime now = LocalDateTime.now();
         return Notification.builder()
                 .channelId(channelId)
                 .job(job)
@@ -87,12 +96,14 @@ public class Notification {
                 .rawPayload(rawPayload)
                 .aiAnalysis(aiAnalysis)
                 .status(AlertStatus.PENDING)
+                .createdAt(now)
+                .updatedAt(now)
                 .build();
     }
 
     public void markAsSent(String slackMessageTs) {
         if (this.status != AlertStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태에서만 전송 완료 처리할 수 있습니다.");
+            throw NotificationException.invalidState();
         }
         this.status = AlertStatus.SENT;
         this.slackMessageTs = slackMessageTs;
@@ -100,20 +111,20 @@ public class Notification {
 
     public void markAsFailed() {
         if (this.status != AlertStatus.PENDING) {
-            throw new IllegalStateException("PENDING 상태에서만 실패 처리할 수 있습니다.");
+            throw NotificationException.invalidState();
         }
         this.status = AlertStatus.FAILED;
     }
 
     public void recordAction(ResolutionAction button, String userEmail) {
         if (this.status != AlertStatus.SENT) {
-            throw new IllegalStateException("전송 완료된 메시지에만 액션을 기록할 수 있습니다.");
+            throw NotificationException.invalidState();
         }
         if (this.actionButton != null) {
-            throw new AlreadyHandledException("이미 처리된 알림입니다.");
+            throw NotificationException.alreadyHandled();
         }
         if (userEmail == null || userEmail.isBlank()) {
-            throw new IllegalArgumentException("액션을 수행한 유저 이메일은 비어있을 수 없습니다.");
+            throw NotificationException.invalidField();
         }
         this.actionButton = button;
         this.actionUserEmail = userEmail;
@@ -121,28 +132,27 @@ public class Notification {
 
     public void markActionFailed() {
         if (this.status != AlertStatus.SENT || this.actionButton == null) {
-            throw new IllegalStateException("액션이 기록된 SENT 상태에서만 실패 처리할 수 있습니다.");
+            throw NotificationException.invalidState();
         }
         this.status = AlertStatus.ACTION_FAILED;
     }
 
     private static void validateChannelId(String channelId) {
-        if (channelId == null || channelId.isBlank()) throw new IllegalArgumentException("채널 ID는 비어있을 수 없습니다.");
-        if (channelId.length() > 100) throw new IllegalArgumentException("채널 ID는 100자를 초과할 수 없습니다.");
+        if (channelId == null || channelId.isBlank()) throw new InvalidInputException();
+        if (channelId.length() > 100) throw new InvalidInputException();
     }
 
     private static void validateDeduplicationKey(String deduplicationKey) {
-        if (deduplicationKey == null || deduplicationKey.isBlank())
-            throw new IllegalArgumentException("중복 억제 키는 비어있을 수 없습니다.");
-        if (deduplicationKey.length() > 255) throw new IllegalArgumentException("중복 억제 키는 255자를 초과할 수 없습니다.");
+        if (deduplicationKey == null || deduplicationKey.isBlank()) throw new InvalidInputException();
+        if (deduplicationKey.length() > 255) throw new InvalidInputException();
     }
 
     private static void validateTitle(String title) {
-        if (title == null || title.isBlank()) throw new IllegalArgumentException("제목은 비어있을 수 없습니다.");
-        if (title.length() > 255) throw new IllegalArgumentException("제목은 255자를 초과할 수 없습니다.");
+        if (title == null || title.isBlank()) throw new InvalidInputException();
+        if (title.length() > 255) throw new InvalidInputException();
     }
 
     private static void validateContent(String content) {
-        if (content == null || content.isBlank()) throw new IllegalArgumentException("내용은 비어있을 수 없습니다.");
+        if (content == null || content.isBlank()) throw new InvalidInputException();
     }
 }

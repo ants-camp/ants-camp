@@ -47,6 +47,14 @@ public class CommonResponse<T> {
                 .body(new CommonResponse<>(201, "SUCCESS", message, data));
     }
 
+    // ── 비동기 처리 수락 응답 (HTTP 202 Accepted) ──────────────────
+
+    public static <T> ResponseEntity<CommonResponse<T>> accepted(String message, T data) {
+        return ResponseEntity
+                .status(HttpStatus.ACCEPTED)
+                .body(new CommonResponse<>(202, "SUCCESS", message, data));
+    }
+
     // ── 실패 응답 (GlobalExceptionHandler용) ────────────────────
 
     public static ResponseEntity<CommonResponse<?>> error(ErrorCode errorCode) {

@@ -3,8 +3,14 @@ package io.antcamp.notificationservice.infrastructure.client.slack;
 import io.antcamp.notificationservice.domain.model.Notification;
 import io.antcamp.notificationservice.domain.model.ResolutionAction;
 import io.antcamp.notificationservice.infrastructure.config.NotificationProperties;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -14,13 +20,19 @@ import java.util.Map;
 public class SlackBlockBuilder {
 
     private final NotificationProperties properties;
+    private final String grafanaUrl;
 
-    public SlackBlockBuilder(NotificationProperties properties) {
+    public SlackBlockBuilder(NotificationProperties properties,
+                             @Value("${grafana.url}") String grafanaUrl) {
         this.properties = properties;
+        this.grafanaUrl = grafanaUrl;
     }
 
     public List<Map<String, Object>> buildAlertBlocks(Notification notification) {
         List<Map<String, Object>> blocks = buildBaseBlocks(notification);
+        // Grafana 딥링크는 인프라 잡 포함 모든 알림에 노출
+        blocks.add(grafanaLinkActions(notification.getJob(),
+                notification.getCreatedAt().atZone(ZoneId.of("Asia/Seoul")).toInstant()));
         if (hasAiAnalysis(notification) && !properties.infrastructureJobs().contains(notification.getJob())) {
             blocks.add(actionsBlock(notification.getNotificationId().toString()));
         }
@@ -97,5 +109,32 @@ public class SlackBlockBuilder {
         button.put("value", value);
         if (style != null) button.put("style", style);
         return button;
+    }
+
+    private Map<String, Object> grafanaLinkActions(String job, Instant alertTime) {
+        long from = alertTime.minus(Duration.ofMinutes(10)).toEpochMilli();
+        long to   = alertTime.plus(Duration.ofMinutes(5)).toEpochMilli();
+        String timeParams   = "?var-job=%s&from=%d&to=%d".formatted(urlEnc(job), from, to);
+        String dashboardUrl = grafanaUrl + "/d/service-dashboard/service-dashboard" + timeParams;
+        String logsUrl      = grafanaUrl + "/d/logs-dashboard/logs-dashboard" + timeParams;
+        return Map.of(
+                "type", "actions",
+                "elements", List.of(
+                        linkButton("📊 Grafana 대시보드", dashboardUrl),
+                        linkButton("📋 로그 보기", logsUrl)
+                )
+        );
+    }
+
+    private Map<String, Object> linkButton(String label, String url) {
+        return Map.of(
+                "type", "button",
+                "text", Map.of("type", "plain_text", "text", label),
+                "url", url
+        );
+    }
+
+    private String urlEnc(String s) {
+        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 }

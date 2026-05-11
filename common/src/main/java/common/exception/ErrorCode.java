@@ -54,10 +54,14 @@ public enum ErrorCode {
     DOCUMENT_TITLE_BLANK(HttpStatus.BAD_REQUEST, "DOCUMENT_TITLE_BLANK", "문서 제목은 비어있을 수 없습니다."),
     DOCUMENT_TITLE_TOO_LONG(HttpStatus.BAD_REQUEST, "DOCUMENT_TITLE_TOO_LONG", "문서 제목은 100자를 초과할 수 없습니다."),
     DOCUMENT_CONTENT_BLANK(HttpStatus.BAD_REQUEST, "DOCUMENT_CONTENT_BLANK", "문서 내용은 비어있을 수 없습니다."),
+    DOCUMENT_TYPE_NULL(HttpStatus.BAD_REQUEST, "DOCUMENT_TYPE_NULL", "문서 타입은 필수입니다."),
     EVAL_QUESTIONS_EMPTY(HttpStatus.BAD_REQUEST, "EVAL_QUESTIONS_EMPTY", "평가 질문은 최소 1개 이상이어야 합니다."),
     EVAL_JUDGE_MODELS_EMPTY(HttpStatus.BAD_REQUEST, "EVAL_JUDGE_MODELS_EMPTY", "평가 모델은 최소 1개 이상이어야 합니다."),
     EVAL_TOO_MANY_COMBINATIONS(HttpStatus.BAD_REQUEST, "EVAL_TOO_MANY_COMBINATIONS", "질문 × 모델 조합이 허용 한도를 초과했습니다."),
     EVAL_RUN_NOT_FOUND(HttpStatus.NOT_FOUND, "EVAL_RUN_NOT_FOUND", "존재하지 않는 평가 실행입니다."),
+    EVAL_SAME_RUN_CONFIG(HttpStatus.BAD_REQUEST, "EVAL_SAME_RUN_CONFIG", "모델과 프롬프트 버전이 동일한 Run은 비교할 수 없습니다."),
+    PROMPT_VERSION_NAME_BLANK(HttpStatus.BAD_REQUEST, "PROMPT_VERSION_NAME_BLANK", "프롬프트 버전 이름은 비어있을 수 없습니다."),
+    PROMPT_VERSION_CONTENT_BLANK(HttpStatus.BAD_REQUEST, "PROMPT_VERSION_CONTENT_BLANK", "프롬프트 내용은 비어있을 수 없습니다."),
 
     // ── Common ────────────────────────────────────────
     INVALID_INPUT(HttpStatus.BAD_REQUEST, "INVALID_INPUT", "입력값이 유효하지 않습니다."),
@@ -74,6 +78,20 @@ public enum ErrorCode {
 
     // ── KIS ────────────────────────────────────────
     KIS_SERVER_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "KIS_SERVICE_ERROR", "KIS 서비스 에러입니다."),
+
+    // ── Notification ──────────────────────────────────
+    NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "NOTIFICATION_NOT_FOUND", "존재하지 않는 알림입니다."),
+    NOTIFICATION_ALREADY_HANDLED(HttpStatus.CONFLICT, "NOTIFICATION_ALREADY_HANDLED", "이미 처리된 알림입니다."),
+    NOTIFICATION_INVALID_STATE(HttpStatus.CONFLICT, "NOTIFICATION_INVALID_STATE", "알림의 현재 상태에서 수행할 수 없는 작업입니다."),
+    NOTIFICATION_INVALID_FIELD(HttpStatus.BAD_REQUEST, "NOTIFICATION_INVALID_FIELD", "알림 필드 값이 유효하지 않습니다."),
+    CONTAINER_NOT_FOUND(HttpStatus.NOT_FOUND, "CONTAINER_NOT_FOUND", "대상 컨테이너를 찾을 수 없습니다."),
+    INFRASTRUCTURE_OPERATION_FORBIDDEN(HttpStatus.FORBIDDEN, "INFRASTRUCTURE_OPERATION_FORBIDDEN", "인프라 서비스는 조작할 수 없습니다."),
+    SLACK_API_ERROR(HttpStatus.BAD_GATEWAY, "SLACK_API_ERROR", "Slack API 호출에 실패했습니다."),
+    DOCKER_OPERATION_FAILED(HttpStatus.SERVICE_UNAVAILABLE, "DOCKER_OPERATION_FAILED", "Docker 작업에 실패했습니다."),
+    ROLLBACK_IMAGE_NOT_CONFIGURED(HttpStatus.INTERNAL_SERVER_ERROR, "ROLLBACK_IMAGE_NOT_CONFIGURED", "롤백 이미지가 설정되지 않았습니다."),
+    PROMPT_TEMPLATE_LOAD_FAILED(HttpStatus.INTERNAL_SERVER_ERROR, "PROMPT_TEMPLATE_LOAD_FAILED", "프롬프트 템플릿 로드에 실패했습니다."),
+    INVALID_CACHE_PATTERN(HttpStatus.BAD_REQUEST, "INVALID_CACHE_PATTERN", "캐시 키 패턴이 유효하지 않습니다."),
+    PROMETHEUS_METRIC_INVALID(HttpStatus.INTERNAL_SERVER_ERROR, "PROMETHEUS_METRIC_INVALID", "Prometheus 메트릭 값이 유효 범위를 벗어났습니다."),
     ;
 
     private final HttpStatus status;

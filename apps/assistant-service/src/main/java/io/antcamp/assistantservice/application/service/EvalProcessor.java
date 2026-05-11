@@ -6,7 +6,6 @@ import io.antcamp.assistantservice.domain.model.EvalQuestion;
 import io.antcamp.assistantservice.domain.model.EvalResult;
 import io.antcamp.assistantservice.domain.model.RagQuery;
 import io.antcamp.assistantservice.domain.repository.EvalRepository;
-import io.antcamp.assistantservice.infrastructure.config.LlmConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -22,14 +21,13 @@ public class EvalProcessor {
     private final RagApplicationService ragApplicationService;
     private final JudgeLlmPort judgeLlmPort;
     private final EvalRepository evalRepository;
-    private final LlmConfig llmConfig;
 
     @Async("evalExecutor")
-    public void runEvalPipeline(RunEvaluationCommand command, UUID evalRunId, String promptOverride) {
+    public void runEvalPipeline(RunEvaluationCommand command, UUID evalRunId, String promptOverride, String ragModel) {
         evalRepository.markRunning(evalRunId);
         try {
             for (EvalQuestion evalQuestion : command.questions()) {
-                RagApplicationService.EvalRagResult ragResult = runRag(evalQuestion.question(), promptOverride);
+                RagApplicationService.EvalRagResult ragResult = runRag(evalQuestion.question(), promptOverride, ragModel);
                 if (ragResult == null) continue;
 
                 RagQuery ragQuery = saveRagQuery(evalQuestion.question(), ragResult);
@@ -48,9 +46,9 @@ public class EvalProcessor {
         }
     }
 
-    private RagApplicationService.EvalRagResult runRag(String question, String promptOverride) {
+    private RagApplicationService.EvalRagResult runRag(String question, String promptOverride, String ragModel) {
         try {
-            return ragApplicationService.runRagForEval(question, promptOverride);
+            return ragApplicationService.runRagForEval(question, promptOverride, ragModel);
         } catch (Exception e) {
             log.error("평가용 RAG 실행 실패, 해당 질문 건너뜀: question={}", question, e);
             return null;
@@ -79,7 +77,7 @@ public class EvalProcessor {
     private void judgeAndSave(RagQuery ragQuery, String contextText, String judgeModel,
                               String question, String referenceAnswer, UUID evalRunId) {
         // 응답 생성 모델과 Judge 모델이 동일하면 self-preference bias 발생 → skip
-        if (judgeModel.equalsIgnoreCase(llmConfig.modelName())) {
+        if (judgeModel.equalsIgnoreCase(ragQuery.getLlmModel())) {
             log.warn("Self-preference bias 방지: RAG 생성 모델과 Judge 모델이 동일하여 skip. model={}", judgeModel);
             return;
         }

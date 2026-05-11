@@ -1,3 +1,18 @@
 spring:
   application:
     name: config-server
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info
+  endpoint:
+    health:
+      show-details: when_authorized
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true   # P50/P95/P99 히스토그램 활성화 (선결조건: 응답시간 메트릭)
+      service-level-objectives:      # 히스토그램 버킷 강제 생성
+        http.server.requests: 50ms,100ms,200ms,500ms,1s,2s,5s
