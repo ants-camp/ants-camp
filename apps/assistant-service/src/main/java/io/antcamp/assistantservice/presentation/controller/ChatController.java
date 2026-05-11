@@ -35,7 +35,7 @@ public class ChatController implements ChatControllerDocs {
 
     @PostMapping
     public ResponseEntity<CommonResponse<ChatSessionResponse>> createSession(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @RequestHeader("X-User-Id") UUID userId
     ) {
         playerRoleGuard.require(role);
@@ -45,7 +45,7 @@ public class ChatController implements ChatControllerDocs {
 
     @GetMapping
     public ResponseEntity<CommonResponse<ChatSessionListResponse>> getSessions(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @RequestHeader("X-User-Id") UUID userId,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastUpdatedAt
@@ -58,7 +58,7 @@ public class ChatController implements ChatControllerDocs {
 
     @GetMapping("/{chatSessionId}/messages")
     public ResponseEntity<CommonResponse<List<ChatMessageResponse>>> getMessages(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @RequestHeader("X-User-Id") UUID userId,
             @PathVariable UUID chatSessionId
     ) {
@@ -70,7 +70,7 @@ public class ChatController implements ChatControllerDocs {
 
     @PostMapping("/{chatSessionId}/messages")
     public ResponseEntity<CommonResponse<SendMessageResponse>> sendMessage(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @RequestHeader("X-User-Id") UUID userId,
             @PathVariable UUID chatSessionId,
             @Valid @RequestBody SendMessageRequest request
