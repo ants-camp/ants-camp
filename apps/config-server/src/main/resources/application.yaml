@@ -9,6 +9,7 @@ spring:
           uri: ${CONFIG_GIT_URI:https://github.com/ants-camp/ants-camp-config.git}
           default-label: ${CONFIG_GIT_BRANCH:dev}
           clone-on-start: true
+          search-paths: configs/{application}
 
 management:
   endpoints:

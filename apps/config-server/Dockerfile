@@ -16,6 +16,8 @@ RUN ./gradlew :apps:config-server:clean :apps:config-server:build -x test --no-d
 
 FROM eclipse-temurin:17-jre
 
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
 COPY --from=builder /app/apps/config-server/build/libs/*.jar app.jar

@@ -30,7 +30,7 @@ public class DocumentController implements DocumentControllerDocs {
 
     @PostMapping
     public ResponseEntity<CommonResponse<DocumentUploadResponse>> ingestDocument(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @Valid @RequestBody SaveDocumentRequest request
     ) {
         managerRoleGuard.require(role);
@@ -44,7 +44,7 @@ public class DocumentController implements DocumentControllerDocs {
 
     @GetMapping("/{documentId}")
     public ResponseEntity<CommonResponse<DocumentDetailResponse>> getDocument(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @PathVariable UUID documentId
     ) {
         managerRoleGuard.require(role);
@@ -53,7 +53,7 @@ public class DocumentController implements DocumentControllerDocs {
 
     @GetMapping
     public ResponseEntity<CommonResponse<DocumentListResponse>> listDocuments(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) DocType type,
             @RequestParam(required = false) String title,
@@ -67,7 +67,7 @@ public class DocumentController implements DocumentControllerDocs {
 
     @PutMapping("/{documentId}")
     public ResponseEntity<CommonResponse<DocumentUploadResponse>> updateDocument(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @PathVariable UUID documentId,
             @Valid @RequestBody SaveDocumentRequest request
     ) {
@@ -82,7 +82,7 @@ public class DocumentController implements DocumentControllerDocs {
 
     @DeleteMapping("/{documentId}")
     public ResponseEntity<Void> deleteDocument(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @PathVariable UUID documentId
     ) {
         managerRoleGuard.require(role);

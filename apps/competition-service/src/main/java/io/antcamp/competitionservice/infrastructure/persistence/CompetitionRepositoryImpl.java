@@ -6,6 +6,7 @@ import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
 import io.antcamp.competitionservice.infrastructure.entity.CompetitionEntity;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -75,5 +76,15 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     @Override
     public List<UUID> findAllOngoingIds() {
         return competitionJpaRepository.findAllOngoingIds(CompetitionStatus.ONGOING);
+    }
+
+    @Override
+    public List<UUID> findAllIdsReadyToStart() {
+        return competitionJpaRepository.findAllIdsReadyToStart(LocalDateTime.now());
+    }
+
+    @Override
+    public List<UUID> findAllIdsReadyToFinish() {
+        return competitionJpaRepository.findAllIdsReadyToFinish(LocalDateTime.now());
     }
 }

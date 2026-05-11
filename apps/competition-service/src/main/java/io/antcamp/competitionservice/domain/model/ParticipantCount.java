@@ -13,11 +13,11 @@ public class ParticipantCount {
     private final int current;
 
     private ParticipantCount(int min, int max, int current) {
-        if (min > max) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
         if (min < 0 || current < 0) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_COUNT_NEGATIVE);
+        }
+        if (min > max) {
+            throw new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_MIN_EXCEEDS_MAX);
         }
         this.min = min;
         this.max = max;
@@ -50,7 +50,7 @@ public class ParticipantCount {
 
     public ParticipantCount decrement() {
         if (current <= 0) {
-            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
+            throw new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_COUNT_CANNOT_DECREASE);
         }
         return new ParticipantCount(min, max, current - 1);
     }

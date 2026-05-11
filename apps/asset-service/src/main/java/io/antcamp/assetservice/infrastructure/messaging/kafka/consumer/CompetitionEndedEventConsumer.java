@@ -58,7 +58,7 @@ public class CompetitionEndedEventConsumer {
             containerFactory = "competitionRegisteredFactory"
     )
     public void handleCompetitionEnded(CompetitionEndedEvent payload) {
-
+        log.info("[Kafka] CompetitionEndedEvent 수신. competitionId={}, 참가자수={}", payload.competitionId(), payload.participantUserIds().size());
         String lockKey = "lock:competition:ended:" + payload.competitionId();
         String lockToken = UUID.randomUUID().toString();
 

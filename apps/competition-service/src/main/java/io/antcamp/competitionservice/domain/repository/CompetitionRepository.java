@@ -32,4 +32,14 @@ public interface CompetitionRepository {
      * 현재 진행 중인(ONGOING) 대회 ID 목록 조회. 1분마다 틱 이벤트 발행 시 사용.
      */
     List<UUID> findAllOngoingIds();
+
+    /**
+     * 자동 시작 대상 대회 ID 목록 조회. PREPARING 상태이며 대회 시작 시간이 현재 시각 이전인 대회.
+     */
+    List<UUID> findAllIdsReadyToStart();
+
+    /**
+     * 자동 종료 대상 대회 ID 목록 조회. ONGOING 상태이며 대회 종료 시간이 현재 시각 이전인 대회.
+     */
+    List<UUID> findAllIdsReadyToFinish();
 }

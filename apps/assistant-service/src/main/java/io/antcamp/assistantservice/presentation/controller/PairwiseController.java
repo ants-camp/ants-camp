@@ -25,7 +25,7 @@ public class PairwiseController {
     // Pairwise 비교 실행
     @PostMapping
     public ResponseEntity<CommonResponse<Void>> runPairwise(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @Valid @RequestBody RunPairwiseRequest request
     ) {
         managerRoleGuard.require(role);
@@ -37,7 +37,7 @@ public class PairwiseController {
     // Pairwise 결과 집계 조회
     @GetMapping
     public ResponseEntity<CommonResponse<PairwiseSummaryResponse>> getSummary(
-            @RequestHeader("X-User-Role") String role,
+            @RequestHeader("X-Role") String role,
             @RequestParam UUID evalRunIdA,
             @RequestParam UUID evalRunIdB
     ) {

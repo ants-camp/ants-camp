@@ -13,11 +13,8 @@ public class CompetitionPeriod {
     private final LocalDateTime endAt;
 
     private CompetitionPeriod(LocalDateTime startAt, LocalDateTime endAt) {
-        if (startAt == null || endAt == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
         if (startAt.isAfter(endAt)) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
+            throw new BusinessException(ErrorCode.COMPETITION_PERIOD_START_AFTER_END);
         }
         this.startAt = startAt;
         this.endAt = endAt;

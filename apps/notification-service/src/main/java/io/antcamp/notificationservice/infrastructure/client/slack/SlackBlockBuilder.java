@@ -41,12 +41,16 @@ public class SlackBlockBuilder {
 
     public List<Map<String, Object>> buildProcessingBlocks(Notification notification, String handlerSlackUserId, ResolutionAction action) {
         List<Map<String, Object>> blocks = buildBaseBlocks(notification);
+        blocks.add(grafanaLinkActions(notification.getJob(),
+                notification.getCreatedAt().atZone(ZoneId.of("Asia/Seoul")).toInstant()));
         blocks.add(sectionBlock(String.format("⏳ *<@%s>* 님이 *%s* 처리를 진행 중입니다…", handlerSlackUserId, action.displayName())));
         return blocks;
     }
 
     public List<Map<String, Object>> buildHandledBlocks(Notification notification, String handlerSlackUserId, ResolutionAction action, boolean succeeded) {
         List<Map<String, Object>> blocks = buildBaseBlocks(notification);
+        blocks.add(grafanaLinkActions(notification.getJob(),
+                notification.getCreatedAt().atZone(ZoneId.of("Asia/Seoul")).toInstant()));
         String statusText = succeeded
                 ? String.format("✅ *<@%s>* 님이 *%s* 처리하였습니다.", handlerSlackUserId, action.displayName())
                 : String.format("❌ *<@%s>* 님이 *%s* 시도하였으나 실패하였습니다.", handlerSlackUserId, action.displayName());

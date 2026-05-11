@@ -1,8 +1,6 @@
 package io.antcamp.competitionservice.infrastructure.entity;
 
 import common.entity.BaseEntity;
-import common.exception.BusinessException;
-import common.exception.ErrorCode;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionPeriod;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
@@ -114,7 +112,6 @@ public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
         this.minParticipants = minParticipants;
         this.maxParticipants = maxParticipants;
         this.currentRegisters = currentRegisters;
-        validate();
     }
 
     /**
@@ -171,33 +168,6 @@ public class CompetitionEntity extends BaseEntity implements Persistable<UUID> {
         this.minParticipants = domain.getParticipantCount().getMin();
         this.maxParticipants = domain.getParticipantCount().getMax();
         this.currentRegisters = domain.getParticipantCount().getCurrent();
-    }
-
-    /**
-     * 빌더 방식의 단점(필수값 누락 시에도 객체가 생성되는 문제)을 보완하기 위해 생성 시점에 필수 참조 타입 값들의 null 여부를 검증한다.
-     */
-    private void validate() {
-        if (competitionId == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (name == null || name.isBlank()) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (type == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (status == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (description == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (registerStartAt == null || registerEndAt == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
-        if (competitionStartAt == null || competitionEndAt == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
     }
 
     @Override
