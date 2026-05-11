@@ -1,6 +1,6 @@
 package io.antcamp.assistantservice.presentation.controller;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.assistantservice.application.dto.command.IngestDocumentCommand;
 import io.antcamp.assistantservice.application.dto.command.UpdateDocumentCommand;
 import io.antcamp.assistantservice.application.service.DocumentApplicationService;
@@ -11,6 +11,7 @@ import io.antcamp.assistantservice.presentation.dto.response.DocumentDetailRespo
 import io.antcamp.assistantservice.presentation.dto.response.DocumentListResponse;
 import io.antcamp.assistantservice.presentation.dto.response.DocumentUploadResponse;
 import jakarta.validation.Valid;
+import io.antcamp.assistantservice.presentation.controller.docs.DocumentControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
@@ -22,13 +23,13 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/assistants/documents")
 @RequiredArgsConstructor
-public class DocumentController {
+public class DocumentController implements DocumentControllerDocs {
 
     private final DocumentApplicationService documentApplicationService;
     private final ManagerRoleGuard managerRoleGuard;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<DocumentUploadResponse>> ingestDocument(
+    public ResponseEntity<CommonResponse<DocumentUploadResponse>> ingestDocument(
             @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody SaveDocumentRequest request
     ) {
@@ -38,20 +39,20 @@ public class DocumentController {
                         new IngestDocumentCommand(request.title(), request.type(), request.content())
                 )
         );
-        return ApiResponse.accepted("문서 등록이 요청되었습니다. 처리 중입니다.", response);
+        return CommonResponse.created("문서 등록이 요청되었습니다. 처리 중입니다.", response);
     }
 
     @GetMapping("/{documentId}")
-    public ResponseEntity<ApiResponse<DocumentDetailResponse>> getDocument(
+    public ResponseEntity<CommonResponse<DocumentDetailResponse>> getDocument(
             @RequestHeader("X-User-Role") String role,
             @PathVariable UUID documentId
     ) {
         managerRoleGuard.require(role);
-        return ApiResponse.ok(DocumentDetailResponse.from(documentApplicationService.getDocument(documentId)));
+        return CommonResponse.ok(DocumentDetailResponse.from(documentApplicationService.getDocument(documentId)));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<DocumentListResponse>> listDocuments(
+    public ResponseEntity<CommonResponse<DocumentListResponse>> listDocuments(
             @RequestHeader("X-User-Role") String role,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) DocType type,
@@ -59,13 +60,13 @@ public class DocumentController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastUpdatedAt
     ) {
         managerRoleGuard.require(role);
-        return ApiResponse.ok(DocumentListResponse.from(
+        return CommonResponse.ok(DocumentListResponse.from(
                 documentApplicationService.getDocuments(type, title, keyword, lastUpdatedAt)
         ));
     }
 
     @PutMapping("/{documentId}")
-    public ResponseEntity<ApiResponse<DocumentUploadResponse>> updateDocument(
+    public ResponseEntity<CommonResponse<DocumentUploadResponse>> updateDocument(
             @RequestHeader("X-User-Role") String role,
             @PathVariable UUID documentId,
             @Valid @RequestBody SaveDocumentRequest request
@@ -76,7 +77,7 @@ public class DocumentController {
                         new UpdateDocumentCommand(documentId, request.title(), request.type(), request.content())
                 )
         );
-        return ApiResponse.ok(response);
+        return CommonResponse.ok(response);
     }
 
     @DeleteMapping("/{documentId}")

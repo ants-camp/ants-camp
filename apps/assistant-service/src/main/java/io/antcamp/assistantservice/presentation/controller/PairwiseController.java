@@ -1,6 +1,6 @@
 package io.antcamp.assistantservice.presentation.controller;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.assistantservice.application.dto.command.RunPairwiseCommand;
 import io.antcamp.assistantservice.application.service.PairwiseApplicationService;
 import io.antcamp.assistantservice.domain.model.PairwiseSummary;
@@ -24,19 +24,19 @@ public class PairwiseController {
 
     // Pairwise 비교 실행
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> runPairwise(
+    public ResponseEntity<CommonResponse<Void>> runPairwise(
             @RequestHeader("X-User-Role") String role,
             @Valid @RequestBody RunPairwiseRequest request
     ) {
         managerRoleGuard.require(role);
         pairwiseApplicationService.runPairwise(
                 new RunPairwiseCommand(request.evalRunIdA(), request.evalRunIdB(), request.judgeModels()));
-        return ApiResponse.accepted("Pairwise 비교가 시작되었습니다.", null);
+        return CommonResponse.created("Pairwise 비교가 시작되었습니다.", null);
     }
 
     // Pairwise 결과 집계 조회
     @GetMapping
-    public ResponseEntity<ApiResponse<PairwiseSummaryResponse>> getSummary(
+    public ResponseEntity<CommonResponse<PairwiseSummaryResponse>> getSummary(
             @RequestHeader("X-User-Role") String role,
             @RequestParam UUID evalRunIdA,
             @RequestParam UUID evalRunIdB
@@ -45,6 +45,6 @@ public class PairwiseController {
         PairwiseSummary summary = pairwiseApplicationService.getSummary(evalRunIdA, evalRunIdB);
         String ragModelA = pairwiseApplicationService.getRagModel(evalRunIdA);
         String ragModelB = pairwiseApplicationService.getRagModel(evalRunIdB);
-        return ApiResponse.ok(PairwiseSummaryResponse.from(summary, ragModelA, ragModelB));
+        return CommonResponse.ok(PairwiseSummaryResponse.from(summary, ragModelA, ragModelB));
     }
 }

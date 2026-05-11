@@ -1,6 +1,6 @@
 package io.antcamp.competitionservice.presentation;
 
-import common.dto.ApiResponse;
+import common.dto.CommonResponse;
 import io.antcamp.competitionservice.application.CompetitionParticipantService;
 import io.antcamp.competitionservice.application.CompetitionService;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
@@ -20,6 +20,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import io.antcamp.competitionservice.presentation.docs.CompetitionControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,7 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/competitions")
-public class CompetitionController {
+public class CompetitionController implements CompetitionControllerDocs {
 
     private final CompetitionService competitionService;
     private final CompetitionParticipantService competitionParticipantService;
@@ -48,7 +49,7 @@ public class CompetitionController {
     // ─── 대회 엔드포인트 ──────────────────────────────────────────────────────
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CreateCompetitionResponse>> createCompetition(
+    public ResponseEntity<CommonResponse<CreateCompetitionResponse>> createCompetition(
             @RequestBody @Valid CreateCompetitionRequest request) {
         CreateCompetitionCommand command = new CreateCompetitionCommand(
                 request.name(),
@@ -63,23 +64,23 @@ public class CompetitionController {
                 request.maxParticipants()
         );
         Competition competition = competitionService.create(command);
-        return ApiResponse.created("대회가 생성되었습니다.", CreateCompetitionResponse.from(competition));
+        return CommonResponse.created("대회가 생성되었습니다.", CreateCompetitionResponse.from(competition));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<FindCompetitionResponse>> findCompetitionById(@PathVariable UUID id) {
+    public ResponseEntity<CommonResponse<FindCompetitionResponse>> findCompetitionById(@PathVariable UUID id) {
         Competition competition = competitionService.findById(id);
-        return ApiResponse.ok(FindCompetitionResponse.from(competition));
+        return CommonResponse.ok(FindCompetitionResponse.from(competition));
     }
 
     @PostMapping("/{id}/publications")
-    public ResponseEntity<ApiResponse<FindCompetitionResponse>> openCompetition(@PathVariable UUID id) {
+    public ResponseEntity<CommonResponse<FindCompetitionResponse>> openCompetition(@PathVariable UUID id) {
         Competition competition = competitionService.openCompetition(id);
-        return ApiResponse.ok("대회가 공개되었습니다.", FindCompetitionResponse.from(competition));
+        return CommonResponse.ok("대회가 공개되었습니다.", FindCompetitionResponse.from(competition));
     }
 
     @PatchMapping("/{id}")
-    public ResponseEntity<ApiResponse<FindCompetitionResponse>> updateCompetitionInfo(
+    public ResponseEntity<CommonResponse<FindCompetitionResponse>> updateCompetitionInfo(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") UUID updatedBy,
             @RequestBody @Valid UpdateCompetitionRequest request) {
@@ -99,37 +100,37 @@ public class CompetitionController {
                 updatedBy.toString()
         );
         Competition competition = competitionService.updateInfo(command);
-        return ApiResponse.ok(FindCompetitionResponse.from(competition));
+        return CommonResponse.ok(FindCompetitionResponse.from(competition));
     }
 
     @PostMapping("/{id}/starts")
-    public ResponseEntity<ApiResponse<FindCompetitionResponse>> startCompetition(@PathVariable UUID id) {
+    public ResponseEntity<CommonResponse<FindCompetitionResponse>> startCompetition(@PathVariable UUID id) {
         Competition competition = competitionService.startCompetition(id);
-        return ApiResponse.ok("대회가 시작되었습니다.", FindCompetitionResponse.from(competition));
+        return CommonResponse.ok("대회가 시작되었습니다.", FindCompetitionResponse.from(competition));
     }
 
     @PostMapping("/{id}/finishes")
-    public ResponseEntity<ApiResponse<FindCompetitionResponse>> finishCompetition(@PathVariable UUID id) {
+    public ResponseEntity<CommonResponse<FindCompetitionResponse>> finishCompetition(@PathVariable UUID id) {
         Competition competition = competitionService.finishCompetition(id);
-        return ApiResponse.ok("대회가 종료되었습니다.", FindCompetitionResponse.from(competition));
+        return CommonResponse.ok("대회가 종료되었습니다.", FindCompetitionResponse.from(competition));
     }
 
     @PostMapping("/{id}/cancellations")
-    public ResponseEntity<ApiResponse<FindCompetitionResponse>> cancelCompetition(@PathVariable UUID id) {
+    public ResponseEntity<CommonResponse<FindCompetitionResponse>> cancelCompetition(@PathVariable UUID id) {
         Competition competition = competitionService.cancelCompetition(id);
-        return ApiResponse.ok("대회가 취소되었습니다.", FindCompetitionResponse.from(competition));
+        return CommonResponse.ok("대회가 취소되었습니다.", FindCompetitionResponse.from(competition));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<FindCompetitionResponse>> deleteCompetition(
+    public ResponseEntity<CommonResponse<FindCompetitionResponse>> deleteCompetition(
             @PathVariable UUID id,
             @RequestHeader("X-User-Id") UUID deletedBy) {
-        return ApiResponse.ok("대회가 삭제되었습니다.",
+        return CommonResponse.ok("대회가 삭제되었습니다.",
                 FindCompetitionResponse.from(competitionService.deleteCompetition(id, deletedBy.toString())));
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<Page<FindCompetitionResponse>>> findAllCompetition(
+    public ResponseEntity<CommonResponse<Page<FindCompetitionResponse>>> findAllCompetition(
             @RequestParam(required = false) CompetitionStatus status,
             @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
         Page<Competition> competitions;
@@ -138,15 +139,15 @@ public class CompetitionController {
         } else {
             competitions = competitionService.findAll(pageable);
         }
-        return ApiResponse.ok(competitions.map(FindCompetitionResponse::from));
+        return CommonResponse.ok(competitions.map(FindCompetitionResponse::from));
     }
 
     // ─── 대회 변경 공지 엔드포인트 ────────────────────────────────────────────
 
     @GetMapping("/{id}/change-notices")
-    public ResponseEntity<ApiResponse<List<FindCompetitionChangeNoticeResponse>>> findAllCompetitionChangeNotice(
+    public ResponseEntity<CommonResponse<List<FindCompetitionChangeNoticeResponse>>> findAllCompetitionChangeNotice(
             @PathVariable UUID id) {
-        return ApiResponse.ok(competitionService.findChangeNotices(id)
+        return CommonResponse.ok(competitionService.findChangeNotices(id)
                 .stream()
                 .map(FindCompetitionChangeNoticeResponse::from)
                 .toList());
@@ -156,13 +157,13 @@ public class CompetitionController {
 
     // 대회 신청 ( 대회가 조회 가능해야하고, 대회 신청기간에 신청 가능 )
     @PostMapping("/{competitionId}/participants")
-    public ResponseEntity<ApiResponse<FindCompetitionParticipantResponse>> registerCompetition(
+    public ResponseEntity<CommonResponse<FindCompetitionParticipantResponse>> registerCompetition(
             @PathVariable UUID competitionId,
             @RequestHeader("X-User-Id") UUID userId,
             @RequestHeader("X-User-Name") String encodedUsername
     ) {
         String username = URLDecoder.decode(encodedUsername, StandardCharsets.UTF_8);
-        return ApiResponse.created("대회 신청이 완료되었습니다.",
+        return CommonResponse.created("대회 신청이 완료되었습니다.",
                 FindCompetitionParticipantResponse.from(
                         competitionParticipantService.registerCompetition(
                                 new JoinCompetitionCommand(competitionId, userId, username))));
@@ -170,21 +171,21 @@ public class CompetitionController {
 
     // 대회 신청 취소 ( 대회 신청 기간에 취소 가능 )
     @DeleteMapping("/{competitionId}/participants")
-    public ResponseEntity<ApiResponse<FindCompetitionParticipantResponse>> cancelRegistration(
+    public ResponseEntity<CommonResponse<FindCompetitionParticipantResponse>> cancelRegistration(
             @PathVariable UUID competitionId,
             @RequestHeader("X-User-Id") UUID userId
     ) {
-        return ApiResponse.ok("대회 신청이 취소되었습니다.",
+        return CommonResponse.ok("대회 신청이 취소되었습니다.",
                 FindCompetitionParticipantResponse.from(
                         competitionParticipantService.cancelRegistration(
                                 new CancelCompetitionCommand(competitionId, userId))));
     }
 
     @GetMapping("/{competitionId}/participants")
-    public ResponseEntity<ApiResponse<List<FindCompetitionParticipantResponse>>> findCompetitionParticipants(
+    public ResponseEntity<CommonResponse<List<FindCompetitionParticipantResponse>>> findCompetitionParticipants(
             @PathVariable UUID competitionId
     ) {
-        return ApiResponse.ok(competitionParticipantService.findAllByCompetitionId(competitionId)
+        return CommonResponse.ok(competitionParticipantService.findAllByCompetitionId(competitionId)
                 .stream()
                 .map(FindCompetitionParticipantResponse::from)
                 .toList());

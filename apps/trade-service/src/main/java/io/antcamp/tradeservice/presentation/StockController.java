@@ -3,6 +3,7 @@ package io.antcamp.tradeservice.presentation;
 import io.antcamp.tradeservice.application.service.StockService;
 import io.antcamp.tradeservice.infrastructure.client.KisWebSocketClient;
 import io.antcamp.tradeservice.infrastructure.dto.StockSearchResponse;
+import io.antcamp.tradeservice.presentation.docs.StockControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,7 +20,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/stocks")
-public class StockController {
+public class StockController implements StockControllerDocs {
 
     private final StockService        stockService;
     private final KisWebSocketClient  kisWebSocketClient;

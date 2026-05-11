@@ -2,6 +2,7 @@ package io.antcamp.tradeservice.presentation;
 
 import io.antcamp.tradeservice.application.service.MarketStatusService;
 import io.antcamp.tradeservice.infrastructure.dto.MarketStatusResponse;
+import io.antcamp.tradeservice.presentation.docs.MarketStatusControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/market")
-public class MarketStatusController {
+public class MarketStatusController implements MarketStatusControllerDocs {
 
     private final MarketStatusService marketStatusService;
 
