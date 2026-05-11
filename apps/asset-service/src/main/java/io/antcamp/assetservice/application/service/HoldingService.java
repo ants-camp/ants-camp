@@ -12,6 +12,7 @@ import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class HoldingService {
@@ -28,9 +30,15 @@ public class HoldingService {
 
     @Transactional
     public TradeResult buy(BuyHoldingCommand command, UUID userId) {
+        log.info("[Holding] 매수 요청. accountId={}, stockCode={}, amount={}, price={}",
+                command.getAccountId(), command.getStockCode(),
+                command.getStockAmount(), command.getBuyPrice());
+
         Account account = accountService.getAccountDomain(command.getAccountId());
 
         if (!account.getUserId().equals(userId)) {
+            log.warn("[Holding] 권한 없는 매수 시도. accountId={}, 요청userId={}, 계좌ownerId={}",
+                    command.getAccountId(), userId, account.getUserId());
             throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
         }
 
@@ -41,15 +49,9 @@ public class HoldingService {
         accountService.withdraw(command.getAccountId(), command.getBuyPrice() * command.getStockAmount());
 
         Holding holding = holdingRepository
-                .findByAccountIdAndStockCodeWithLock(
-                        command.getAccountId(),
-                        command.getStockCode()
-                )
+                .findByAccountIdAndStockCodeWithLock(command.getAccountId(), command.getStockCode())
                 .map(existingHolding -> {
-                    existingHolding.buy(
-                            command.getStockAmount(),
-                            command.getBuyPrice()
-                    );
+                    existingHolding.buy(command.getStockAmount(), command.getBuyPrice());
                     return existingHolding;
                 })
                 .orElseGet(() -> Holding.create(
@@ -60,6 +62,10 @@ public class HoldingService {
                 ));
 
         holdingRepository.save(holding);
+
+        log.info("[Holding] 매수 완료. accountId={}, stockCode={}, amount={}, price={}",
+                command.getAccountId(), command.getStockCode(),
+                command.getStockAmount(), command.getBuyPrice());
 
         return new TradeResult(
                 account.getUserId(),
@@ -73,9 +79,15 @@ public class HoldingService {
 
     @Transactional
     public TradeResult sell(SellHoldingCommand command, UUID userId) {
+        log.info("[Holding] 매도 요청. accountId={}, stockCode={}, amount={}, price={}",
+                command.getAccountId(), command.getStockCode(),
+                command.getStockAmount(), command.getPrice());
+
         Account account = accountService.getAccountDomain(command.getAccountId());
 
         if (!account.getUserId().equals(userId)) {
+            log.warn("[Holding] 권한 없는 매도 시도. accountId={}, 요청userId={}, 계좌ownerId={}",
+                    command.getAccountId(), userId, account.getUserId());
             throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
         }
 
@@ -84,10 +96,7 @@ public class HoldingService {
         }
 
         Holding holding = holdingRepository
-                .findByAccountIdAndStockCodeWithLock(
-                        command.getAccountId(),
-                        command.getStockCode()
-                )
+                .findByAccountIdAndStockCodeWithLock(command.getAccountId(), command.getStockCode())
                 .orElseThrow(() -> new HoldingNotFoundException("보유 주식을 찾을 수 없습니다."));
 
         holding.sell(command.getStockAmount());
@@ -99,6 +108,10 @@ public class HoldingService {
         } else {
             holdingRepository.save(holding);
         }
+
+        log.info("[Holding] 매도 완료. accountId={}, stockCode={}, amount={}, price={}",
+                command.getAccountId(), command.getStockCode(),
+                command.getStockAmount(), command.getPrice());
 
         return new TradeResult(
                 account.getUserId(),

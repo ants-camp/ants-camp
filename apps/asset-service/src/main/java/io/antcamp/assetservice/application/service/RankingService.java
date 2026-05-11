@@ -26,6 +26,7 @@ public class RankingService {
     private final RedisTemplate<String, String> stringRedisTemplate;
 
     public void updateRanking(UUID competitionId) {
+        log.info("[Ranking] 랭킹 업데이트 시작. competitionId={}", competitionId);
         List<Account> accounts = accountRepository.findAllByCompetitionId(competitionId);
 
         Map<String, Long> priceCache = new HashMap<>();
@@ -48,6 +49,6 @@ public class RankingService {
             stringRedisTemplate.opsForZSet().add(rankingKey, account.getUserId().toString(), totalAsset);
         }
 
-        log.info("랭킹 업데이트 완료: competitionId={}", competitionId);
+        log.info("[Ranking] 랭킹 업데이트 완료. competitionId={}, 참가자수={}", competitionId, accounts.size());
     }
 }
