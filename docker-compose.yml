@@ -74,6 +74,8 @@ services:
     environment:
       <<: *java-tz
       SERVER_PORT: 8888
+      CONFIG_GIT_URI: ${CONFIG_GIT_URI}
+      CONFIG_GIT_BRANCH: ${CONFIG_GIT_BRANCH}
     networks:
       - kafka-network
 
