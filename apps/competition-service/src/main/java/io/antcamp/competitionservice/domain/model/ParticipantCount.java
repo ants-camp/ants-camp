@@ -50,7 +50,7 @@ public class ParticipantCount {
 
     public ParticipantCount decrement() {
         if (current <= 0) {
-            throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
+            throw new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_COUNT_CANNOT_DECREASE);
         }
         return new ParticipantCount(min, max, current - 1);
     }

@@ -13,9 +13,6 @@ public class RegisterPeriod {
     private final LocalDateTime endAt;
 
     private RegisterPeriod(LocalDateTime startAt, LocalDateTime endAt) {
-        if (startAt == null || endAt == null) {
-            throw new BusinessException(ErrorCode.INVALID_INPUT);
-        }
         if (startAt.isAfter(endAt)) {
             throw new BusinessException(ErrorCode.COMPETITION_REGISTER_PERIOD_START_AFTER_END);
         }
