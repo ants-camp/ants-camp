@@ -13,7 +13,9 @@ java {
         languageVersion = JavaLanguageVersion.of(17)
     }
 }
-
+ext {
+    set('springCloudVersion', "2025.0.1")
+}
 repositories {
     mavenCentral()
 }
@@ -24,8 +26,14 @@ dependencies {
     runtimeOnly 'io.micrometer:micrometer-registry-prometheus'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
 
+    implementation 'org.springframework.cloud:spring-cloud-config-server'
+}
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+    }
+}
 tasks.named('test') {
     useJUnitPlatform()
 }
