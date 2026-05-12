@@ -11,14 +11,14 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
+import java.util.UUID;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import java.util.List;
-import java.util.UUID;
 
 @Tag(name = "Ranking", description = "대회 랭킹 조회 / 최종 순위 확정")
 public interface RankingControllerDocs {
@@ -47,10 +47,10 @@ public interface RankingControllerDocs {
                                       "data": null
                                     }""")))
     })
-    @GetMapping("/competitions/{competitionId}/users/{userId}")
+    @GetMapping("/competitions/{competitionId}/me")
     ResponseEntity<CommonResponse<MyRankingResponse>> findMyRanking(
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID competitionId,
-            @Parameter(description = "사용자 UUID", required = true) @PathVariable UUID userId);
+            @Parameter(description = "사용자 UUID", required = true) @RequestHeader("X-User-Id") UUID userId);
 
     @Operation(summary = "최종 순위 확정 (수동 트리거)", description = "대회 종료 후 최종 순위를 확정합니다. 관리자 전용.")
     @ApiResponses({
