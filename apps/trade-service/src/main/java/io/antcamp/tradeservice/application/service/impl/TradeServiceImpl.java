@@ -183,7 +183,7 @@ public class TradeServiceImpl implements TradeService {
             // 조건 충족 — 즉시 체결
             totalPrice = currentPrice * request.stockAmount();
             Trade savedTrade = Trade.create(
-                    UUID.randomUUID(), accountId, tradeType, now,
+                    null, accountId, tradeType, now,
                     request.stockCode(), request.stockAmount(), totalPrice,
                     OrderType.LIMIT, request.limitPrice()
             );
@@ -198,15 +198,14 @@ public class TradeServiceImpl implements TradeService {
         }
 
         // 시장가 — 즉시 체결
-        Trade newTrade = Trade.create(
-                UUID.randomUUID(), accountId, tradeType, now,
+        Trade newTrade = Trade.create(null, accountId, tradeType, now,
                 request.stockCode(), request.stockAmount(), totalPrice,
                 OrderType.MARKET, null
         );
-        tradeRepository.save(newTrade);
+        Trade savedTrade = tradeRepository.save(newTrade);
         executeAsset(newTrade, currentPrice);
         log.info("[주문] 시장가 체결 — tradeId={} {} {}주 체결가={}",
-                newTrade.tradeId(), tradeType, request.stockAmount(), currentPrice);
+                savedTrade.tradeId(), tradeType, request.stockAmount(), currentPrice);
         return TradeOrderResponse.executed(
                 request.stockCode(), stockName, "MARKET", tradeType.name(),
                 currentPrice, request.stockAmount()

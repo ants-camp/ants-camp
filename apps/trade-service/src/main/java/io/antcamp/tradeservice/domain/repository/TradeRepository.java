@@ -7,7 +7,7 @@ import java.util.UUID;
 
 public interface TradeRepository {
     Trade findById(UUID tradeId);
-    void save(Trade trade);
+    Trade save(Trade trade);
     void updateStatus(Trade trade);
 
     /** status=PENDING & orderType=LIMIT 인 미체결 지정가 주문 전체 조회 */
