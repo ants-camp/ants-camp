@@ -1,7 +1,5 @@
 package io.antcamp.apigateway.filter;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.antcamp.apigateway.dto.User;
 import io.antcamp.apigateway.dto.UserResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -13,11 +11,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
+import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -37,17 +36,17 @@ public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFil
             "/api/users/register"
     );
     private final WebClient webClient;
+    private final ReactiveJwtDecoder jwtDecoder;
 
-    public CustomAuthFilter(WebClient.Builder webClientBuilder) {
+    public CustomAuthFilter(
+            WebClient.Builder webClientBuilder,
+            ReactiveJwtDecoder jwtDecoder
+    ) {
         super(Config.class);
-        /**
-         * user-service 호출용 WebClient
-         * - @LoadBalanced 적용되어 있으므로 서비스명으로 호출 가능
-         * - Eureka 기반 서비스 디스커버리 사용
-         */
         this.webClient = webClientBuilder
                 .baseUrl("http://user-service")
                 .build();
+        this.jwtDecoder = jwtDecoder;
     }
 
     public static class Config {
@@ -68,11 +67,14 @@ public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFil
                     .request(secureRequest)
                     .build();
 
-            return secureExchange.getPrincipal()
-                    .cast(Authentication.class)
-                    .flatMap(authentication -> {
-                        Jwt jwt = (Jwt) authentication.getPrincipal();
+            String token = extractBearerToken(secureRequest);
 
+            if (token == null) {
+                return unauthorizedResponse(secureExchange, "Authorization header is empty.");
+            }
+
+            return jwtDecoder.decode(token)
+                    .flatMap(jwt -> {
                         String userId = jwt.getSubject();
 
                         if (userId == null || userId.isBlank()) {
@@ -81,12 +83,25 @@ public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFil
 
                         return authenticateUser(secureExchange, chain, userId);
                     })
-                    .switchIfEmpty(unauthorizedResponse(secureExchange, "Authentication is empty."))
                     .onErrorResume(e -> {
-                        log.error("[CustomAuthFilter] Authentication error: {}", e.getMessage());
+                        log.warn("[CustomAuthFilter] Invalid JWT: {}", e.getMessage());
                         return unauthorizedResponse(secureExchange, "Invalid token.");
                     });
         };
+    }
+
+    private String extractBearerToken(ServerHttpRequest request) {
+        String authorization = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+
+        if (authorization == null || authorization.isBlank()) {
+            return null;
+        }
+
+        if (!authorization.startsWith("Bearer ")) {
+            return null;
+        }
+
+        return authorization.substring(7);
     }
 
     private Mono<Void> authenticateUser(

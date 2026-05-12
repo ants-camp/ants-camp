@@ -10,6 +10,7 @@ import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionParticipant;
 import io.antcamp.competitionservice.domain.repository.CompetitionParticipantRepository;
 import io.antcamp.competitionservice.domain.repository.CompetitionRepository;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,11 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
         // 1. 대회 조회 (Competition 비관적 락 먼저 획득 - 같은 대회 신청 요청을 직렬화)
         Competition competition = competitionRepository.findByIdWithLock(command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
+
+        if (competition.getRegisterPeriod().getEndAt().isBefore(LocalDateTime.now())) {
+            // 대회 신청기간이 지나서 신청할 수 없습니다 예외 반환
+            throw new BusinessException(ErrorCode.COMPETITION_CANNOT_REGISTER);
+        }
 
         // 2. 락 획득 후 중복 신청 체크 (이 시점엔 앞선 트랜잭션이 이미 commit된 상태)
         competitionParticipantRepository.findByUserIdAndCompetitionId(command.userId(), command.competitionId())

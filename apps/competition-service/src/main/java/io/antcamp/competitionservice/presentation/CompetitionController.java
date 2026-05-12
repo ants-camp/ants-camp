@@ -23,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -42,6 +43,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/competitions")
+@Slf4j
 public class CompetitionController implements CompetitionControllerDocs {
 
     private final CompetitionTickScheduler competitionTickScheduler;
@@ -66,6 +68,7 @@ public class CompetitionController implements CompetitionControllerDocs {
                 request.maxParticipants()
         );
         Competition competition = competitionService.create(command);
+        log.info("컨트롤러 - 대회 저장 완료");
         return CommonResponse.created("대회가 생성되었습니다.", CreateCompetitionResponse.from(competition));
     }
 

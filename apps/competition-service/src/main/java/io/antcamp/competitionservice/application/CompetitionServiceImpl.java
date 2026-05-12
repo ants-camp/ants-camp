@@ -20,6 +20,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CompetitionServiceImpl implements CompetitionService {
 
     private final CompetitionRepository competitionRepository;
@@ -40,14 +42,6 @@ public class CompetitionServiceImpl implements CompetitionService {
     @Override
     @Transactional
     public Competition create(CreateCompetitionCommand command) {
-        LocalDateTime now = LocalDateTime.now();
-        if (command.registerStartAt().isBefore(now)) {
-            throw new BusinessException(ErrorCode.COMPETITION_REGISTER_START_IN_PAST);
-        }
-        if (command.competitionStartAt().isBefore(now)) {
-            throw new BusinessException(ErrorCode.COMPETITION_PERIOD_START_IN_PAST);
-        }
-
         Competition competition = Competition.createCompetition(
                 command.name(),
                 command.type(),
@@ -57,7 +51,10 @@ public class CompetitionServiceImpl implements CompetitionService {
                 CompetitionPeriod.of(command.competitionStartAt(), command.competitionEndAt()),
                 ParticipantCount.of(command.minParticipants(), command.maxParticipants())
         );
-        return competitionRepository.save(competition);
+        log.info(competition.toString());
+        Competition saved = competitionRepository.save(competition);
+        log.info("저장 완료");
+        return saved;
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────

@@ -11,12 +11,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 @Repository
 @RequiredArgsConstructor
+@Slf4j
 public class CompetitionRepositoryImpl implements CompetitionRepository {
 
     private final CompetitionJpaRepository competitionJpaRepository;
@@ -25,6 +27,7 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
 
     @Override
     public Competition save(Competition competition) {
+        log.info("대회 리포지토리 구현체 - Competition save: {}", competition);
         return competitionJpaRepository.findById(competition.getCompetitionId())
                 .map(entity -> {
                     entity.update(competition);
@@ -32,6 +35,7 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
                 })
                 .orElseGet(() -> {
                     CompetitionEntity entity = CompetitionEntity.from(competition);
+                    log.info("대회 리포지토리 구현체 - 새로운 엔티티 저장 직전");
                     return competitionJpaRepository.save(entity).toDomain();
                 });
     }
@@ -51,7 +55,7 @@ public class CompetitionRepositoryImpl implements CompetitionRepository {
     }
 
     // ── Delete ────────────────────────────────────────────────────────────────
-    
+
     @Override
     public void delete(Competition competition, String deletedBy) {
         CompetitionEntity entity = competitionJpaRepository.findById(competition.getCompetitionId())
