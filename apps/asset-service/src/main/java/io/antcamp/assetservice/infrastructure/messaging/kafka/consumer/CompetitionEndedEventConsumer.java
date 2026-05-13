@@ -75,8 +75,14 @@ public class CompetitionEndedEventConsumer {
 
             List<Account> accounts = accountRepository.findAllByCompetitionId(payload.competitionId());
 
-            if (accounts.isEmpty() || accounts.get(0).isEnded()) {
-                log.warn("이미 종료 처리된 대회입니다. competitionId={}", payload.competitionId());
+            // 수정 전: accounts.isEmpty() || accounts.get(0).isEnded()
+            //   ← 첫 번째 계좌만 검사하므로 부분 처리된 경우 나머지 계좌가 영원히 미종료로 남을 수 있음
+            if (accounts.isEmpty()) {
+                log.warn("종료 이벤트 수신했으나 계좌가 없습니다. competitionId={}", payload.competitionId());
+                return;
+            }
+            if (accounts.stream().allMatch(Account::isEnded)) {
+                log.warn("이미 모든 계좌가 종료 처리된 대회입니다. competitionId={}", payload.competitionId());
                 return;
             }
 
