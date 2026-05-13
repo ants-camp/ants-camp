@@ -33,6 +33,12 @@ public class RefreshTokenRedisRepository {
         return Optional.ofNullable(stringRedisTemplate.opsForValue().get(key));
     }
 
+    public boolean existsByUserId(UUID userId) {
+        String key = KEY_PREFIX + userId;
+        return Boolean.TRUE.equals(stringRedisTemplate.hasKey(key));
+    }
+
+
     public void deleteByUserId(UUID userId) {
         String key = KEY_PREFIX + userId;
         stringRedisTemplate.delete(key);

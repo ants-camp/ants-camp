@@ -10,10 +10,9 @@ import io.antcamp.userservice.presentation.controller.docs.AuthControllerDocs;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -32,9 +31,9 @@ public class AuthController implements AuthControllerDocs {
 
     @PostMapping("/logout")
     public ResponseEntity<CommonResponse<Void>> logout(
-            @Valid @RequestBody LogoutRequest request
+            @RequestHeader("X-User-Id") UUID userId
     ) {
-        authService.logout(request);
+        authService.logout(userId);
         return CommonResponse.ok("로그아웃에 성공했습니다.", null);
     }
 
