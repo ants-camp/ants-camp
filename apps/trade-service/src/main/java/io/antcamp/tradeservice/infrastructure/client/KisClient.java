@@ -1,5 +1,6 @@
 package io.antcamp.tradeservice.infrastructure.client;
 
+import io.antcamp.tradeservice.infrastructure.config.OpenFeignConfig;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenRequest;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
 import io.antcamp.tradeservice.infrastructure.dto.ApprovalKeyResponse;
@@ -15,7 +16,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
-@FeignClient(name = "kisClient", url = "${kis.app.url}")
+// configuration = OpenFeignConfig.class → KIS 전용 ErrorDecoder 적용. 다른 Feign 클라이언트(AssetClient)에는 영향 없음.
+@FeignClient(name = "kisClient", url = "${kis.app.url}", configuration = OpenFeignConfig.class)
 public interface KisClient {
 
     // REST API 접근 토큰 발급 — 응답: {"access_token": "..."}
