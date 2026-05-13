@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Trade", description = "KIS 주식 가격 조회 / 주문 접수·취소 / 미체결 목록")
@@ -231,7 +232,8 @@ public interface TradeControllerDocs {
     })
     @PostMapping("/order")
     ResponseEntity<CommonResponse<TradeOrderResponse>> placeOrder(
-            @RequestBody TradeOrderRequest request);
+            @RequestBody TradeOrderRequest request,
+            @RequestHeader("X-User-Id") UUID userId);
 
     @Operation(summary = "미체결 주문 취소", description = "PENDING 상태의 지정가 주문을 취소합니다. 본인 주문만 취소 가능합니다.")
     @ApiResponses({
