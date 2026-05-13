@@ -71,12 +71,19 @@ public class ClaudeApiClient implements LlmPort {
 
             JsonNode text = root.path("content").path(0).path("text");
             if (text.isMissingNode()) return null;
-            // Claude가 응답을 코드블록(```)으로 감싸면 Slack mrkdwn이 비활성화됨 → 제거
-            return text.asText().replaceAll("(?s)^```[a-z]*\n?", "").replaceAll("\n?```$", "").trim();
+            return toSlackFormat(text.asText());
 
         } catch (Exception e) {
             log.error("Claude API 호출 실패: {}", e.getMessage());
             return null;
         }
+    }
+
+    private String toSlackFormat(String text) {
+        return text
+                .replaceAll("(?s)```[a-z]*\n?", "").replaceAll("\n?```", "")
+                .replaceAll("\\*\\*(.+?)\\*\\*", "*$1*")
+                .replaceAll("(?m)^#{1,6}\\s*", "")
+                .trim();
     }
 }
