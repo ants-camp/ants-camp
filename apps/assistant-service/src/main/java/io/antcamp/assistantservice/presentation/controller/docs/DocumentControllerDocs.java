@@ -36,8 +36,7 @@ public interface DocumentControllerDocs {
                                       "data": {
                                         "documentId": "doc-uuid-...",
                                         "title": "삼성전자 2026 사업전망",
-                                        "type": "STOCK_ANALYSIS",
-                                        "status": "PROCESSING"
+                                        "type": "STOCK_ANALYSIS"
                                       }
                                     }"""))),
             @ApiResponse(responseCode = "400", description = "제목 또는 내용 유효성 실패",
@@ -70,7 +69,9 @@ public interface DocumentControllerDocs {
                                         "title": "삼성전자 2026 사업전망",
                                         "type": "STOCK_ANALYSIS",
                                         "content": "삼성전자는 2026년 반도체 부문에서...",
-                                        "status": "INDEXED",
+                                        "chunkCount": 3,
+                                        "ingestStatus": "COMPLETED",
+                                        "failureReason": null,
                                         "createdAt": "2026-05-10T10:00:00"
                                       }
                                     }"""))),
@@ -105,8 +106,8 @@ public interface DocumentControllerDocs {
                                             "documentId": "doc-uuid-...",
                                             "title": "삼성전자 2026 사업전망",
                                             "type": "STOCK_ANALYSIS",
-                                            "status": "INDEXED",
-                                            "updatedAt": "2026-05-10T10:00:00"
+                                            "updatedAt": "2026-05-10T10:00:00",
+                                            "ingestStatus": "COMPLETED"
                                           }
                                         ],
                                         "hasNext": false
@@ -140,7 +141,7 @@ public interface DocumentControllerDocs {
                                       "data": {
                                         "documentId": "doc-uuid-...",
                                         "title": "삼성전자 2026 사업전망 (수정)",
-                                        "status": "PROCESSING"
+                                        "type": "STOCK_ANALYSIS"
                                       }
                                     }"""))),
             @ApiResponse(responseCode = "404", description = "존재하지 않는 문서",

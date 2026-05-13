@@ -9,10 +9,11 @@ public record DocumentItemResponse(
         UUID documentId,
         String title,
         String type,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        String ingestStatus
 ) {
 
     public static DocumentItemResponse from(DocumentItemResult result) {
-        return new DocumentItemResponse(result.documentId(), result.title(), result.type(), result.updatedAt());
+        return new DocumentItemResponse(result.documentId(), result.title(), result.type(), result.updatedAt(), result.ingestStatus());
     }
 }
