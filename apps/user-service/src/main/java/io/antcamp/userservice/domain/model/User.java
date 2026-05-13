@@ -40,6 +40,18 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private UserStatus status;
 
+    public void updateProfile(String name, String phone) {
+        this.name = name;
+        this.phone = phone;
+    }
+
+    public void changePassword(String password) {
+        this.password = password;
+    }
+
+    public void withdraw() {
+        this.status = UserStatus.WITHDRAWN;
+    }
     public boolean isActive() {
         return this.status == UserStatus.ACTIVE;
     }
