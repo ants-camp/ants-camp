@@ -103,6 +103,8 @@ services:
     depends_on:
       eureka-server:
         condition: service_healthy
+      config-server:
+        condition: service_healthy
     networks:
       - kafka-network
 
