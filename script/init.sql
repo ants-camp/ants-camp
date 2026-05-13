@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS trade.p_trade (
     trade_status    VARCHAR(50),
     total_price     DOUBLE PRECISION NOT NULL,
     created_at      TIMESTAMP       NOT NULL,
-    created_by      VARCHAR(255)    NOT NULL,
+    created_by      VARCHAR(255),
     updated_at      TIMESTAMP,
     updated_by      VARCHAR(255),
     deleted_at      TIMESTAMP,

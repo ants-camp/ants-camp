@@ -29,8 +29,8 @@ public class TradeRepositoryImpl implements TradeRepository {
     }
 
     @Override
-    public void save(Trade trade) {
-        tradeJpaRepository.save(TradeEntity.fromDomain(trade));
+    public Trade save(Trade trade) {
+        return tradeJpaRepository.save(TradeEntity.fromDomain(trade)).toDomain();
     }
 
     @Override

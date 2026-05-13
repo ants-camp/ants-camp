@@ -1,8 +1,12 @@
 package io.antcamp.apigateway.dto;
 
 public record UserResponse(
-        boolean success,
-        User data,
-        String error
+        int status,
+        String code,
+        String message,
+        User data
 ) {
+    public boolean success() {
+        return "SUCCESS".equals(code) && data != null;
+    }
 }
