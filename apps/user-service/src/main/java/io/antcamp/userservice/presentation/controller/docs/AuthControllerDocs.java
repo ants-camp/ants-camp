@@ -2,7 +2,6 @@ package io.antcamp.userservice.presentation.controller.docs;
 
 import common.dto.CommonResponse;
 import io.antcamp.userservice.presentation.dto.request.LoginRequest;
-import io.antcamp.userservice.presentation.dto.request.LogoutRequest;
 import io.antcamp.userservice.presentation.dto.request.ReissueRequest;
 import io.antcamp.userservice.presentation.dto.response.LoginResponse;
 import io.swagger.v3.oas.annotations.Operation;

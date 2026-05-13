@@ -3,7 +3,6 @@ package io.antcamp.userservice.presentation.controller;
 import common.dto.CommonResponse;
 import io.antcamp.userservice.application.service.AuthService;
 import io.antcamp.userservice.presentation.dto.request.LoginRequest;
-import io.antcamp.userservice.presentation.dto.request.LogoutRequest;
 import io.antcamp.userservice.presentation.dto.request.ReissueRequest;
 import io.antcamp.userservice.presentation.dto.response.LoginResponse;
 import io.antcamp.userservice.presentation.controller.docs.AuthControllerDocs;

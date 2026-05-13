@@ -57,9 +57,13 @@ public class GatewaySecurityConfig {
                                 "/api/notifications/interactions"
                         ).permitAll()
 
+                        // 로그아웃은 인증 필요
+                                .pathMatchers("/api/auth/logout")
+                                .authenticated()
                         // 관리자 전용 API
                         .pathMatchers("/api/admin/**")
                         .hasRole("ADMIN")
+
 
                         // 알림 관리자 조회 API — ADMIN/MANAGER
                         .pathMatchers("/api/notifications/admin/**")
