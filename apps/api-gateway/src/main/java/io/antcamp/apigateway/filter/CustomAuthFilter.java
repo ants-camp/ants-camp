@@ -9,18 +9,14 @@ import org.springframework.cloud.gateway.filter.factory.AbstractGatewayFilterFac
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
-import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -42,7 +38,7 @@ public class CustomAuthFilter extends AbstractGatewayFilterFactory<CustomAuthFil
             WebClient.Builder webClientBuilder,
             ReactiveJwtDecoder jwtDecoder
     ) {
-        super(Config.class);
+
         this.webClient = webClientBuilder
                 .baseUrl("http://user-service")
                 .build();

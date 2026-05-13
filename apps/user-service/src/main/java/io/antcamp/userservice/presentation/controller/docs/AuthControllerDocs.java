@@ -12,8 +12,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+
+import java.util.UUID;
 
 @Tag(name = "Auth", description = "로그인 / 로그아웃 / 토큰 재발급")
 public interface AuthControllerDocs {
@@ -52,61 +56,73 @@ public interface AuthControllerDocs {
     @PostMapping("/login")
     ResponseEntity<CommonResponse<LoginResponse>> login(@RequestBody LoginRequest request);
 
-    @Operation(summary = "로그아웃", description = "액세스 토큰을 블랙리스트에 등록하여 무효화합니다.")
-    @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "로그아웃 성공",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "성공", value = """
-                                    {
-                                      "status": 200,
-                                      "code": "SUCCESS",
-                                      "message": "로그아웃에 성공했습니다.",
-                                      "data": null
-                                    }"""))),
-            @ApiResponse(responseCode = "401", description = "이미 로그아웃된 토큰",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "실패", value = """
-                                    {
-                                      "status": 401,
-                                      "code": "TOKEN_BLACKLISTED",
-                                      "message": "이미 로그아웃된 토큰입니다.",
-                                      "data": null
-                                    }""")))
-    })
-    @PostMapping("/logout")
-    ResponseEntity<CommonResponse<Void>> logout(@RequestBody LogoutRequest request);
 
-    @Operation(summary = "토큰 재발급", description = "Refresh Token으로 새 Access Token을 발급합니다.")
+    @Operation(
+            summary = "로그아웃",
+            description = "현재 로그인된 사용자의 Refresh Token을 Redis에서 삭제합니다."
+    )
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "재발급 성공",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "성공", value = """
-                                    {
-                                      "status": 200,
-                                      "code": "SUCCESS",
-                                      "message": "토큰 재발급에 성공했습니다.",
-                                      "data": {
-                                        "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                                        "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-                                        "user": {
-                                          "userId": "550e8400-e29b-41d4-a716-446655440000",
-                                          "email": "user@example.com",
-                                          "name": "홍길동",
-                                          "role": "PLAYER",
-                                          "phone": "010-1234-5678"
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "로그아웃 성공",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "성공",
+                                    value = """
+                                        {
+                                          "status": 200,
+                                          "code": "SUCCESS",
+                                          "message": "로그아웃에 성공했습니다.",
+                                          "data": null
                                         }
-                                      }
-                                    }"""))),
-            @ApiResponse(responseCode = "401", description = "유효하지 않은 Refresh Token",
-                    content = @Content(mediaType = "application/json",
-                            examples = @ExampleObject(name = "실패", value = """
-                                    {
-                                      "status": 401,
-                                      "code": "INVALID_REFRESH_TOKEN",
-                                      "message": "유효하지 않은 리프레시 토큰입니다.",
-                                      "data": null
-                                    }""")))
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "이미 로그아웃된 사용자",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "이미 로그아웃됨",
+                                    value = """
+                                        {
+                                          "status": 400,
+                                          "code": "ALREADY_LOGGED_OUT",
+                                          "message": "이미 로그아웃된 사용자입니다.",
+                                          "data": null
+                                        }
+                                        """
+                            )
+                    )
+            ),
+
+            @ApiResponse(
+                    responseCode = "401",
+                    description = "인증 실패",
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    name = "인증 실패",
+                                    value = """
+                                        {
+                                          "status": 401,
+                                          "code": "UNAUTHORIZED",
+                                          "message": "인증이 필요합니다.",
+                                          "data": null
+                                        }
+                                        """
+                            )
+                    )
+            )
     })
+    @DeleteMapping("/logout")
+    ResponseEntity<CommonResponse<Void>> logout(
+            @RequestHeader("X-User-Id") UUID userId
+    );
     @PostMapping("/reissue")
     ResponseEntity<CommonResponse<LoginResponse>> reissue(@RequestBody ReissueRequest request);
 }

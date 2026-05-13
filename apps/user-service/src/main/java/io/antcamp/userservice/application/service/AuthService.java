@@ -58,14 +58,12 @@ public class AuthService {
         );
     }
 
-    public void logout(LogoutRequest request) {
-        String refreshToken = request.refreshToken();
+    public void logout(UUID userId) {
+        boolean exists = refreshTokenRedisRepository.existsByUserId(userId);
 
-        if (!jwtProvider.validateToken(refreshToken)) {
-            throw new BusinessException(ErrorCode.INVALID_TOKEN);
+        if (!exists) {
+            throw new BusinessException(ErrorCode.ALREADY_LOGGED_OUT);
         }
-
-        UUID userId = jwtProvider.getUserId(refreshToken);
 
         refreshTokenRedisRepository.deleteByUserId(userId);
     }

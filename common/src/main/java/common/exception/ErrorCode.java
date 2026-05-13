@@ -30,6 +30,7 @@ public enum ErrorCode {
     CANNOT_UPDATE_ROLE_SELF(HttpStatus.FORBIDDEN, "CANNOT_UPDATE_ROLE_SELF", "본인 권한은 변경할 수 없습니다."),
     USER_NOT_APPROVED(HttpStatus.FORBIDDEN, "USER_NOT_APPROVED", "승인되지 않은 사용자입니다."),
     SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "SAME_AS_OLD_PASSWORD", "새 비밀번호는 현재 비밀번호와 달라야 합니다."),
+    ALREADY_LOGGED_OUT(HttpStatus.BAD_REQUEST, "ALREADY_LOGGED_OUT","이미 로그아웃된 사용자입니다."),
 
     // ── Competition ───────────────────────────────────
     COMPETITION_NOT_FOUND(HttpStatus.NOT_FOUND, "COMPETITION_NOT_FOUND", "존재하지 않는 대회입니다."),
