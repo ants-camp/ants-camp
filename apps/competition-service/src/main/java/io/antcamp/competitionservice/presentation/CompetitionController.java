@@ -188,6 +188,7 @@ public class CompetitionController implements CompetitionControllerDocs {
                                 new CancelCompetitionCommand(competitionId, userId))));
     }
 
+    // 특정 대회의 참가자 목록 조회
     @GetMapping("/{competitionId}/participants")
     public ResponseEntity<CommonResponse<List<FindCompetitionParticipantResponse>>> findCompetitionParticipants(
             @PathVariable UUID competitionId

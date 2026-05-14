@@ -102,6 +102,9 @@ public enum ErrorCode {
     TRADE_ALREADY_PROCESSED(HttpStatus.NOT_FOUND, "TRADE_ALREADY_PROCESSED",
             "이미 처리된 주문 취소 시도 (PENDING이 아닐 때)입니다."), // 이미 처리된 주문 취소 시도 (PENDING이 아닐 때)
     INVALID_INPUT_VALUE(HttpStatus.BAD_REQUEST, "INVALID_INPUT_VALUE", "요청 파라미터 오류입니다."),     // 요청 파라미터 오류
+    // 수정 후 신규: 접수 시점 사전 검증 실패용
+    INSUFFICIENT_BALANCE(HttpStatus.BAD_REQUEST, "INSUFFICIENT_BALANCE", "현금 잔액이 부족합니다."),
+    INSUFFICIENT_HOLDINGS(HttpStatus.BAD_REQUEST, "INSUFFICIENT_HOLDINGS", "매도 가능한 보유 수량이 부족합니다."),
 
     // ── Asset ────────────────────────────────────────
     ASSET_SERVICE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "ASSET_SERVICE_ERROR", "자산 서비스 에러입니다."),

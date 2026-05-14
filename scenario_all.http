@@ -37,7 +37,7 @@ Content-Type: application/json
     var now = new Date();
     var REG_END_MIN = 3;     // 등록 마감: 지금 + 3분
     var START_MIN   = 4;     // 대회 시작: 지금 + 4분
-    var END_MIN     = 18;    // 대회 종료: 지금 + 18분
+    var END_MIN     = 30;    // 대회 종료: 지금 + 18분
     client.global.set("register_end_at",      toLocalDateTime(new Date(now.getTime() + REG_END_MIN * 60 * 1000)));
     client.global.set("competition_start_at", toLocalDateTime(new Date(now.getTime() + START_MIN   * 60 * 1000)));
     client.global.set("competition_end_at",   toLocalDateTime(new Date(now.getTime() + END_MIN     * 60 * 1000)));
@@ -202,7 +202,7 @@ Authorization: Bearer {{access_token_0}}
   "name": "2026 거래 테스트 대회",
   "type": "PERSONAL",
   "description": "유저1 vs 유저2 vs 유저3 수익률 대결",
-  "firstSeed": 10000000,
+  "firstSeed": 1000000,
   "registerStartAt": "2026-05-01T00:00:00",
   "registerEndAt": "{{register_end_at}}",
   "competitionStartAt": "{{competition_start_at}}",
@@ -425,7 +425,7 @@ Authorization: Bearer {{access_token_1}}
 
 {
   "stockCode":  "{{stock_code}}",
-  "stockAmount": 10,
+  "stockAmount": 1,
   "orderType": "MARKET",
   "side": "BUY",
   "limitPrice": "",
@@ -451,7 +451,7 @@ Authorization: Bearer {{access_token_1}}
   "stockAmount": 1,
   "orderType": "LIMIT",
   "side": "BUY",
-  "limitPrice": 280000.00,
+  "limitPrice": 295500.00,
   "accountId": "{{account_id_1}}"
 }
 
@@ -464,6 +464,18 @@ Authorization: Bearer {{access_token_1}}
     });
     console.log("✅ 유저1 지정가 매수 완료 — 삼성전자 1주 (limitPrice=280,000)");
     console.log("⏱  1분 경과 후 11~14번을 실행하세요.");
+%}
+
+### 미체결 된 지정가 거래 조회
+GET {{gateway_base}}/api/trades/pending
+Authorization: Bearer {{access_token_1}}
+X-ACCOUNT-ID: {{account_id_1}}
+
+> {%
+    client.test("200 or 201", function() {
+        client.assert(response.status === 200 || response.status === 201,
+            "Expected 200/201, got " + response.status);
+    });
 %}
 
 # ---------------------------------------------------------------
@@ -563,14 +575,14 @@ Authorization: Bearer {{access_token_1}}
 #         └─ Account.deposit()    → 잔액 증가 (현재가 × 수량)
 # ================================================================
 
-### 시장가 매도 — 삼성전자 5주
+### 시장가 매도 — 삼성전자 1주
 POST {{gateway_base}}/api/trades/order
 Content-Type: application/json
 Authorization: Bearer {{access_token_1}}
 
 {
   "stockCode":  "{{stock_code}}",
-  "stockAmount": 5,
+  "stockAmount": 1,
   "orderType": "MARKET",
   "side": "SELL",
   "limitPrice": null,
@@ -606,9 +618,21 @@ Authorization: Bearer {{access_token_1}}
   "stockAmount": 1,
   "orderType": "LIMIT",
   "side": "SELL",
-  "limitPrice": 260000.00,
+  "limitPrice": 293000.00,
   "accountId": "{{account_id_1}}"
 }
+
+### 미체결 된 지정가 거래 조회
+GET {{gateway_base}}/api/trades/pending
+Authorization: Bearer {{access_token_1}}
+X-ACCOUNT-ID: {{account_id_1}}
+
+> {%
+    client.test("200 or 201", function() {
+        client.assert(response.status === 200 || response.status === 201,
+            "Expected 200/201, got " + response.status);
+    });
+%}
 
 > {%
     client.test("200 or 201", function() {
@@ -721,3 +745,5 @@ Authorization: Bearer {{access_token_0}}
         console.log(JSON.stringify(data, null, 2));
     }
 %}
+
+

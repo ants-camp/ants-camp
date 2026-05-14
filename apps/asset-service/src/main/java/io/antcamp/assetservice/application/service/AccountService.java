@@ -97,6 +97,17 @@ public class AccountService {
                 .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
     }
 
+    /**
+     * 내부 서비스 호출용 — 잔액만 반환. 권한 검증 생략.
+     * `/internal/...` 경로로만 노출해야 함.
+     */
+    @Transactional(readOnly = true)
+    public long getBalance(UUID accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+        return account.getAccountAmount() != null ? account.getAccountAmount() : 0L;
+    }
+
     @Transactional
     public void deleteByUserIdAndCompetitionId(UUID userId, UUID competitionId) {
         log.info("[Account] 계좌 삭제 요청. userId={}, competitionId={}", userId, competitionId);
