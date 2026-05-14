@@ -43,9 +43,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -58,6 +60,17 @@ public class TradeServiceImpl implements TradeService {
     private final AssetClient assetClient;
     private final ObjectMapper objectMapper;
     private final TradeRepository tradeRepository;
+    /**
+     * Self-injection — REQUIRES_NEW 트랜잭션 분리를 위해 proxy 경유 호출이 필요.
+     * 직접 this.executePendingLimitOrder(...) 로 호출하면 self-invocation 이라
+     * Spring AOP proxy 가 적용되지 않아 새 트랜잭션이 열리지 않는다.
+     *
+     * 수정 전: @Lazy private final TradeService self;
+     *   → Lombok @RequiredArgsConstructor 가 필드의 @Lazy 를 생성자 파라미터로 전파하지 않아
+     *     일반 의존성으로 해석돼 LimitOrderScheduler ↔ TradeServiceImpl 순환참조 발생.
+     * 수정 후: ObjectProvider 로 lazy lookup. 호출 시점에 빈을 가져오므로 순환 안 생김.
+     */
+    private final ObjectProvider<TradeService> selfProvider;
 
     @Value("${kis.app.key}")
     private String appKey;
@@ -145,6 +158,14 @@ public class TradeServiceImpl implements TradeService {
 
     /**
      * 시장가 / 지정가 통합 주문. MARKET  → 현재가 즉시 체결 LIMIT   → 조건 충족 시 즉시 체결 / 미충족 시 PENDING 저장
+     *
+     * <p>접수 시점 사전 검증 (수정 후 추가):
+     * <ul>
+     *   <li>SELL — asset-service 보유 수량 확인, 부족 시 즉시 거부 (phantom PENDING 차단)</li>
+     *   <li>BUY  — asset-service 현금 잔액 확인, 부족 시 즉시 거부</li>
+     * </ul>
+     * 한계: 동일 종목으로 동시 PENDING 여러 건 들어오면 합계 기준 검증은 못 함 (예약 락이 없음).
+     * 모의투자 트래픽 수준에선 무시 가능. 후속으로 reservation 패턴 도입 권장.
      */
     // 수정 전: public TradeOrderResponse placeOrder(TradeOrderRequest request)
     @Override
@@ -163,6 +184,10 @@ public class TradeServiceImpl implements TradeService {
         double execPrice = request.isMarket() ? currentPrice : request.limitPrice();
         double totalPrice = currentPrice * request.stockAmount(); // 체결가 기준
 
+        // 수정 후 신규: 접수 시점 사전 검증 (SELL=보유, BUY=잔액)
+        // 시장가/지정가/즉시체결/PENDING 모든 분기 공통 적용 — phantom PENDING 차단 목적.
+        validateSufficientFundsOrHoldings(request, tradeType, currentPrice);
+
         // 지정가 — 조건 미충족 시 PENDING 저장
         if (request.isLimit()) {
             boolean conditionMet = tradeType == TradeType.BUY
@@ -171,7 +196,7 @@ public class TradeServiceImpl implements TradeService {
 
             if (!conditionMet) {
                 Trade pendingTrade = Trade.create(
-                        null, request.accountId(), tradeType, now,
+                        null, request.accountId(), userId, tradeType, now,
                         request.stockCode(), request.stockAmount(),
                         request.limitPrice() * request.stockAmount(),
                         OrderType.LIMIT, request.limitPrice()
@@ -191,7 +216,7 @@ public class TradeServiceImpl implements TradeService {
             // 조건 충족 — 즉시 체결
             totalPrice = currentPrice * request.stockAmount();
             Trade newLimitTrade = Trade.create(
-                    null, request.accountId(), tradeType, now,
+                    null, request.accountId(), userId, tradeType, now,
                     request.stockCode(), request.stockAmount(), totalPrice,
                     OrderType.LIMIT, request.limitPrice()
             );
@@ -217,7 +242,7 @@ public class TradeServiceImpl implements TradeService {
         }
 
         // 시장가 — 즉시 체결
-        Trade newTrade = Trade.create(null, request.accountId(), tradeType, now,
+        Trade newTrade = Trade.create(null, request.accountId(), userId, tradeType, now,
                 request.stockCode(), request.stockAmount(), totalPrice,
                 OrderType.MARKET, null
         );
@@ -239,6 +264,53 @@ public class TradeServiceImpl implements TradeService {
                 request.stockCode(), stockName, "MARKET", tradeType.name(),
                 currentPrice, request.stockAmount()
         );
+    }
+
+    /**
+     * 접수 시점 사전 검증.
+     * BUY: 필요 현금(= 체결예상가 × 수량) ≤ 현재 잔액
+     * SELL: 요청 수량 ≤ 현재 보유 수량
+     *
+     * 검증 가격 — LIMIT BUY 는 보수적으로 max(currentPrice, limitPrice) 를 쓰지 않고
+     * 의도된 한도가인 limitPrice 기준으로 검증한다 (실제 체결가는 ≤ limitPrice 이므로 안전).
+     * SELL 은 가격과 무관하게 수량만 검증.
+     */
+    private void validateSufficientFundsOrHoldings(TradeOrderRequest request,
+                                                    TradeType tradeType,
+                                                    double currentPrice) {
+        if (tradeType == TradeType.SELL) {
+            int held;
+            try {
+                held = assetClient.getHoldingQuantity(request.accountId(), request.stockCode());
+            } catch (Exception e) {
+                log.error("[주문] 보유 조회 실패 — accountId={} stockCode={} error={}",
+                        request.accountId(), request.stockCode(), e.getMessage());
+                throw new BusinessException(ErrorCode.ASSET_SERVICE_ERROR);
+            }
+            if (held < request.stockAmount()) {
+                log.info("[주문] 보유 부족 거부 — accountId={} stockCode={} 보유={} 요청={}",
+                        request.accountId(), request.stockCode(), held, request.stockAmount());
+                throw new BusinessException(ErrorCode.INSUFFICIENT_HOLDINGS);
+            }
+            return;
+        }
+
+        // BUY
+        double priceForCheck = request.isLimit() ? request.limitPrice() : currentPrice;
+        long requiredCash = (long) (priceForCheck * request.stockAmount());
+        long balance;
+        try {
+            balance = assetClient.getAccountBalance(request.accountId());
+        } catch (Exception e) {
+            log.error("[주문] 잔액 조회 실패 — accountId={} error={}",
+                    request.accountId(), e.getMessage());
+            throw new BusinessException(ErrorCode.ASSET_SERVICE_ERROR);
+        }
+        if (balance < requiredCash) {
+            log.info("[주문] 잔액 부족 거부 — accountId={} 잔액={} 필요={}",
+                    request.accountId(), balance, requiredCash);
+            throw new BusinessException(ErrorCode.INSUFFICIENT_BALANCE);
+        }
     }
 
     /**
@@ -279,16 +351,30 @@ public class TradeServiceImpl implements TradeService {
 
     /**
      * 스케줄러 전용: PENDING 지정가 주문을 현재가와 비교해 체결. LimitOrderScheduler 에서 @Scheduled 로 호출.
+     *
+     * <p>수정 전 버그 (두 가지):
+     * <ol>
+     *   <li>userId 를 null 로 전달해 asset-service 가 X-User-Id 헤더 누락으로 400 반환.</li>
+     *   <li>executeAsset 호출 전에 updateSuccess 를 먼저 in-memory 마킹 → asset 호출 실패해도
+     *       catch 가 트랜잭션을 롤백시키지 않아 SUCCESS 가 그대로 flush 되는 데이터 정합성 깨짐.</li>
+     * </ol>
+     *
+     * <p>수정 후:
+     * <ul>
+     *   <li>주문 시점에 보존된 trade.userId() 를 사용</li>
+     *   <li>executeAsset 호출 (내부에서 성공 시에만 updateSuccess) → 실패 시 catch 에서 updateFail</li>
+     *   <li>한 건 실패가 다른 건 처리를 막지 않도록 각 iteration 을 별도 트랜잭션으로 분리
+     *       (self-invocation 회피용 SELF 빈 참조)</li>
+     * </ul>
      */
     @Override
-    @Transactional
     public void executePendingLimitOrders() {
         List<Trade> pendingOrders = tradeRepository.findPendingLimitOrders();
         if (pendingOrders.isEmpty()) {
             return;
         }
 
-        log.debug("[스케줄러] 미체결 지정가 주문 {}건 처리 시작", pendingOrders.size());
+        log.info("[스케줄러] 미체결 지정가 주문 {}건 처리 시작", pendingOrders.size());
 
         for (Trade order : pendingOrders) {
             try {
@@ -296,20 +382,38 @@ public class TradeServiceImpl implements TradeService {
                 if (!order.isLimitConditionMet(currentPrice)) {
                     continue;
                 }
-
-                // 체결 처리
-                Trade success = Trade.updateSuccess(order);
-                tradeRepository.updateStatus(success);
-                // 스케줄러는 userId 없이 내부 처리 — null 전달 (asset-service 내부 권한 검증 미적용)
-                executeAsset(order, currentPrice, null);
-
-                log.info("[스케줄러] 지정가 체결 — tradeId={} {} {}주 지정가={} 현재가={}",
-                        order.tradeId(), order.tradeType(), order.stockAmount(),
-                        order.limitPrice(), currentPrice);
-
+                // self proxy 호출로 REQUIRES_NEW 트랜잭션 시작 — 건별 독립 커밋/롤백
+                // 수정 전: self.executePendingLimitOrder(...) → 순환참조 (위 selfProvider 주석 참조)
+                selfProvider.getObject().executePendingLimitOrder(order, currentPrice);
             } catch (Exception e) {
-                log.error("[스케줄러] 체결 처리 실패 — tradeId={} error={}", order.tradeId(), e.getMessage());
+                log.error("[스케줄러] 체결 처리 실패 — tradeId={} error={}",
+                        order.tradeId(), e.getMessage());
             }
+        }
+    }
+
+    /**
+     * PENDING 1건 체결 처리 — 건별 독립 트랜잭션.
+     * <p>asset-service 호출 성공 시에만 trade 를 SUCCESS 로, 실패 시 FAIL 로 마킹.
+     */
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void executePendingLimitOrder(Trade order, double currentPrice) {
+        try {
+            // 수정 전: 여기서 updateSuccess 를 먼저 호출했음 → 아래 executeAsset 실패해도
+            //          @Transactional 이 catch 로 인해 롤백 안 되고 SUCCESS 가 commit 되던 버그.
+            // executeAsset 내부에서 asset 호출 성공 후에만 updateSuccess 호출하도록 위임.
+            executeAsset(order, currentPrice, order.userId());
+            log.info("[스케줄러] 지정가 체결 — tradeId={} {} {}주 지정가={} 현재가={}",
+                    order.tradeId(), order.tradeType(), order.stockAmount(),
+                    order.limitPrice(), currentPrice);
+        } catch (Exception e) {
+            // 자산 호출 실패 시 FAIL 로 마킹하고 정상 종료해야 트랜잭션이 커밋되어 상태가 persist 된다.
+            // throw 로 재던지면 @Transactional 이 롤백하면서 updateFail 도 같이 사라져 PENDING 좀비가 생김.
+            // 호출자(executePendingLimitOrders) 는 이 메서드의 성공/실패를 별도로 알 필요가 없으므로 로깅으로 충분.
+            log.error("[스케줄러] asset 호출 실패 → FAIL 처리 — tradeId={} userId={} error={}",
+                    order.tradeId(), order.userId(), e.getMessage());
+            tradeRepository.updateStatus(Trade.updateFail(order));
         }
     }
 
@@ -324,7 +428,8 @@ public class TradeServiceImpl implements TradeService {
         double totalPrice = nowPrice * stockAmount;
 
         UUID newTradeId = UUID.randomUUID();
-        Trade newTrade = Trade.create(newTradeId, accountId, TradeType.BUY,
+        // 수정 전: Trade.create(newTradeId, accountId, TradeType.BUY, ...) — userId 인자 추가
+        Trade newTrade = Trade.create(newTradeId, accountId, userId, TradeType.BUY,
                 LocalDateTime.now(), stockCode, stockAmount, totalPrice, OrderType.MARKET, null);
         tradeRepository.save(newTrade);
 
@@ -347,7 +452,8 @@ public class TradeServiceImpl implements TradeService {
         double totalPrice = nowPrice * stockAmount;
 
         UUID newTradeId = UUID.randomUUID();
-        Trade newTrade = Trade.create(newTradeId, accountId, TradeType.SELL,
+        // 수정 전: Trade.create(newTradeId, accountId, TradeType.SELL, ...) — userId 인자 추가
+        Trade newTrade = Trade.create(newTradeId, accountId, userId, TradeType.SELL,
                 LocalDateTime.now(), stockCode, stockAmount, totalPrice, OrderType.MARKET, null);
         tradeRepository.save(newTrade);
 

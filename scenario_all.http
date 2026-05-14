@@ -451,7 +451,7 @@ Authorization: Bearer {{access_token_1}}
   "stockAmount": 1,
   "orderType": "LIMIT",
   "side": "BUY",
-  "limitPrice": 291000.00,
+  "limitPrice": 295500.00,
   "accountId": "{{account_id_1}}"
 }
 
