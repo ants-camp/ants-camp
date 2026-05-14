@@ -354,6 +354,22 @@ CREATE TABLE IF NOT EXISTS assistant.p_pairwise_results (
     PRIMARY KEY (pairwise_result_id)
 );
 
+CREATE TABLE IF NOT EXISTS assistant.p_pairwise_runs (
+    pairwise_run_id     UUID            NOT NULL,
+    eval_run_id_a       UUID            NOT NULL,
+    eval_run_id_b       UUID            NOT NULL,
+    status              VARCHAR(20)     NOT NULL,
+    total_count         INT             NOT NULL DEFAULT 0,
+    done_count          INT             NOT NULL DEFAULT 0,
+    created_at          TIMESTAMP       NOT NULL,
+    created_by          VARCHAR(255)    NOT NULL,
+    updated_at          TIMESTAMP,
+    updated_by          VARCHAR(255),
+    deleted_at          TIMESTAMP,
+    deleted_by          VARCHAR(255),
+    PRIMARY KEY (pairwise_run_id)
+);
+
 -- =========================
 -- 5. 초기 데이터
 -- =========================
