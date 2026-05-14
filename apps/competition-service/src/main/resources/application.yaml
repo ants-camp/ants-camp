@@ -1,3 +1,9 @@
 spring:
   application:
     name: competition-service
+
+  profiles:
+    active: ${COMPETITION_SPRING_PROFILES_ACTIVE}
+
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL}

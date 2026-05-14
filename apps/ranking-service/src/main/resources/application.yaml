@@ -1,3 +1,9 @@
 spring:
   application:
     name: ranking-service
+
+  profiles:
+    active: ${RANKING_SPRING_PROFILES_ACTIVE}
+
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL}

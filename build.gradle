@@ -51,11 +51,11 @@ project(':common') {
     jar.enabled = true
 }
 
-project(':apps:account-service') {
+project(':apps:asset-service') {
     apply plugin: 'org.springframework.boot'
 }
 
-project(':apps:ai-service') {
+project(':apps:assistant-service') {
     apply plugin: 'org.springframework.boot'
 }
 
@@ -75,19 +75,11 @@ project(':apps:ranking-service') {
     apply plugin: 'org.springframework.boot'
 }
 
-project(':apps:stock-service') {
-    apply plugin: 'org.springframework.boot'
-}
-
 project(':apps:trade-service') {
     apply plugin: 'org.springframework.boot'
 }
 
 project(':apps:user-service') {
-    apply plugin: 'org.springframework.boot'
-}
-
-project(':apps:portfolio-service') {
     apply plugin: 'org.springframework.boot'
 }
 

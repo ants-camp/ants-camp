@@ -1,0 +1,66 @@
+version: 0.0
+os: linux
+
+# ============================================================
+# 배포 파일 복사
+# S3에서 다운로드한 패키지 내용을 EC2 대상 디렉토리로 복사
+# ============================================================
+files:
+  - source: /
+    destination: /opt/ants-camp
+    overwrite: true
+
+# ============================================================
+# 파일 권한 설정
+# ============================================================
+permissions:
+  - object: /opt/ants-camp
+    pattern: "**"
+    owner: ubuntu
+    group: ubuntu
+    mode: "755"
+    type:
+      - directory
+  - object: /opt/ants-camp
+    pattern: "*.jar"
+    owner: ubuntu
+    group: ubuntu
+    mode: "644"
+    type:
+      - file
+  - object: /opt/ants-camp/scripts
+    pattern: "*.sh"
+    owner: ubuntu
+    group: ubuntu
+    mode: "755"
+    type:
+      - file
+
+# ============================================================
+# 배포 훅 (실행 순서)
+#
+# BeforeInstall   → 기존 서비스 중지, 백업
+# AfterInstall    → DB 마이그레이션, systemd 서비스 파일 생성
+# ApplicationStart → 서비스 기동
+# ValidateService  → 헬스체크 (실패 시 자동 롤백)
+# ============================================================
+hooks:
+  BeforeInstall:
+    - location: scripts/before_install.sh
+      timeout: 60
+      runas: root
+
+  AfterInstall:
+    - location: scripts/after_install.sh
+      timeout: 180
+      runas: root
+
+  ApplicationStart:
+    - location: scripts/application_start.sh
+      timeout: 120
+      runas: root
+
+  ValidateService:
+    - location: scripts/validate_service.sh
+      timeout: 120
+      runas: ubuntu

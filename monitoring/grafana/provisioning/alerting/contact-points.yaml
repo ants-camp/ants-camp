@@ -1,0 +1,19 @@
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: slack-alerts
+    receivers:
+      - uid: slack-contact-point
+        type: slack
+        settings:
+          url: ${SLACK_ALERTMANAGER_WEBHOOK_URL}
+          title: |
+            🚨 [{{ .Status | toUpper }}] {{ .GroupLabels.alertname }}
+          text: |
+            {{ range .Alerts }}
+            *서비스:* {{ .Labels.job }}
+            *심각도:* {{ .Labels.severity }}
+            *요약:* {{ .Annotations.summary }}
+            {{ end }}
+        disableResolveMessage: false

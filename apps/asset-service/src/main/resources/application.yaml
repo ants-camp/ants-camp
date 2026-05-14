@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: asset-service
+
+  profiles:
+    active: ${ASSET_SPRING_PROFILES_ACTIVE}
+
+  config:
+    import: optional:configserver:${CONFIG_SERVER_URL}
