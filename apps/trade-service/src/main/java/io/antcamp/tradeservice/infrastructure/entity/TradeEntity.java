@@ -26,6 +26,11 @@ public class TradeEntity extends BaseEntity {
     @Column(nullable = false)
     private UUID accountId;
 
+    // 수정 전: 없음. 스케줄러가 체결 시 X-User-Id 헤더를 채우기 위해 주문 시점의 userId 보존.
+    // 기존 row 호환을 위해 nullable. 신규 주문부터는 항상 채워짐.
+    @Column
+    private UUID userId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private TradeType tradeType;
@@ -60,6 +65,7 @@ public class TradeEntity extends BaseEntity {
         return Trade.fromPersistence(
                 this.tradeId,
                 this.accountId,
+                this.userId,
                 this.tradeType,
                 this.tradeAt,
                 this.stockCode,
@@ -83,6 +89,7 @@ public class TradeEntity extends BaseEntity {
     private TradeEntity(Trade trade) {
         this.tradeId    = trade.tradeId();
         this.accountId  = trade.accountId();
+        this.userId     = trade.userId();
         this.tradeType  = trade.tradeType();
         this.tradeAt    = trade.tradeAt();
         this.stockCode  = trade.stockCode();

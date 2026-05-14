@@ -1,5 +1,6 @@
 package io.antcamp.tradeservice.application.service;
 
+import io.antcamp.tradeservice.domain.model.Trade;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
 import io.antcamp.tradeservice.presentation.dto.BuyStockResponse;
 import io.antcamp.tradeservice.presentation.dto.DailyChartResponse;
@@ -56,6 +57,12 @@ public interface TradeService {
      * 스케줄러 전용: PENDING 지정가 주문을 현재가와 비교해 체결 처리.
      */
     void executePendingLimitOrders();
+
+    /**
+     * 스케줄러 내부 헬퍼: 단일 PENDING 건을 독립 트랜잭션으로 체결.
+     * Self-proxy 호출 + REQUIRES_NEW 를 위해 인터페이스로 노출하지만, 외부 호출 대상은 아님.
+     */
+    void executePendingLimitOrder(Trade order, double currentPrice);
 
     // ── 레거시 (하위 호환) ────────────────────────────────────────────────
     // 수정 전: BuyStockResponse buyStock(LocalDateTime time, String stockCode, int stockAmount, UUID accountId);

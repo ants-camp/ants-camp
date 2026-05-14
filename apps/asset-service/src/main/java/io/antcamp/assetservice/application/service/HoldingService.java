@@ -123,6 +123,19 @@ public class HoldingService {
         );
     }
 
+    /**
+     * 내부 서비스 호출용 — 특정 계좌의 특정 종목 보유 수량 조회.
+     * 권한 검증을 생략하므로 게이트웨이 외부 노출 금지 (`/internal/...` 경로 사용).
+     * 보유가 없으면 0 반환.
+     */
+    @Transactional(readOnly = true)
+    public int getHoldingQuantity(UUID accountId, String stockCode) {
+        return holdingRepository
+                .findByAccountIdAndStockCode(accountId, stockCode)
+                .map(Holding::getStockAmount)
+                .orElse(0);
+    }
+
     @Transactional(readOnly = true)
     public List<HoldingResult> getHoldings(UUID accountId, UUID userId) {
         AccountResult account = accountService.getAccount(accountId, userId);
