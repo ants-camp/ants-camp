@@ -1,0 +1,19 @@
+# Terraform 상태 파일 (원격 backend 사용 시에도 로컬 파일 무시)
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# 민감 정보 포함 가능성 있는 변수 파일
+terraform.tfvars
+*.auto.tfvars
+
+# 플랜 파일
+*.tfplan
+plan.out
+
+# 크래시 로그
+crash.log
+
+# 기타
+.DS_Store

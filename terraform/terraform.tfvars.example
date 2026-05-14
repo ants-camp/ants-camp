@@ -1,0 +1,144 @@
+# ============================================================
+# terraform.tfvars.example
+# 복사 후 terraform.tfvars로 이름 변경하고 값을 채워주세요.
+# ⚠️  terraform.tfvars는 .gitignore에 추가하여 커밋 금지
+# ============================================================
+
+# ── 기본 설정 ─────────────────────────────────────────────────
+aws_region        = "ap-northeast-2"
+project_name      = "ants-camp"
+availability_zone = "ap-northeast-2a"
+
+# ── 네트워크 ──────────────────────────────────────────────────
+vpc_cidr            = "10.0.0.0/16"
+public_subnet_cidr  = "10.0.1.0/24"
+private_subnet_cidr = "10.0.2.0/24"
+
+# ── 접근 제어 ─────────────────────────────────────────────────
+# 관리자 IP (SSH 접속, Grafana 접근 허용)
+# curl ifconfig.me 로 확인
+admin_cidr = "203.0.113.10/32"
+
+# ── EC2 키 페어 ───────────────────────────────────────────────
+# 기존 키 사용 시:
+create_key_pair = false
+key_name        = "my-existing-key"
+
+# 새 키 생성 시 (create_key_pair = true):
+# create_key_pair  = true
+# key_name         = "ants-camp-key"
+# public_key_path  = "~/.ssh/id_rsa.pub"
+
+# ── AMI ───────────────────────────────────────────────────────
+# Ubuntu 22.04 LTS (ap-northeast-2) 최신 ID 확인:
+# aws ec2 describe-images --owners 099720109477 \
+#   --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*" \
+#   --query 'sort_by(Images, &CreationDate)[-1].ImageId' --output text
+ami_id = "ami-0c9c942bd7bf113a2"
+
+# ── S3 JAR 배포 ───────────────────────────────────────────────
+# Terraform이 이 이름으로 버킷을 직접 생성합니다 (전역 고유 이름 필요)
+s3_bucket_name = "ants-camp-deployments-<yourname>"
+
+# CI/CD 파이프라인(GitHub Actions 등)이 JAR를 S3에 올릴 때 사용하는 Role ARN
+# 없으면 빈 문자열로 두면 EC2만 접근 가능
+cicd_role_arn  = ""
+# cicd_role_arn = "arn:aws:iam::123456789012:role/github-actions-role"
+
+jar_keys = {
+  config_server = "jars/config-server.jar"
+  eureka_server = "jars/eureka-server.jar"
+  kafka_ui      = "jars/kafka-ui.jar"
+  user          = "jars/user-service.jar"
+  asset         = "jars/asset-service.jar"
+  ranking       = "jars/ranking-service.jar"
+  trade         = "jars/trade-service.jar"
+  competition   = "jars/competition-service.jar"
+  notification  = "jars/notification-service.jar"
+  assistant     = "jars/assistant-service.jar"
+}
+
+# ── Config Server ──────────────────────────────────────────────
+config_git_uri      = "https://github.com/your-org/config-repo"
+config_git_username = ""          # private repo 인 경우
+config_git_password = ""          # GitHub PAT (민감정보 → Secrets Manager 권장)
+
+# ── Kafka ─────────────────────────────────────────────────────
+kafka_heap_size = "256m"
+
+# ── Monitoring EC2 고정 IP ─────────────────────────────────────
+# public_subnet_cidr(10.0.1.0/24) 범위 내 미사용 IP
+# (monitoring-ec2는 퍼블릭 서브넷에 배치 + EIP 할당)
+monitoring_private_ip = "10.0.1.100"
+
+# ============================================================
+# Aurora PostgreSQL 설정
+# ============================================================
+
+# Aurora 마스터 비밀번호 (⚠️ 반드시 강력한 비밀번호 사용, 커밋 금지)
+aurora_master_password  = "superpow3rp@ssw0rd!@"
+aurora_master_username  = "antcampadmin"
+aurora_database_name    = "antcamp"
+aurora_engine_version   = "15.4"
+
+# dev: db.t3.medium, prod: db.r6g.large 권장
+aurora_instance_class         = "db.t3.medium"
+aurora_replica_count          = 1     # 0 = writer만, 1+ = writer + readers
+aurora_backup_retention_days  = 7
+
+# 두 번째 AZ 서브넷 (Aurora Multi-AZ + ALB 요구사항)
+availability_zone_2     = "ap-northeast-2c"
+public_subnet_cidr_az2  = "10.0.4.0/24"
+private_subnet_cidr_az2 = "10.0.3.0/24"
+
+# ============================================================
+# ALB 설정
+# ============================================================
+
+# ACM 인증서 ARN (HTTPS 사용 시 설정, 없으면 HTTP만 사용)
+alb_certificate_arn = ""
+# alb_certificate_arn = "arn:aws:acm:ap-northeast-2:123456789012:certificate/xxxxxxxx"
+
+# ============================================================
+# Auto Scaling Group 설정
+# ============================================================
+
+app_instance_type    = "t3.small"
+app_port             = 8080
+asg_min_size         = 1
+asg_max_size         = 4
+asg_desired_capacity = 2
+
+# ============================================================
+# CodeDeploy 설정
+# ============================================================
+
+# 블루/그린 배포 후 기존(블루) 인스턴스 종료 대기 시간(분)
+# 이 시간 내에 문제 발생 시 롤백 가능
+codedeploy_termination_wait_time = 5
+
+# ── 서비스 포트 (기본값 변경 필요 시만 선언) ──────────────────
+# ports = {
+#   config_server    = 8888
+#   eureka           = 8761
+#   kafka_ui         = 9000
+#   kafka_broker     = 9092
+#   kafka_controller = 9093
+#   user             = 8081
+#   asset            = 8082
+#   ranking          = 1400
+#   trade            = 1050
+#   competition      = 1051
+#   notification     = 1200
+#   assistant        = 1201
+#   prometheus       = 9090
+#   grafana          = 3000
+#   loki             = 3100
+#   promtail         = 9080
+#   node_exporter    = 9100
+#   postgres         = 5432
+#   redis            = 6379
+#   http             = 80
+#   https            = 443
+#   ssh              = 22
+# }

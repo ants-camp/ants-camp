@@ -1,0 +1,1708 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ants Camp — API 테스트 UI</title>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #222635;
+      --border: #2e3347;
+      --accent: #4f8ef7;
+      --accent2: #7c5cfc;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #f59e0b;
+      --text: #e2e8f0;
+      --text2: #94a3b8;
+      --text3: #64748b;
+      --radius: 8px;
+      --radius-sm: 4px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-logo {
+      font-size: 18px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header-subtitle { color: var(--text3); font-size: 12px; }
+    .header-spacer { flex: 1; }
+    .token-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 12px;
+      color: var(--text3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .token-badge .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text3);
+    }
+    .token-badge.active .dot { background: var(--green); }
+    .token-badge.active { color: var(--green); border-color: var(--green); }
+
+    /* ── Config bar ── */
+    .config-bar {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 24px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .config-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .config-item label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    .config-item input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      padding: 4px 8px;
+      font-size: 12px;
+      width: 180px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      padding: 0 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 12px 18px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text3);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      transition: color .15s, border-color .15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Main layout ── */
+    .main {
+      display: flex;
+      gap: 0;
+      height: calc(100vh - 130px);
+    }
+    .panel-left {
+      width: 55%;
+      min-width: 400px;
+      overflow-y: auto;
+      padding: 20px 24px;
+      border-right: 1px solid var(--border);
+    }
+    .panel-right {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* ── Tab pane ── */
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* ── Section ── */
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 20px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .section-title:first-child { margin-top: 0; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 10px;
+      overflow: hidden;
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .card-header:hover { background: var(--surface2); }
+    .method-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 3px;
+      letter-spacing: 0.5px;
+      min-width: 52px;
+      text-align: center;
+    }
+    .method-GET    { background: #0d3d27; color: #22c55e; }
+    .method-POST   { background: #1e3a5f; color: #60a5fa; }
+    .method-DELETE { background: #3d1515; color: #f87171; }
+    .method-PATCH  { background: #3d2c00; color: #fbbf24; }
+    .card-title {
+      flex: 1;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      color: var(--text2);
+    }
+    .card-desc {
+      font-size: 11px;
+      color: var(--text3);
+    }
+    .chevron {
+      color: var(--text3);
+      font-size: 11px;
+      transition: transform .2s;
+    }
+    .card.open .chevron { transform: rotate(180deg); }
+    .card-body {
+      display: none;
+      padding: 14px;
+      border-top: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .card.open .card-body { display: block; }
+
+    /* ── Form fields ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .form-grid.single { grid-template-columns: 1fr; }
+    .form-grid.triple { grid-template-columns: 1fr 1fr 1fr; }
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+    }
+    .field input, .field select, .field textarea {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      padding: 6px 10px;
+      font-size: 13px;
+      width: 100%;
+      transition: border-color .15s;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .field textarea { resize: vertical; min-height: 80px; font-family: monospace; font-size: 12px; }
+    .field select option { background: var(--surface2); }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 7px 16px;
+      border: none;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover:not(:disabled) { opacity: .85; }
+    .btn-danger  { background: var(--red); color: #fff; }
+    .btn-danger:hover:not(:disabled)  { opacity: .85; }
+    .btn-warning { background: var(--yellow); color: #000; }
+    .btn-warning:hover:not(:disabled) { opacity: .85; }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    /* ── Response panel ── */
+    .resp-header {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .resp-badge {
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+    .resp-badge.ok     { background: #0d3d27; color: #22c55e; }
+    .resp-badge.err    { background: #3d1515; color: #f87171; }
+    .resp-badge.empty  { background: var(--surface2); color: var(--text3); }
+    .resp-meta {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: monospace;
+    }
+    .resp-box {
+      background: #0a0c14;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 12px;
+      color: #a8d8a8;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: calc(100vh - 280px);
+      overflow-y: auto;
+      flex: 1;
+    }
+    .resp-box.err { color: #f87171; }
+    .resp-endpoint {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: monospace;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      word-break: break-all;
+    }
+    .resp-empty {
+      color: var(--text3);
+      font-size: 13px;
+      text-align: center;
+      padding: 40px 0;
+    }
+
+    /* ── Hint ── */
+    .hint {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+      font-style: italic;
+    }
+
+    /* ── Tag chip ── */
+    .chip {
+      display: inline-block;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 1px 8px;
+      font-size: 10px;
+      color: var(--text3);
+      font-family: monospace;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ────────────────────────────────────────────────── -->
+<div class="header">
+  <div>
+    <div class="header-logo">🐜 Ants Camp</div>
+    <div class="header-subtitle">API 테스트 대시보드</div>
+  </div>
+  <div class="header-spacer"></div>
+  <div class="token-badge" id="tokenBadge">
+    <span class="dot"></span>
+    <span id="tokenBadgeText">로그인 안 됨</span>
+  </div>
+</div>
+
+<!-- ── Config bar ─────────────────────────────────────────────── -->
+<div class="config-bar">
+  <div class="config-item">
+    <label>Gateway</label>
+    <input id="cfgGateway" value="http://localhost:8083" placeholder="http://localhost:8083" />
+  </div>
+  <div class="config-item">
+    <label>Asset</label>
+    <input id="cfgAsset" value="http://localhost:8086" placeholder="http://localhost:8086" />
+  </div>
+  <div class="config-item">
+    <label>Trade</label>
+    <input id="cfgTrade" value="http://localhost:8084" placeholder="http://localhost:8084" />
+  </div>
+  <div class="config-item">
+    <label>Ranking</label>
+    <input id="cfgRanking" value="http://localhost:8094" placeholder="http://localhost:8094" />
+  </div>
+  <div class="config-item">
+    <label>Competition</label>
+    <input id="cfgCompetition" value="http://localhost:8092" placeholder="http://localhost:8092" />
+  </div>
+</div>
+
+<!-- ── Tabs ───────────────────────────────────────────────────── -->
+<div class="tabs">
+  <button class="tab-btn active" onclick="switchTab('user')">👤 인증 / 사용자</button>
+  <button class="tab-btn" onclick="switchTab('asset')">💰 자산 / 계좌</button>
+  <button class="tab-btn" onclick="switchTab('trade')">📈 거래 / 시세</button>
+  <button class="tab-btn" onclick="switchTab('ranking')">🏆 랭킹</button>
+  <button class="tab-btn" onclick="switchTab('competition')">🎯 대회</button>
+</div>
+
+<!-- ── Main ───────────────────────────────────────────────────── -->
+<div class="main">
+  <!-- Left: forms -->
+  <div class="panel-left">
+
+    <!-- ══════════════ 인증 / 사용자 ══════════════ -->
+    <div class="tab-pane active" id="pane-user">
+
+      <div class="section-title">인증 (Auth Service)</div>
+
+      <!-- 회원가입 -->
+      <div class="card" id="card-register">
+        <div class="card-header" onclick="toggleCard('register')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/users/register</span>
+          <span class="card-desc">회원가입</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>이메일</label><input id="reg-email" placeholder="test@example.com" /></div>
+            <div class="field"><label>비밀번호 <span class="chip">대/소/숫자/특수 8-15자</span></label><input id="reg-password" type="password" placeholder="Test1234!" /></div>
+            <div class="field"><label>이름</label><input id="reg-name" placeholder="홍길동" /></div>
+            <div class="field"><label>전화번호</label><input id="reg-phone" placeholder="01012345678" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="registerUser()">회원가입</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 로그인 -->
+      <div class="card open" id="card-login">
+        <div class="card-header" onclick="toggleCard('login')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/auth/login</span>
+          <span class="card-desc">로그인 (토큰 자동 저장)</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>이메일</label><input id="login-email" placeholder="test@example.com" /></div>
+            <div class="field"><label>비밀번호</label><input id="login-password" type="password" placeholder="Test1234!" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="login()">로그인</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 로그아웃 -->
+      <div class="card" id="card-logout">
+        <div class="card-header" onclick="toggleCard('logout')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/auth/logout</span>
+          <span class="card-desc">로그아웃</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>Refresh Token</label><input id="logout-refresh" placeholder="자동 입력됨" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-danger" onclick="logout()">로그아웃</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 토큰 재발급 -->
+      <div class="card" id="card-reissue">
+        <div class="card-header" onclick="toggleCard('reissue')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/auth/reissue</span>
+          <span class="card-desc">토큰 재발급</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>Refresh Token</label><input id="reissue-refresh" placeholder="자동 입력됨" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="reissue()">재발급</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">사용자 (User Service)</div>
+
+      <!-- 내 정보 -->
+      <div class="card" id="card-me">
+        <div class="card-header" onclick="toggleCard('me')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/users/me</span>
+          <span class="card-desc">내 정보 조회</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>X-User-Id <span class="chip">헤더</span></label><input id="me-userId" placeholder="UUID (로그인 시 자동 입력)" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getMe()">조회</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ 자산 / 계좌 ══════════════ -->
+    <div class="tab-pane" id="pane-asset">
+
+      <div class="section-title">계좌 (Account)</div>
+
+      <!-- 계좌 생성 -->
+      <div class="card" id="card-createAccount">
+        <div class="card-header" onclick="toggleCard('createAccount')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/accounts</span>
+          <span class="card-desc">계좌 생성</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>userId</label><input id="ca-userId" placeholder="UUID" /></div>
+            <div class="field"><label>type</label>
+              <select id="ca-type">
+                <option value="COMPETITION">COMPETITION</option>
+                <option value="PERSONAL">PERSONAL</option>
+              </select>
+            </div>
+            <div class="field"><label>initialAmount</label><input id="ca-amount" type="number" placeholder="10000000" /></div>
+            <div class="field"><label>competitionId</label><input id="ca-competitionId" placeholder="UUID (선택)" /></div>
+            <div class="field"><label>competitionName</label><input id="ca-competitionName" placeholder="대회명 (선택)" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="createAccount()">계좌 생성</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 계좌 조회 -->
+      <div class="card" id="card-getAccount">
+        <div class="card-header" onclick="toggleCard('getAccount')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/accounts/{accountId}</span>
+          <span class="card-desc">계좌 조회</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>accountId</label><input id="ga-accountId" placeholder="UUID" /></div>
+            <div class="field"><label>X-User-Id <span class="chip">헤더</span></label><input id="ga-userId" placeholder="UUID (로그인 시 자동)" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getAccount()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 입금 -->
+      <div class="card" id="card-deposit">
+        <div class="card-header" onclick="toggleCard('deposit')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/accounts/{accountId}/deposit</span>
+          <span class="card-desc">입금</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>accountId</label><input id="dep-accountId" placeholder="UUID" /></div>
+            <div class="field"><label>amount</label><input id="dep-amount" type="number" placeholder="1000000" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="deposit()">입금</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 출금 -->
+      <div class="card" id="card-withdraw">
+        <div class="card-header" onclick="toggleCard('withdraw')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/accounts/{accountId}/withdraw</span>
+          <span class="card-desc">출금</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>accountId</label><input id="wd-accountId" placeholder="UUID" /></div>
+            <div class="field"><label>amount</label><input id="wd-amount" type="number" placeholder="500000" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-danger" onclick="withdraw()">출금</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">자산 (Asset)</div>
+
+      <!-- 자산 조회 -->
+      <div class="card" id="card-getAsset">
+        <div class="card-header" onclick="toggleCard('getAsset')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/assets?accountId=</span>
+          <span class="card-desc">자산 조회</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>accountId</label><input id="ast-accountId" placeholder="UUID" /></div>
+            <div class="field"><label>X-User-Id <span class="chip">헤더</span></label><input id="ast-userId" placeholder="UUID (로그인 시 자동)" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getAsset()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">보유 종목 (Holdings)</div>
+
+      <!-- 보유 종목 조회 -->
+      <div class="card" id="card-getHoldings">
+        <div class="card-header" onclick="toggleCard('getHoldings')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/holdings?accountId=</span>
+          <span class="card-desc">보유 종목 목록</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>accountId</label><input id="hld-accountId" placeholder="UUID" /></div>
+            <div class="field"><label>X-User-Id <span class="chip">헤더</span></label><input id="hld-userId" placeholder="UUID (로그인 시 자동)" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getHoldings()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 매수 -->
+      <div class="card" id="card-buyHolding">
+        <div class="card-header" onclick="toggleCard('buyHolding')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/holdings/buy</span>
+          <span class="card-desc">종목 매수 (자산 서비스)</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid triple">
+            <div class="field"><label>accountId</label><input id="bh-accountId" placeholder="UUID" /></div>
+            <div class="field"><label>stockCode</label><input id="bh-stockCode" placeholder="005930" /></div>
+            <div class="field"><label>quantity</label><input id="bh-quantity" type="number" placeholder="10" /></div>
+            <div class="field"><label>price</label><input id="bh-price" type="number" placeholder="70000" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="buyHolding()">매수</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 매도 -->
+      <div class="card" id="card-sellHolding">
+        <div class="card-header" onclick="toggleCard('sellHolding')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/holdings/sell</span>
+          <span class="card-desc">종목 매도 (자산 서비스)</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid triple">
+            <div class="field"><label>accountId</label><input id="sh-accountId" placeholder="UUID" /></div>
+            <div class="field"><label>stockCode</label><input id="sh-stockCode" placeholder="005930" /></div>
+            <div class="field"><label>quantity</label><input id="sh-quantity" type="number" placeholder="5" /></div>
+            <div class="field"><label>price</label><input id="sh-price" type="number" placeholder="70000" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-danger" onclick="sellHolding()">매도</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ 거래 / 시세 ══════════════ -->
+    <div class="tab-pane" id="pane-trade">
+
+      <div class="section-title">장 상태 (Market)</div>
+
+      <div class="card" id="card-marketStatus">
+        <div class="card-header" onclick="toggleCard('marketStatus')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/market/status</span>
+          <span class="card-desc">장 운영 상태</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getMarketStatus()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">종목 검색 (Stock)</div>
+
+      <div class="card" id="card-stockSearch">
+        <div class="card-header" onclick="toggleCard('stockSearch')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/stocks/search</span>
+          <span class="card-desc">종목 검색</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>q (검색어)</label><input id="ss-q" placeholder="삼성" /></div>
+            <div class="field"><label>limit (기본 20)</label><input id="ss-limit" type="number" placeholder="20" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="stockSearch()">검색</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 실시간 구독 -->
+      <div class="card" id="card-realtimeSub">
+        <div class="card-header" onclick="toggleCard('realtimeSub')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/stocks/realtime/{stockCode}</span>
+          <span class="card-desc">실시간 체결+호가 구독</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>stockCode</label><input id="rt-subCode" placeholder="005930" /></div>
+          </div>
+          <p class="hint">구독 후 STOMP /topic/price/{code}, /topic/orderbook/{code} 수신</p>
+          <div class="btn-row" style="margin-top:10px">
+            <button class="btn btn-primary" onclick="realtimeSubscribe()">구독 등록</button>
+            <button class="btn btn-danger"  onclick="realtimeUnsubscribe()">구독 해제</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">시세 조회 (Trades)</div>
+
+      <!-- KIS 액세스 토큰 -->
+      <div class="card" id="card-kisToken">
+        <div class="card-header" onclick="toggleCard('kisToken')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/trades/access-token</span>
+          <span class="card-desc">KIS 액세스 토큰 발급</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getKisToken()">발급</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 현재가 -->
+      <div class="card" id="card-nowPrice">
+        <div class="card-header" onclick="toggleCard('nowPrice')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/trades/now-price</span>
+          <span class="card-desc">현재가 조회</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>stock_code</label><input id="np-code" placeholder="005930" /></div>
+            <div class="field"><label>date_time <span class="chip">선택</span></label><input id="np-dt" type="datetime-local" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getNowPrice()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 분봉 가격 -->
+      <div class="card" id="card-minutePrice">
+        <div class="card-header" onclick="toggleCard('minutePrice')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/trades/minute-price</span>
+          <span class="card-desc">분봉 시세</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>stock_code</label><input id="mp-code" placeholder="005930" /></div>
+            <div class="field"><label>date_time <span class="chip">선택</span></label><input id="mp-dt" type="datetime-local" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getMinutePrice()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 가격 상세 -->
+      <div class="card" id="card-priceDetail">
+        <div class="card-header" onclick="toggleCard('priceDetail')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/trades/price</span>
+          <span class="card-desc">가격 상세 조회</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>stock_code</label><input id="pd-code" placeholder="005930" /></div>
+            <div class="field"><label>date_time <span class="chip">선택</span></label><input id="pd-dt" type="datetime-local" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getPriceDetail()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 일봉 차트 -->
+      <div class="card" id="card-chart">
+        <div class="card-header" onclick="toggleCard('chart')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/trades/chart</span>
+          <span class="card-desc">일/주/월/년봉 차트</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>stock_code</label><input id="ch-code" placeholder="005930" /></div>
+            <div class="field"><label>start_date <span class="chip">YYYYMMDD</span></label><input id="ch-start" placeholder="20240101" /></div>
+            <div class="field"><label>end_date</label><input id="ch-end" placeholder="20241231" /></div>
+            <div class="field"><label>period</label>
+              <select id="ch-period">
+                <option value="D">D — 일봉</option>
+                <option value="W">W — 주봉</option>
+                <option value="M">M — 월봉</option>
+                <option value="Y">Y — 년봉</option>
+              </select>
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getChart()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 복수 종목 가격 -->
+      <div class="card" id="card-stockPriceList">
+        <div class="card-header" onclick="toggleCard('stockPriceList')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/trades/stock-price-list</span>
+          <span class="card-desc">복수 종목 현재가</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field">
+              <label>stockCodes <span class="chip">쉼표 구분</span></label>
+              <input id="spl-codes" placeholder="005930,035420,000660" />
+            </div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getStockPriceList()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">주문 (Order)</div>
+
+      <!-- 주문 -->
+      <div class="card open" id="card-placeOrder">
+        <div class="card-header" onclick="toggleCard('placeOrder')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/trades/order</span>
+          <span class="card-desc">매수 / 매도 주문</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid triple">
+            <div class="field"><label>stockCode</label><input id="po-code" placeholder="005930" /></div>
+            <div class="field"><label>stockAmount</label><input id="po-amount" type="number" placeholder="10" /></div>
+            <div class="field"><label>side</label>
+              <select id="po-side">
+                <option value="BUY">BUY — 매수</option>
+                <option value="SELL">SELL — 매도</option>
+              </select>
+            </div>
+            <div class="field"><label>orderType</label>
+              <select id="po-orderType" onchange="toggleLimitPrice()">
+                <option value="MARKET">MARKET — 시장가</option>
+                <option value="LIMIT">LIMIT — 지정가</option>
+              </select>
+            </div>
+            <div class="field" id="field-limitPrice" style="display:none">
+              <label>limitPrice <span class="chip">지정가 시 필수</span></label>
+              <input id="po-limitPrice" type="number" placeholder="70000" />
+            </div>
+            <div class="field"><label>X-Account-Id <span class="chip">헤더</span></label><input id="po-accountId" placeholder="UUID" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="placeOrder()">주문 제출</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 미체결 조회 -->
+      <div class="card" id="card-pendingOrders">
+        <div class="card-header" onclick="toggleCard('pendingOrders')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/trades/pending</span>
+          <span class="card-desc">미체결 주문 목록</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>X-Account-Id <span class="chip">헤더</span></label><input id="pnd-accountId" placeholder="UUID" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getPendingOrders()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 주문 취소 -->
+      <div class="card" id="card-cancelOrder">
+        <div class="card-header" onclick="toggleCard('cancelOrder')">
+          <span class="method-badge method-DELETE">DELETE</span>
+          <span class="card-title">/api/trades/order/{tradeId}</span>
+          <span class="card-desc">미체결 주문 취소</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>tradeId</label><input id="co-tradeId" placeholder="UUID" /></div>
+            <div class="field"><label>X-Account-Id <span class="chip">헤더</span></label><input id="co-accountId" placeholder="UUID" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-danger" onclick="cancelOrder()">주문 취소</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">실시간 WebSocket 상태</div>
+
+      <div class="card" id="card-wsStatus">
+        <div class="card-header" onclick="toggleCard('wsStatus')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/trades/realtime/status</span>
+          <span class="card-desc">KIS WebSocket 연결 상태</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getWsStatus()">상태 확인</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ 랭킹 ══════════════ -->
+    <div class="tab-pane" id="pane-ranking">
+
+      <div class="section-title">랭킹 조회</div>
+
+      <!-- 전체 랭킹 -->
+      <div class="card open" id="card-topRankings">
+        <div class="card-header" onclick="toggleCard('topRankings')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/rankings/competitions/{competitionId}</span>
+          <span class="card-desc">대회 전체 랭킹</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid triple">
+            <div class="field"><label>competitionId</label><input id="tr-compId" placeholder="UUID" /></div>
+            <div class="field"><label>page (기본 0)</label><input id="tr-page" type="number" placeholder="0" /></div>
+            <div class="field"><label>size (기본 20)</label><input id="tr-size" type="number" placeholder="20" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getTopRankings()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 내 순위 -->
+      <div class="card" id="card-myRanking">
+        <div class="card-header" onclick="toggleCard('myRanking')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/rankings/competitions/{competitionId}/users/{userId}</span>
+          <span class="card-desc">내 순위 조회</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>competitionId</label><input id="mr-compId" placeholder="UUID" /></div>
+            <div class="field"><label>userId</label><input id="mr-userId" placeholder="UUID (로그인 시 자동)" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getMyRanking()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 순위 확정 -->
+      <div class="card" id="card-finalizeRankings">
+        <div class="card-header" onclick="toggleCard('finalizeRankings')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/rankings/competitions/{competitionId}/finalize</span>
+          <span class="card-desc">최종 순위 확정 (수동 트리거)</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>competitionId</label><input id="fr-compId" placeholder="UUID" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-warning" onclick="finalizeRankings()">순위 확정</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ 대회 ══════════════ -->
+    <div class="tab-pane" id="pane-competition">
+
+      <div class="section-title">대회 관리</div>
+
+      <!-- 대회 목록 -->
+      <div class="card open" id="card-listCompetitions">
+        <div class="card-header" onclick="toggleCard('listCompetitions')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/competitions</span>
+          <span class="card-desc">대회 목록 조회</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid triple">
+            <div class="field"><label>status <span class="chip">선택</span></label>
+              <select id="lc-status">
+                <option value="">전체</option>
+                <option value="DRAFT">DRAFT</option>
+                <option value="PUBLISHED">PUBLISHED</option>
+                <option value="ONGOING">ONGOING</option>
+                <option value="FINISHED">FINISHED</option>
+                <option value="CANCELLED">CANCELLED</option>
+              </select>
+            </div>
+            <div class="field"><label>page</label><input id="lc-page" type="number" placeholder="0" /></div>
+            <div class="field"><label>size</label><input id="lc-size" type="number" placeholder="10" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="listCompetitions()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 대회 상세 -->
+      <div class="card" id="card-getCompetition">
+        <div class="card-header" onclick="toggleCard('getCompetition')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/competitions/{id}</span>
+          <span class="card-desc">대회 상세 조회</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>competitionId</label><input id="gc-id" placeholder="UUID" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getCompetition()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 대회 생성 -->
+      <div class="card" id="card-createCompetition">
+        <div class="card-header" onclick="toggleCard('createCompetition')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/competitions</span>
+          <span class="card-desc">대회 생성</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>name</label><input id="cc-name" placeholder="2024 모의투자 대회" /></div>
+            <div class="field"><label>type</label>
+              <select id="cc-type">
+                <option value="COMPETITION">COMPETITION</option>
+                <option value="LEAGUE">LEAGUE</option>
+              </select>
+            </div>
+            <div class="field"><label>firstSeed (초기 자금)</label><input id="cc-seed" type="number" placeholder="10000000" /></div>
+            <div class="field"><label>minParticipants</label><input id="cc-min" type="number" placeholder="2" /></div>
+            <div class="field"><label>maxParticipants</label><input id="cc-max" type="number" placeholder="100" /></div>
+            <div class="field"><label>registerStartAt</label><input id="cc-regStart" type="datetime-local" /></div>
+            <div class="field"><label>registerEndAt</label><input id="cc-regEnd" type="datetime-local" /></div>
+            <div class="field"><label>competitionStartAt</label><input id="cc-start" type="datetime-local" /></div>
+            <div class="field"><label>competitionEndAt</label><input id="cc-end" type="datetime-local" /></div>
+          </div>
+          <div class="form-grid single">
+            <div class="field"><label>description</label><textarea id="cc-desc" placeholder="대회 설명"></textarea></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="createCompetition()">대회 생성</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 상태 변경 -->
+      <div class="card" id="card-compStatus">
+        <div class="card-header" onclick="toggleCard('compStatus')">
+          <span class="method-badge method-PATCH">PATCH</span>
+          <span class="card-title">/api/competitions/{id}/...</span>
+          <span class="card-desc">대회 상태 변경</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>competitionId</label><input id="cs-id" placeholder="UUID" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary"  onclick="patchComp('publish')">공개 (publish)</button>
+            <button class="btn btn-warning"  onclick="patchComp('start')">시작 (start)</button>
+            <button class="btn btn-warning"  onclick="patchComp('finish')">종료 (finish)</button>
+            <button class="btn btn-danger"   onclick="patchComp('cancel')">취소 (cancel)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 대회 삭제 -->
+      <div class="card" id="card-deleteCompetition">
+        <div class="card-header" onclick="toggleCard('deleteCompetition')">
+          <span class="method-badge method-DELETE">DELETE</span>
+          <span class="card-title">/api/competitions/{id}</span>
+          <span class="card-desc">대회 삭제</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="field"><label>competitionId</label><input id="dc-id" placeholder="UUID" /></div>
+            <div class="field"><label>deletedBy</label><input id="dc-by" placeholder="admin" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-danger" onclick="deleteCompetition()">삭제</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 변경 공지 -->
+      <div class="card" id="card-changeNotices">
+        <div class="card-header" onclick="toggleCard('changeNotices')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/competitions/{id}/change-notices</span>
+          <span class="card-desc">변경 공지 목록</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>competitionId</label><input id="cn-id" placeholder="UUID" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="getChangeNotices()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">대회 참가자</div>
+
+      <!-- 참가자 목록 -->
+      <div class="card" id="card-listParticipants">
+        <div class="card-header" onclick="toggleCard('listParticipants')">
+          <span class="method-badge method-GET">GET</span>
+          <span class="card-title">/api/competitions/{competitionId}/participants</span>
+          <span class="card-desc">참가자 목록</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid single">
+            <div class="field"><label>competitionId</label><input id="lp-compId" placeholder="UUID" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="listParticipants()">조회</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 대회 신청 -->
+      <div class="card" id="card-joinCompetition">
+        <div class="card-header" onclick="toggleCard('joinCompetition')">
+          <span class="method-badge method-POST">POST</span>
+          <span class="card-title">/api/competitions/{competitionId}/participants</span>
+          <span class="card-desc">대회 신청</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="card-body">
+          <div class="form-grid triple">
+            <div class="field"><label>competitionId</label><input id="jc-compId" placeholder="UUID" /></div>
+            <div class="field"><label>userId</label><input id="jc-userId" placeholder="UUID (로그인 시 자동)" /></div>
+            <div class="field"><label>nickname</label><input id="jc-nickname" placeholder="닉네임" /></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="joinCompetition()">신청</button>
+            <button class="btn btn-danger"  onclick="cancelJoinCompetition()">신청 취소</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right: response -->
+  <div class="panel-right">
+    <div class="resp-header">
+      <span>응답</span>
+      <span class="resp-badge empty" id="respBadge">—</span>
+      <span class="resp-meta" id="respMeta"></span>
+      <div style="flex:1"></div>
+      <button class="btn" style="font-size:11px;padding:4px 10px;background:var(--surface2);color:var(--text3);border:1px solid var(--border);" onclick="clearResp()">지우기</button>
+    </div>
+    <div class="resp-endpoint" id="respEndpoint" style="display:none"></div>
+    <div class="resp-box" id="respBox">
+      <div class="resp-empty">← 왼쪽에서 API를 호출하면<br>응답이 여기에 표시됩니다.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════
+let state = {
+  accessToken:  null,
+  refreshToken: null,
+  userId:       null,
+};
+
+// ═══════════════════════════════════════════════════════
+//  Config helpers
+// ═══════════════════════════════════════════════════════
+const cfg = {
+  gateway()     { return document.getElementById('cfgGateway').value.replace(/\/$/, ''); },
+  asset()       { return document.getElementById('cfgAsset').value.replace(/\/$/, ''); },
+  trade()       { return document.getElementById('cfgTrade').value.replace(/\/$/, ''); },
+  ranking()     { return document.getElementById('cfgRanking').value.replace(/\/$/, ''); },
+  competition() { return document.getElementById('cfgCompetition').value.replace(/\/$/, ''); },
+};
+
+// ═══════════════════════════════════════════════════════
+//  Tab / Card UI
+// ═══════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('pane-' + tab).classList.add('active');
+  event.currentTarget.classList.add('active');
+}
+
+function toggleCard(id) {
+  document.getElementById('card-' + id).classList.toggle('open');
+}
+
+function toggleLimitPrice() {
+  const isLimit = document.getElementById('po-orderType').value === 'LIMIT';
+  document.getElementById('field-limitPrice').style.display = isLimit ? '' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+//  Response display
+// ═══════════════════════════════════════════════════════
+function showResp(method, url, status, data, ms) {
+  const badge = document.getElementById('respBadge');
+  const meta  = document.getElementById('respMeta');
+  const box   = document.getElementById('respBox');
+  const ep    = document.getElementById('respEndpoint');
+
+  ep.style.display = '';
+  ep.textContent = `${method}  ${url}`;
+
+  const ok = status >= 200 && status < 300;
+  badge.textContent = status;
+  badge.className = 'resp-badge ' + (ok ? 'ok' : 'err');
+  meta.textContent = `${ms}ms`;
+
+  let text;
+  try { text = JSON.stringify(data, null, 2); } catch { text = String(data); }
+  box.className = 'resp-box' + (ok ? '' : ' err');
+  box.textContent = text;
+}
+
+function showRespError(method, url, err) {
+  const badge = document.getElementById('respBadge');
+  const box   = document.getElementById('respBox');
+  const ep    = document.getElementById('respEndpoint');
+  ep.style.display = '';
+  ep.textContent = `${method}  ${url}`;
+  badge.textContent = 'ERR';
+  badge.className = 'resp-badge err';
+  document.getElementById('respMeta').textContent = '';
+  box.className = 'resp-box err';
+  box.textContent = String(err);
+}
+
+function clearResp() {
+  document.getElementById('respBadge').className = 'resp-badge empty';
+  document.getElementById('respBadge').textContent = '—';
+  document.getElementById('respMeta').textContent = '';
+  document.getElementById('respEndpoint').style.display = 'none';
+  document.getElementById('respBox').className = 'resp-box';
+  document.getElementById('respBox').innerHTML = '<div class="resp-empty">← 왼쪽에서 API를 호출하면<br>응답이 여기에 표시됩니다.</div>';
+}
+
+// ═══════════════════════════════════════════════════════
+//  Token badge
+// ═══════════════════════════════════════════════════════
+function updateTokenBadge() {
+  const badge = document.getElementById('tokenBadge');
+  const text  = document.getElementById('tokenBadgeText');
+  if (state.accessToken) {
+    badge.className = 'token-badge active';
+    text.textContent = '로그인됨' + (state.userId ? ` (${state.userId.split('-')[0]}…)` : '');
+  } else {
+    badge.className = 'token-badge';
+    text.textContent = '로그인 안 됨';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  API fetch helper
+// ═══════════════════════════════════════════════════════
+async function apiFetch(method, url, body, extraHeaders = {}) {
+  const headers = { 'Content-Type': 'application/json', ...extraHeaders };
+  if (state.accessToken) headers['Authorization'] = 'Bearer ' + state.accessToken;
+
+  const opts = { method, headers };
+  if (body !== undefined && body !== null) opts.body = JSON.stringify(body);
+
+  const t0 = Date.now();
+  try {
+    const res  = await fetch(url, opts);
+    const ms   = Date.now() - t0;
+    let   data;
+    const ct   = res.headers.get('content-type') || '';
+    if (ct.includes('json')) {
+      try { data = await res.json(); } catch { data = await res.text(); }
+    } else {
+      data = await res.text();
+    }
+    showResp(method, url, res.status, data, ms);
+    return { ok: res.ok, status: res.status, data };
+  } catch (err) {
+    showRespError(method, url, err);
+    return { ok: false, error: err };
+  }
+}
+
+function v(id) { return document.getElementById(id)?.value?.trim() || ''; }
+function n(id) { const x = v(id); return x ? Number(x) : undefined; }
+
+// ═══════════════════════════════════════════════════════
+//  USER SERVICE
+// ═══════════════════════════════════════════════════════
+async function registerUser() {
+  const url = cfg.gateway() + '/api/users/register';
+  await apiFetch('POST', url, {
+    email:    v('reg-email'),
+    password: v('reg-password'),
+    name:     v('reg-name'),
+    phone:    v('reg-phone'),
+  });
+}
+
+async function login() {
+  const url = cfg.gateway() + '/api/auth/login';
+  const res = await apiFetch('POST', url, {
+    email:    v('login-email'),
+    password: v('login-password'),
+  });
+  if (res.ok && res.data) {
+    const d = res.data.data || res.data;
+    state.accessToken  = d.accessToken  || d.access_token  || null;
+    state.refreshToken = d.refreshToken || d.refresh_token || null;
+    if (d.user) state.userId = d.user.userId || d.user.id || null;
+
+    // 자동 채우기
+    if (state.refreshToken) {
+      document.getElementById('logout-refresh').value  = state.refreshToken;
+      document.getElementById('reissue-refresh').value = state.refreshToken;
+    }
+    if (state.userId) {
+      document.getElementById('me-userId').value  = state.userId;
+      document.getElementById('mr-userId').value  = state.userId;
+      document.getElementById('jc-userId').value  = state.userId;
+      ['ga-userId','ast-userId','hld-userId'].forEach(id => {
+        document.getElementById(id).value = state.userId;
+      });
+    }
+    updateTokenBadge();
+  }
+}
+
+async function logout() {
+  const url = cfg.gateway() + '/api/auth/logout';
+  await apiFetch('POST', url, { refreshToken: v('logout-refresh') || state.refreshToken });
+  state.accessToken  = null;
+  state.refreshToken = null;
+  updateTokenBadge();
+}
+
+async function reissue() {
+  const url = cfg.gateway() + '/api/auth/reissue';
+  const res = await apiFetch('POST', url, { refreshToken: v('reissue-refresh') || state.refreshToken });
+  if (res.ok && res.data) {
+    const d = res.data.data || res.data;
+    state.accessToken  = d.accessToken  || state.accessToken;
+    state.refreshToken = d.refreshToken || state.refreshToken;
+    updateTokenBadge();
+  }
+}
+
+async function getMe() {
+  const userId = v('me-userId') || state.userId;
+  const url = cfg.gateway() + '/api/users/me';
+  await apiFetch('GET', url, null, { 'X-User-Id': userId });
+}
+
+// ═══════════════════════════════════════════════════════
+//  ASSET SERVICE
+// ═══════════════════════════════════════════════════════
+async function createAccount() {
+  const url = cfg.asset() + '/api/accounts';
+  const body = {
+    userId:          v('ca-userId') || state.userId,
+    type:            v('ca-type'),
+    initialAmount:   n('ca-amount'),
+    competitionId:   v('ca-competitionId') || undefined,
+    competitionName: v('ca-competitionName') || undefined,
+  };
+  await apiFetch('POST', url, body);
+}
+
+async function getAccount() {
+  const id = v('ga-accountId');
+  const userId = v('ga-userId') || state.userId;
+  const url = cfg.asset() + '/api/accounts/' + id;
+  await apiFetch('GET', url, null, { 'X-User-Id': userId });
+}
+
+async function deposit() {
+  const id  = v('dep-accountId');
+  const amt = v('dep-amount');
+  const url = `${cfg.asset()}/api/accounts/${id}/deposit?amount=${amt}`;
+  await apiFetch('POST', url, null);
+}
+
+async function withdraw() {
+  const id  = v('wd-accountId');
+  const amt = v('wd-amount');
+  const url = `${cfg.asset()}/api/accounts/${id}/withdraw?amount=${amt}`;
+  await apiFetch('POST', url, null);
+}
+
+async function getAsset() {
+  const userId = v('ast-userId') || state.userId;
+  const url = `${cfg.asset()}/api/assets?accountId=${v('ast-accountId')}`;
+  await apiFetch('GET', url, null, { 'X-User-Id': userId });
+}
+
+async function getHoldings() {
+  const userId = v('hld-userId') || state.userId;
+  const url = `${cfg.asset()}/api/holdings?accountId=${v('hld-accountId')}`;
+  await apiFetch('GET', url, null, { 'X-User-Id': userId });
+}
+
+async function buyHolding() {
+  const userId = state.userId;
+  const url = cfg.asset() + '/api/holdings/buy';
+  const body = {
+    accountId: v('bh-accountId'),
+    stockCode: v('bh-stockCode'),
+    quantity:  n('bh-quantity'),
+    price:     n('bh-price'),
+  };
+  await apiFetch('POST', url, body, userId ? { 'X-User-Id': userId } : {});
+}
+
+async function sellHolding() {
+  const userId = state.userId;
+  const url = cfg.asset() + '/api/holdings/sell';
+  const body = {
+    accountId: v('sh-accountId'),
+    stockCode: v('sh-stockCode'),
+    quantity:  n('sh-quantity'),
+    price:     n('sh-price'),
+  };
+  await apiFetch('POST', url, body, userId ? { 'X-User-Id': userId } : {});
+}
+
+// ═══════════════════════════════════════════════════════
+//  TRADE SERVICE
+// ═══════════════════════════════════════════════════════
+async function getMarketStatus() {
+  await apiFetch('GET', cfg.trade() + '/api/market/status', null);
+}
+
+async function stockSearch() {
+  const q     = v('ss-q');
+  const limit = v('ss-limit') || 20;
+  await apiFetch('GET', `${cfg.trade()}/api/stocks/search?q=${encodeURIComponent(q)}&limit=${limit}`, null);
+}
+
+async function realtimeSubscribe() {
+  const code = v('rt-subCode');
+  await apiFetch('POST', `${cfg.trade()}/api/stocks/realtime/${code}`, null);
+}
+
+async function realtimeUnsubscribe() {
+  const code = v('rt-subCode');
+  await apiFetch('DELETE', `${cfg.trade()}/api/stocks/realtime/${code}`, null);
+}
+
+async function getKisToken() {
+  await apiFetch('POST', cfg.trade() + '/api/trades/access-token', null);
+}
+
+async function getNowPrice() {
+  const code = v('np-code');
+  const dt   = v('np-dt');
+  let url = `${cfg.trade()}/api/trades/now-price?stock_code=${code}`;
+  if (dt) url += '&date_time=' + encodeURIComponent(dt.replace('T', 'T') + ':00');
+  await apiFetch('GET', url, null);
+}
+
+async function getMinutePrice() {
+  const code = v('mp-code');
+  const dt   = v('mp-dt');
+  let url = `${cfg.trade()}/api/trades/minute-price?stock_code=${code}`;
+  if (dt) url += '&date_time=' + encodeURIComponent(dt + ':00');
+  await apiFetch('GET', url, null);
+}
+
+async function getPriceDetail() {
+  const code = v('pd-code');
+  const dt   = v('pd-dt');
+  let url = `${cfg.trade()}/api/trades/price?stock_code=${code}`;
+  if (dt) url += '&date_time=' + encodeURIComponent(dt + ':00');
+  await apiFetch('GET', url, null);
+}
+
+async function getChart() {
+  const code   = v('ch-code');
+  const start  = v('ch-start');
+  const end    = v('ch-end');
+  const period = v('ch-period') || 'D';
+  const url = `${cfg.trade()}/api/trades/chart?stock_code=${code}&start_date=${start}&end_date=${end}&period=${period}`;
+  await apiFetch('GET', url, null);
+}
+
+async function getStockPriceList() {
+  const raw   = v('spl-codes');
+  const codes = raw.split(',').map(s => s.trim()).filter(Boolean);
+  await apiFetch('POST', cfg.trade() + '/api/trades/stock-price-list', { stockCodes: codes });
+}
+
+async function placeOrder() {
+  const accountId = v('po-accountId');
+  const body = {
+    stockCode:  v('po-code'),
+    stockAmount: n('po-amount'),
+    orderType:   v('po-orderType'),
+    side:        v('po-side'),
+  };
+  const lp = v('po-limitPrice');
+  if (lp) body.limitPrice = Number(lp);
+  const headers = accountId ? { 'X-Account-Id': accountId } : {};
+  await apiFetch('POST', cfg.trade() + '/api/trades/order', body, headers);
+}
+
+async function getPendingOrders() {
+  const accountId = v('pnd-accountId');
+  const headers = accountId ? { 'X-Account-Id': accountId } : {};
+  await apiFetch('GET', cfg.trade() + '/api/trades/pending', null, headers);
+}
+
+async function cancelOrder() {
+  const tradeId   = v('co-tradeId');
+  const accountId = v('co-accountId');
+  const headers = accountId ? { 'X-Account-Id': accountId } : {};
+  await apiFetch('DELETE', `${cfg.trade()}/api/trades/order/${tradeId}`, null, headers);
+}
+
+async function getWsStatus() {
+  await apiFetch('GET', cfg.trade() + '/api/trades/realtime/status', null);
+}
+
+// ═══════════════════════════════════════════════════════
+//  RANKING SERVICE
+// ═══════════════════════════════════════════════════════
+async function getTopRankings() {
+  const compId = v('tr-compId');
+  const page   = v('tr-page') || 0;
+  const size   = v('tr-size') || 20;
+  await apiFetch('GET', `${cfg.ranking()}/api/rankings/competitions/${compId}?page=${page}&size=${size}`, null);
+}
+
+async function getMyRanking() {
+  const compId = v('mr-compId');
+  const userId = v('mr-userId') || state.userId;
+  await apiFetch('GET', `${cfg.ranking()}/api/rankings/competitions/${compId}/users/${userId}`, null);
+}
+
+async function finalizeRankings() {
+  const compId = v('fr-compId');
+  await apiFetch('POST', `${cfg.ranking()}/api/rankings/competitions/${compId}/finalize`, null);
+}
+
+// ═══════════════════════════════════════════════════════
+//  COMPETITION SERVICE
+// ═══════════════════════════════════════════════════════
+function fmtDt(id) {
+  const val = v(id);
+  return val ? val + ':00' : undefined;
+}
+
+async function listCompetitions() {
+  const status = v('lc-status');
+  const page   = v('lc-page') || 0;
+  const size   = v('lc-size') || 10;
+  let url = `${cfg.competition()}/api/competitions?page=${page}&size=${size}`;
+  if (status) url += '&status=' + status;
+  await apiFetch('GET', url, null);
+}
+
+async function getCompetition() {
+  const id = v('gc-id');
+  await apiFetch('GET', `${cfg.competition()}/api/competitions/${id}`, null);
+}
+
+async function createCompetition() {
+  const body = {
+    name:               v('cc-name'),
+    type:               v('cc-type'),
+    description:        v('cc-desc'),
+    firstSeed:          n('cc-seed'),
+    registerStartAt:    fmtDt('cc-regStart'),
+    registerEndAt:      fmtDt('cc-regEnd'),
+    competitionStartAt: fmtDt('cc-start'),
+    competitionEndAt:   fmtDt('cc-end'),
+    minParticipants:    n('cc-min'),
+    maxParticipants:    n('cc-max'),
+  };
+  await apiFetch('POST', cfg.competition() + '/api/competitions', body);
+}
+
+async function patchComp(action) {
+  const id = v('cs-id');
+  await apiFetch('PATCH', `${cfg.competition()}/api/competitions/${id}/${action}`, null);
+}
+
+async function deleteCompetition() {
+  const id  = v('dc-id');
+  const by  = v('dc-by');
+  await apiFetch('DELETE', `${cfg.competition()}/api/competitions/${id}?deletedBy=${encodeURIComponent(by)}`, null);
+}
+
+async function getChangeNotices() {
+  const id = v('cn-id');
+  await apiFetch('GET', `${cfg.competition()}/api/competitions/${id}/change-notices`, null);
+}
+
+async function listParticipants() {
+  const compId = v('lp-compId');
+  await apiFetch('GET', `${cfg.competition()}/api/competitions/${compId}/participants`, null);
+}
+
+async function joinCompetition() {
+  const compId = v('jc-compId');
+  const body = {
+    userId:   v('jc-userId') || state.userId,
+    nickname: v('jc-nickname'),
+  };
+  await apiFetch('POST', `${cfg.competition()}/api/competitions/${compId}/participants`, body);
+}
+
+async function cancelJoinCompetition() {
+  const compId = v('jc-compId');
+  const body = {
+    userId:   v('jc-userId') || state.userId,
+    nickname: v('jc-nickname'),
+  };
+  await apiFetch('DELETE', `${cfg.competition()}/api/competitions/${compId}/participants`, body);
+}
+</script>
+</body>
+</html>
