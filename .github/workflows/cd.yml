@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: '전체 서비스 강제 배포'
+        type: boolean
+        default: false
 
 # ============================================================
 # 배포 방식: GitHub Actions → S3 업로드 → SSM Run Command
@@ -47,14 +53,23 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
       - name: 변경된 서비스 매트릭스 생성
         id: set-matrix
         run: |
-          COMMON_CHANGED=$(git diff --name-only HEAD~1 HEAD | grep "^common/" | wc -l)
+          # 수동 실행(workflow_dispatch)에서 deploy_all=true 이면 전체 배포
+          DEPLOY_ALL="${{ github.event.inputs.deploy_all }}"
+
+          # PR 머지: HEAD~1과 비교 / 직접 push: 이전 커밋과 비교
+          BASE_SHA="${{ github.event.before }}"
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="HEAD~1"
+          fi
+
+          COMMON_CHANGED=$(git diff --name-only "$BASE_SHA" HEAD | grep "^common/" | wc -l)
 
           # 서비스 메타데이터 정의 (service|ec2_tag|s3_key|port|container)
           declare -A META=(
@@ -75,11 +90,11 @@ jobs:
           for SERVICE in "${!META[@]}"; do
             IFS='|' read -r EC2_TAG S3_KEY PORT CONTAINER <<< "${META[$SERVICE]}"
 
-            # common 변경 시 전체 재배포, 아니면 해당 서비스 경로만 체크
-            if [ "$COMMON_CHANGED" -gt "0" ]; then
+            # 전체 배포 조건: 수동 deploy_all, common 변경, 또는 서비스 경로 변경
+            if [ "$DEPLOY_ALL" = "true" ] || [ "$COMMON_CHANGED" -gt "0" ]; then
               CHANGED=1
             else
-              CHANGED=$(git diff --name-only HEAD~1 HEAD | grep "^apps/$SERVICE/" | wc -l)
+              CHANGED=$(git diff --name-only "$BASE_SHA" HEAD | grep "^apps/$SERVICE/" | wc -l)
             fi
 
             if [ "$CHANGED" -gt "0" ]; then
@@ -105,7 +120,7 @@ jobs:
     name: 배포 - ${{ matrix.service }}
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: ${{ fromJson(needs.detect-changes.outputs.matrix).include[0] != null }}
+    if: ${{ needs.detect-changes.result == 'success' && fromJson(needs.detect-changes.outputs.matrix).include[0] != null }}
 
     strategy:
       matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
