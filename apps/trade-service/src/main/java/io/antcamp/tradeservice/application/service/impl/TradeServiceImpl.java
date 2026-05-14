@@ -165,38 +165,39 @@ public class TradeServiceImpl implements TradeService {
 
         // 지정가 — 조건 미충족 시 PENDING 저장
         if (request.isLimit()) {
-            Trade pendingTrade = Trade.create(
-                    null, request.accountId(), tradeType, now,
-                    request.stockCode(), request.stockAmount(),
-                    request.limitPrice() * request.stockAmount(),
-                    OrderType.LIMIT, request.limitPrice()
-            );
-
             boolean conditionMet = tradeType == TradeType.BUY
                     ? currentPrice <= request.limitPrice()
                     : currentPrice >= request.limitPrice();
 
             if (!conditionMet) {
-                tradeRepository.save(pendingTrade);
+                Trade pendingTrade = Trade.create(
+                        null, request.accountId(), tradeType, now,
+                        request.stockCode(), request.stockAmount(),
+                        request.limitPrice() * request.stockAmount(),
+                        OrderType.LIMIT, request.limitPrice()
+                );
+                // 수정 전: tradeRepository.save(pendingTrade); → 반환된 tradeId 가 유실되어 응답·취소 시 null 사용됨
+                Trade savedPending = tradeRepository.save(pendingTrade);
                 log.info("[주문] 지정가 미체결 저장 — tradeId={} {} {} {}주 지정가={} 현재가={}",
-                        pendingTrade.tradeId(), tradeType, request.stockCode(),
+                        savedPending.tradeId(), tradeType, request.stockCode(),
                         request.stockAmount(), request.limitPrice(), currentPrice);
                 return TradeOrderResponse.pending(
                         request.stockCode(), stockName, "LIMIT", tradeType.name(),
                         currentPrice, request.limitPrice(), request.stockAmount(),
-                        pendingTrade.tradeId()
+                        savedPending.tradeId()
                 );
             }
 
             // 조건 충족 — 즉시 체결
             totalPrice = currentPrice * request.stockAmount();
-            Trade savedTrade = Trade.create(
+            Trade newLimitTrade = Trade.create(
                     null, request.accountId(), tradeType, now,
                     request.stockCode(), request.stockAmount(), totalPrice,
                     OrderType.LIMIT, request.limitPrice()
             );
-            tradeRepository.save(savedTrade);
-            // 수정 전: executeAsset(savedTrade, currentPrice);
+            // 수정 전: tradeRepository.save(savedTrade);  ← 반환값을 무시해 savedTrade.tradeId() 가 null →
+            //         executeAsset 내부 updateStatus → findById(null) → 500 발생
+            Trade savedTrade = tradeRepository.save(newLimitTrade);
             try {
                 executeAsset(savedTrade, currentPrice, userId);
             } catch (Exception e) {
