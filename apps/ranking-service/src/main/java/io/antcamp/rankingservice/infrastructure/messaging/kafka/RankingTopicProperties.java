@@ -12,14 +12,8 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "topics")
 public record RankingTopicProperties(
-        @Valid Trade trade,
         @Valid Asset asset
 ) {
-    public record Trade(
-            @NotBlank String tradeSucceeded   // 매매 체결 시 단건 실시간 순위 갱신
-    ) {
-    }
-
     public record Asset(
             @NotBlank String totalCalculated   // 대회 종료 후 최종 총자산 수신 → 최종 순위 DB 저장
     ) {

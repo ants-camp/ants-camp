@@ -39,7 +39,8 @@ public interface TradeService {
     /**
      * 매수/매도 주문. - MARKET : 현재가로 즉시 체결 - LIMIT  : 조건 충족 시 즉시 체결, 미충족 시 PENDING 으로 저장
      */
-    TradeOrderResponse placeOrder(TradeOrderRequest request);
+    // 수정 전: TradeOrderResponse placeOrder(TradeOrderRequest request);
+    TradeOrderResponse placeOrder(TradeOrderRequest request, UUID userId);
 
     /**
      * 미체결(PENDING) 지정가 주문 취소. 본인 주문이 아닐 경우 예외.
@@ -57,7 +58,9 @@ public interface TradeService {
     void executePendingLimitOrders();
 
     // ── 레거시 (하위 호환) ────────────────────────────────────────────────
-    BuyStockResponse buyStock(LocalDateTime time, String stockCode, int stockAmount, UUID accountId);
+    // 수정 전: BuyStockResponse buyStock(LocalDateTime time, String stockCode, int stockAmount, UUID accountId);
+    BuyStockResponse buyStock(LocalDateTime time, String stockCode, int stockAmount, UUID accountId, UUID userId);
 
-    SellStockResponse sellStock(LocalDateTime now, String stockCode, int stockAmount, UUID accountId);
+    // 수정 전: SellStockResponse sellStock(LocalDateTime now, String stockCode, int stockAmount, UUID accountId);
+    SellStockResponse sellStock(LocalDateTime now, String stockCode, int stockAmount, UUID accountId, UUID userId);
 }

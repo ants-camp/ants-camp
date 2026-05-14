@@ -177,7 +177,7 @@ CREATE TABLE IF NOT EXISTS ranking.p_rankings (
     last_updated_at TIMESTAMP,
     is_finalized    BOOLEAN         NOT NULL DEFAULT FALSE,
     created_at      TIMESTAMP       NOT NULL,
-    created_by      VARCHAR(255)    NOT NULL,
+    created_by      VARCHAR(255),
     updated_at      TIMESTAMP,
     updated_by      VARCHAR(255),
     deleted_at      TIMESTAMP,

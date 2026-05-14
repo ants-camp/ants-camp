@@ -5,20 +5,26 @@ import feign.RetryableException;
 import feign.codec.ErrorDecoder;
 import io.antcamp.tradeservice.infrastructure.dto.KisErrorResponse;
 import io.antcamp.tradeservice.infrastructure.exception.KisApiException;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
+/**
+ * KIS Feign 클라이언트 전용 설정.
+ *
+ * <p>주의: 이 클래스에는 {@code @Configuration} 어노테이션을 절대 붙이지 말 것.
+ * 컴포넌트 스캔에 잡히면 ErrorDecoder가 모든 Feign 클라이언트(AssetClient 등)에 글로벌로 적용되어,
+ * KIS가 아닌 서비스의 에러 응답을 KIS 포맷({@code msg_cd}, {@code msg})으로 강제 파싱하여
+ * 실제 에러 메시지를 null로 만들어버린다.
+ *
+ * <p>이 설정은 {@code @FeignClient(configuration = OpenFeignConfig.class)}로
+ * 명시적으로 지정한 클라이언트({@link io.antcamp.tradeservice.infrastructure.client.KisClient},
+ * {@link io.antcamp.tradeservice.infrastructure.client.KisApproveClient})에만 적용된다.
+ */
 @Slf4j
-@Configuration
-@RequiredArgsConstructor
 public class OpenFeignConfig {
 
-    private final ObjectMapper objectMapper;
-
     @Bean
-    public ErrorDecoder kisErrorDecoder() {
+    public ErrorDecoder kisErrorDecoder(ObjectMapper objectMapper) {
         return (methodKey, response) -> {
             // body 가 없는 경우
             if (response.body() == null) {
