@@ -60,44 +60,52 @@ jobs:
       - name: 변경된 서비스 매트릭스 생성
         id: set-matrix
         run: |
-          # 수동 실행(workflow_dispatch)에서 deploy_all=true 이면 전체 배포
           DEPLOY_ALL="${{ github.event.inputs.deploy_all }}"
-
-          # PR 머지: HEAD~1과 비교 / 직접 push: 이전 커밋과 비교
           BASE_SHA="${{ github.event.before }}"
+
+          # 브랜치 최초 push이거나 base sha가 없으면 HEAD~1 사용
           if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
             BASE_SHA="HEAD~1"
           fi
 
-          COMMON_CHANGED=$(git diff --name-only "$BASE_SHA" HEAD | grep "^common/" | wc -l)
+          echo "=== 디버그 ==="
+          echo "BASE_SHA: $BASE_SHA"
+          echo "HEAD: $(git rev-parse HEAD)"
+          echo "변경된 파일 목록:"
+          git diff --name-only "$BASE_SHA" HEAD || echo "(diff 실패)"
+          echo "=============="
 
-          # 서비스 메타데이터 정의 (service|ec2_tag|s3_key|port|container)
-          declare -A META=(
-            ["user-service"]="ants-camp-domain-ec2|jars/user-service.jar|8081|antcamp-user"
-            ["asset-service"]="ants-camp-domain-ec2|jars/asset-service.jar|8082|antcamp-asset"
-            ["ranking-service"]="ants-camp-domain-ec2|jars/ranking-service.jar|8094|antcamp-ranking"
-            ["trade-service"]="ants-camp-domain2-ec2|jars/trade-service.jar|8084|antcamp-trade"
-            ["competition-service"]="ants-camp-domain2-ec2|jars/competition-service.jar|8092|antcamp-competition"
-            ["notification-service"]="ants-camp-notification-ec2|jars/notification-service.jar|8098|antcamp-notification"
-            ["assistant-service"]="ants-camp-notification-ec2|jars/assistant-service.jar|8096|antcamp-assistant"
-            ["api-gateway"]="ants-camp-gateway-ec2|jars/api-gateway.jar|8080|antcamp-gateway"
-            ["config-server"]="ants-camp-infra-ec2|jars/config-server.jar|8888|antcamp-config"
-            ["eureka-server"]="ants-camp-infra-ec2|jars/eureka-server.jar|8761|antcamp-eureka"
-          )
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD 2>/dev/null || echo "")
+          COMMON_CHANGED=$(echo "$CHANGED_FILES" | grep "^common/" | wc -l)
 
           INCLUDES="[]"
 
-          for SERVICE in "${!META[@]}"; do
-            IFS='|' read -r EC2_TAG S3_KEY PORT CONTAINER <<< "${META[$SERVICE]}"
+          # service|ec2_tag|s3_key|port|container 순서
+          SERVICES="
+          user-service|ants-camp-domain-ec2|jars/user-service.jar|8081|antcamp-user
+          asset-service|ants-camp-domain-ec2|jars/asset-service.jar|8082|antcamp-asset
+          ranking-service|ants-camp-domain-ec2|jars/ranking-service.jar|8094|antcamp-ranking
+          trade-service|ants-camp-domain2-ec2|jars/trade-service.jar|8084|antcamp-trade
+          competition-service|ants-camp-domain2-ec2|jars/competition-service.jar|8092|antcamp-competition
+          notification-service|ants-camp-notification-ec2|jars/notification-service.jar|8098|antcamp-notification
+          assistant-service|ants-camp-notification-ec2|jars/assistant-service.jar|8096|antcamp-assistant
+          api-gateway|ants-camp-gateway-ec2|jars/api-gateway.jar|8080|antcamp-gateway
+          config-server|ants-camp-infra-ec2|jars/config-server.jar|8888|antcamp-config
+          eureka-server|ants-camp-infra-ec2|jars/eureka-server.jar|8761|antcamp-eureka
+          "
 
-            # 전체 배포 조건: 수동 deploy_all, common 변경, 또는 서비스 경로 변경
+          while IFS='|' read -r SERVICE EC2_TAG S3_KEY PORT CONTAINER; do
+            SERVICE=$(echo "$SERVICE" | xargs)
+            [ -z "$SERVICE" ] && continue
+
             if [ "$DEPLOY_ALL" = "true" ] || [ "$COMMON_CHANGED" -gt "0" ]; then
               CHANGED=1
             else
-              CHANGED=$(git diff --name-only "$BASE_SHA" HEAD | grep "^apps/$SERVICE/" | wc -l)
+              CHANGED=$(echo "$CHANGED_FILES" | grep "^apps/$SERVICE/" | wc -l)
             fi
 
             if [ "$CHANGED" -gt "0" ]; then
+              echo "배포 대상: $SERVICE"
               ENTRY=$(jq -n \
                 --arg svc "$SERVICE" \
                 --arg tag "$EC2_TAG" \
@@ -106,11 +114,11 @@ jobs:
                 --arg ctr "$CONTAINER" \
                 '{service: $svc, ec2_tag: $tag, s3_key: $key, port: $port, container: $ctr}')
               INCLUDES=$(echo "$INCLUDES" | jq ". += [$ENTRY]")
-              echo "배포 대상: $SERVICE → $EC2_TAG"
             fi
-          done
+          done <<< "$SERVICES"
 
           MATRIX=$(echo "$INCLUDES" | jq -c '{include: .}')
+          echo "최종 matrix: $MATRIX"
           echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
 
   # ──────────────────────────────────────────────────────────
