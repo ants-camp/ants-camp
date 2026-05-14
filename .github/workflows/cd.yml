@@ -25,8 +25,8 @@ on:
 # ============================================================
 
 env:
-  AWS_REGION: ${{ vars.AWS_REGION }}
-  S3_BUCKET: ${{ vars.S3_BUCKET }}
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
+  S3_BUCKET: ${{ vars.S3_BUCKET || 'ants-camp-deployments' }}
 
 concurrency:
   group: deploy-${{ github.ref }}
@@ -176,7 +176,7 @@ jobs:
             --instance-ids "${{ steps.get-instance.outputs.instance_id }}" \
             --document-name "AWS-RunShellScript" \
             --parameters "commands=[
-              \"set -euxo pipefail\",
+              \"set -eux\",
               \"echo '=== 배포 시작: ${{ matrix.service }} ===' \",
               \"APP_DIR=/opt/ants-camp\",
               \"JAR_FILE=\$APP_DIR/${{ matrix.service }}.jar\",
