@@ -3,18 +3,17 @@ package io.antcamp.assistantservice.infrastructure.llm;
 import io.antcamp.assistantservice.application.port.LlmPort;
 import io.antcamp.assistantservice.domain.model.Role;
 import io.antcamp.assistantservice.infrastructure.config.LlmConfig;
-import lombok.RequiredArgsConstructor;
 import org.springframework.ai.anthropic.AnthropicChatModel;
 import org.springframework.ai.anthropic.AnthropicChatOptions;
 import org.springframework.ai.chat.messages.AssistantMessage;
 import org.springframework.ai.chat.messages.Message;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.ai.chat.model.ChatResponse;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.openai.OpenAiChatOptions;
-import org.springframework.ai.chat.prompt.Prompt;
-import org.springframework.ai.chat.metadata.Usage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.retry.annotation.Backoff;
 import org.springframework.retry.annotation.Retryable;
@@ -33,19 +32,19 @@ public class OpenAiChatAdapter implements LlmPort {
     private final LlmConfig llmConfig;
 
     public OpenAiChatAdapter(OpenAiChatModel openAiChatModel,
-                              @Autowired(required = false) AnthropicChatModel anthropicChatModel,
-                              LlmConfig llmConfig) {
+                             @Autowired(required = false) AnthropicChatModel anthropicChatModel,
+                             LlmConfig llmConfig) {
         this.openAiChatModel = openAiChatModel;
         this.anthropicChatModel = anthropicChatModel;
         this.llmConfig = llmConfig;
     }
 
     /**
-     *재시도 조건 (retryFor)
-     *   - IOException — 네트워크 단절, 타임아웃 등 I/O 오류
-     *   - HttpServerErrorException — 5xx 응답 (OpenAI 서버 오류)
-     *   - 4xx (잘못된 요청 등)는 재시도 대상이 아님 — 재시도해도 의미 없으므로 제외
-     *   - 1초 > 2초 > 4초 > 8초
+     * 재시도 조건 (retryFor)
+     * - IOException — 네트워크 단절, 타임아웃 등 I/O 오류
+     * - HttpServerErrorException — 5xx 응답 (OpenAI 서버 오류)
+     * - 4xx (잘못된 요청 등)는 재시도 대상이 아님 — 재시도해도 의미 없으므로 제외
+     * - 1초 > 2초 > 4초 > 8초
      */
     @Retryable(
             retryFor = {IOException.class, HttpServerErrorException.class},
