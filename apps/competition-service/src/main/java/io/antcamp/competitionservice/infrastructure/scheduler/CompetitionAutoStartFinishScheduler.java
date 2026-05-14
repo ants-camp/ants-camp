@@ -56,7 +56,7 @@ public class CompetitionAutoStartFinishScheduler {
     /**
      * 30분마다 대회 종료 시간이 지난 ONGOING 대회를 자동으로 FINISHED로 전환한다.
      */
-    @Scheduled(cron = "0 */30 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void autoFinishCompetitions() {
         List<UUID> ids = competitionRepository.findAllIdsReadyToFinish();
 

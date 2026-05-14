@@ -9,6 +9,7 @@ import java.util.UUID;
  *   EXECUTED — 체결 완료
  *   PENDING  — 지정가 조건 미충족, 미체결 대기
  *   CANCELLED — 주문 취소
+ *   FAILED   — 체결 실패 (잔액 차감 오류 등)
  */
 public record TradeOrderResponse(
         String stockCode,
@@ -58,6 +59,19 @@ public record TradeOrderResponse(
                 stockCode, null, "LIMIT", side,
                 "CANCELLED", limitPrice != null ? limitPrice : 0, 0, amount, tradeId,
                 String.format("주문 취소 완료 — tradeId=%s", tradeId)
+        );
+    }
+
+    /** 체결 실패 — asset-service 오류 등 */
+    public static TradeOrderResponse failed(
+            String stockCode, String stockName,
+            String orderType, String side,
+            double price, int amount) {
+        return new TradeOrderResponse(
+                stockCode, stockName, orderType, side,
+                "FAILED", price, 0, amount, null,
+                String.format("%s %d주 체결 실패 (잔액 차감 오류)",
+                        side.equalsIgnoreCase("BUY") ? "매수" : "매도", amount)
         );
     }
 }

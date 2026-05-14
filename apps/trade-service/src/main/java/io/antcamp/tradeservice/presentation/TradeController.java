@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -111,11 +112,17 @@ public class TradeController implements TradeControllerDocs {
      * <p>
      * 응답 status: EXECUTED  — 즉시 체결 PENDING   — 조건 미충족, 미체결 대기 (tradeId 포함)
      */
+    // 수정 전:
+    // public ResponseEntity<CommonResponse<TradeOrderResponse>> placeOrder(
+    //         @RequestBody TradeOrderRequest request) {
+    //     return CommonResponse.ok(tradeService.placeOrder(request));
+    // }
     @PostMapping("/order")
     public ResponseEntity<CommonResponse<TradeOrderResponse>> placeOrder(
-            @RequestBody TradeOrderRequest request
+            @RequestBody TradeOrderRequest request,
+            @RequestHeader("X-User-Id") UUID userId
     ) {
-        return CommonResponse.ok(tradeService.placeOrder(request));
+        return CommonResponse.ok(tradeService.placeOrder(request, userId));
     }
 
     /**
@@ -148,10 +155,12 @@ public class TradeController implements TradeControllerDocs {
     @PostMapping("/buy")
     public ResponseEntity<CommonResponse<BuyStockResponse>> buyStock(
             @RequestBody BuyStockRequest request,
-            @LoginAccount UUID accountId
+            @LoginAccount UUID accountId,
+            @RequestHeader("X-User-Id") UUID userId
     ) {
+        // 수정 전: tradeService.buyStock(..., accountId)
         return CommonResponse.ok(tradeService.buyStock(LocalDateTime.now(),
-                request.stockCode(), request.stockAmount(), accountId));
+                request.stockCode(), request.stockAmount(), accountId, userId));
     }
 
     /**
@@ -161,10 +170,12 @@ public class TradeController implements TradeControllerDocs {
     @PostMapping("/sell")
     public ResponseEntity<CommonResponse<SellStockResponse>> sellStock(
             @RequestBody BuyStockRequest request,
-            @LoginAccount UUID accountId
+            @LoginAccount UUID accountId,
+            @RequestHeader("X-User-Id") UUID userId
     ) {
+        // 수정 전: tradeService.sellStock(..., accountId)
         return CommonResponse.ok(tradeService.sellStock(LocalDateTime.now(),
-                request.stockCode(), request.stockAmount(), accountId));
+                request.stockCode(), request.stockAmount(), accountId, userId));
     }
 
     // ── 공통 헬퍼 ─────────────────────────────────────────────────────────

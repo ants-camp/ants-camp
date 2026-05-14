@@ -7,6 +7,7 @@ import io.antcamp.competitionservice.application.dto.CancelCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
+import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.infrastructure.scheduler.CompetitionTickScheduler;
@@ -47,6 +48,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CompetitionController implements CompetitionControllerDocs {
 
     private final CompetitionTickScheduler competitionTickScheduler;
+    private final CompetitionEventProducer competitionEventProducer;
     private final CompetitionService competitionService;
     private final CompetitionParticipantService competitionParticipantService;
 
@@ -196,8 +198,11 @@ public class CompetitionController implements CompetitionControllerDocs {
                 .toList());
     }
 
+    /**
+     * 특정 대회 한 건에 대한 랭킹 갱신을 수동으로 트리거한다. 운영/테스트 용도로만 사용한다 — 평상시에는 1분 주기 스케줄러가 ONGOING 대회를 자동 tick 한다.
+     */
     @PostMapping("/refresh")
-    public void publishCompetitionTicks() {
+    public void refreshCompetitionRanking() {
         competitionTickScheduler.publishCompetitionTicks();
     }
 }

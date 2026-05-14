@@ -16,10 +16,9 @@ import io.antcamp.tradeservice.infrastructure.client.KisClient;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenRequest;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
 import io.antcamp.tradeservice.infrastructure.dto.ApprovalTokenRequest;
-import io.antcamp.tradeservice.infrastructure.event.producer.TradeEventProducer;
-import io.antcamp.tradeservice.infrastructure.event.producer.TradeSucceededEvent;
 import io.antcamp.tradeservice.presentation.dto.AssetResponse;
 import io.antcamp.tradeservice.presentation.dto.AssetSellRequest;
+import io.antcamp.tradeservice.presentation.dto.BuyHoldingRequest;
 import io.antcamp.tradeservice.presentation.dto.BuyStockResponse;
 import io.antcamp.tradeservice.presentation.dto.DailyChartResponse;
 import io.antcamp.tradeservice.presentation.dto.MinutePriceOutput2;
@@ -56,7 +55,6 @@ public class TradeServiceImpl implements TradeService {
 
     private final StringRedisTemplate redisTemplate;
     private final KisClient kisClient;
-    private final TradeEventProducer kafkaProducer;
     private final AssetClient assetClient;
     private final ObjectMapper objectMapper;
     private final TradeRepository tradeRepository;
@@ -148,9 +146,10 @@ public class TradeServiceImpl implements TradeService {
     /**
      * 시장가 / 지정가 통합 주문. MARKET  → 현재가 즉시 체결 LIMIT   → 조건 충족 시 즉시 체결 / 미충족 시 PENDING 저장
      */
+    // 수정 전: public TradeOrderResponse placeOrder(TradeOrderRequest request)
     @Override
     @Transactional
-    public TradeOrderResponse placeOrder(TradeOrderRequest request) {
+    public TradeOrderResponse placeOrder(TradeOrderRequest request, UUID userId) {
         validateOrderRequest(request);
 
         LocalDateTime now = LocalDateTime.now();
@@ -197,7 +196,17 @@ public class TradeServiceImpl implements TradeService {
                     OrderType.LIMIT, request.limitPrice()
             );
             tradeRepository.save(savedTrade);
-            executeAsset(savedTrade, currentPrice);
+            // 수정 전: executeAsset(savedTrade, currentPrice);
+            try {
+                executeAsset(savedTrade, currentPrice, userId);
+            } catch (Exception e) {
+                log.error("[주문] 지정가 즉시체결 실패 — tradeId={} error={}", savedTrade.tradeId(), e.getMessage());
+                tradeRepository.updateStatus(Trade.updateFail(savedTrade));
+                return TradeOrderResponse.failed(
+                        request.stockCode(), stockName, "LIMIT", tradeType.name(),
+                        currentPrice, request.stockAmount()
+                );
+            }
             log.info("[주문] 지정가 즉시체결 — tradeId={} {} {}주 체결가={}",
                     savedTrade.tradeId(), tradeType, request.stockAmount(), currentPrice);
             return TradeOrderResponse.executed(
@@ -212,7 +221,17 @@ public class TradeServiceImpl implements TradeService {
                 OrderType.MARKET, null
         );
         Trade savedTrade = tradeRepository.save(newTrade);
-        executeAsset(savedTrade, currentPrice);
+        // 수정 전: executeAsset(savedTrade, currentPrice);
+        try {
+            executeAsset(savedTrade, currentPrice, userId);
+        } catch (Exception e) {
+            log.error("[주문] 시장가 체결 실패 — tradeId={} error={}", savedTrade.tradeId(), e.getMessage());
+            tradeRepository.updateStatus(Trade.updateFail(savedTrade));
+            return TradeOrderResponse.failed(
+                    request.stockCode(), stockName, "MARKET", tradeType.name(),
+                    currentPrice, request.stockAmount()
+            );
+        }
         log.info("[주문] 시장가 체결 — tradeId={} {} {}주 체결가={}",
                 savedTrade.tradeId(), tradeType, request.stockAmount(), currentPrice);
         return TradeOrderResponse.executed(
@@ -280,7 +299,8 @@ public class TradeServiceImpl implements TradeService {
                 // 체결 처리
                 Trade success = Trade.updateSuccess(order);
                 tradeRepository.updateStatus(success);
-                executeAsset(order, currentPrice);
+                // 스케줄러는 userId 없이 내부 처리 — null 전달 (asset-service 내부 권한 검증 미적용)
+                executeAsset(order, currentPrice, null);
 
                 log.info("[스케줄러] 지정가 체결 — tradeId={} {} {}주 지정가={} 현재가={}",
                         order.tradeId(), order.tradeType(), order.stockAmount(),
@@ -294,8 +314,9 @@ public class TradeServiceImpl implements TradeService {
 
     // ── 레거시 ────────────────────────────────────────────────────────────
 
+    // 수정 전: buyStock(LocalDateTime dateTime, String stockCode, int stockAmount, UUID accountId)
     @Override
-    public BuyStockResponse buyStock(LocalDateTime dateTime, String stockCode, int stockAmount, UUID accountId) {
+    public BuyStockResponse buyStock(LocalDateTime dateTime, String stockCode, int stockAmount, UUID accountId, UUID userId) {
         MinutePriceResponse response = getKisPrice(stockCode, dateTime);
         String stockName = response.minutePriceOutput1().stockName();
         double nowPrice = Double.parseDouble(response.minutePriceOutput1().priceNow());
@@ -307,18 +328,18 @@ public class TradeServiceImpl implements TradeService {
         tradeRepository.save(newTrade);
 
         try {
-            AssetResponse assetResponse = assetClient.getAsset(accountId, totalPrice);
-            if (assetResponse.tradeAt() != null) {
-                tradeRepository.updateStatus(Trade.updateSuccess(tradeRepository.findById(newTradeId)));
-            }
+            // 수정 전: assetClient.getAsset(accountId, totalPrice);
+            assetClient.getAsset(userId, new BuyHoldingRequest(accountId, stockCode, stockAmount, (long) nowPrice));
+            tradeRepository.updateStatus(Trade.updateSuccess(tradeRepository.findById(newTradeId)));
         } catch (Exception e) {
             log.error("asset server 응답 실패");
         }
         return new BuyStockResponse(stockCode, stockName, totalPrice, stockAmount);
     }
 
+    // 수정 전: sellStock(LocalDateTime dateTime, String stockCode, int stockAmount, UUID accountId)
     @Override
-    public SellStockResponse sellStock(LocalDateTime dateTime, String stockCode, int stockAmount, UUID accountId) {
+    public SellStockResponse sellStock(LocalDateTime dateTime, String stockCode, int stockAmount, UUID accountId, UUID userId) {
         MinutePriceResponse response = getKisPrice(stockCode, dateTime);
         String stockName = response.minutePriceOutput1().stockName();
         double nowPrice = Double.parseDouble(response.minutePriceOutput1().priceNow());
@@ -330,11 +351,11 @@ public class TradeServiceImpl implements TradeService {
         tradeRepository.save(newTrade);
 
         try {
-            AssetSellRequest sellRequest = new AssetSellRequest(accountId, stockCode, stockAmount, nowPrice);
-            AssetResponse assetResponse = assetClient.getStock(sellRequest);
-            if (assetResponse.tradeAt() != null) {
-                tradeRepository.updateStatus(Trade.updateSuccess(tradeRepository.findById(newTradeId)));
-            }
+            // 수정 전: new AssetSellRequest(accountId, stockCode, stockAmount, nowPrice)  ← double을 그대로 넘김
+            AssetSellRequest sellRequest = new AssetSellRequest(accountId, stockCode, stockAmount, (long) nowPrice);
+            // 수정 전: assetClient.getStock(sellRequest);
+            assetClient.getStock(userId, sellRequest);
+            tradeRepository.updateStatus(Trade.updateSuccess(tradeRepository.findById(newTradeId)));
         } catch (Exception e) {
             log.error("asset server 응답 실패");
         }
@@ -389,25 +410,38 @@ public class TradeServiceImpl implements TradeService {
 
     /**
      * AssetClient 호출 후 Trade 상태 업데이트 + Kafka 발행. 매수 / 매도 분기 처리.
+     * 실패 시 예외를 호출부로 전파 (호출부에서 Trade FAIL 처리 및 응답 결정)
      */
-    private void executeAsset(Trade trade, double executedPrice) {
-        try {
-            if (trade.tradeType() == TradeType.BUY) {
-                assetClient.getAsset(trade.accountId(), trade.totalPrice());
-            } else {
-                assetClient.getStock(new AssetSellRequest(
-                        trade.accountId(), trade.stockCode(),
-                        trade.stockAmount(), executedPrice));
-            }
-            Trade success = Trade.updateSuccess(trade);
-            tradeRepository.updateStatus(success);
-            kafkaProducer.publishTradeResult(
-                    new TradeSucceededEvent(trade.totalPrice(), trade.accountId(), trade.tradeId())
-            );
-        } catch (Exception e) {
-            log.error("[체결 오류] tradeId={} error={}", trade.tradeId(), e.getMessage());
-            tradeRepository.updateStatus(Trade.updateFail(trade));
+    // 수정 전: private void executeAsset(Trade trade, double executedPrice)
+    private void executeAsset(Trade trade, double executedPrice, UUID userId) {
+        // 수정 전:
+        // if (trade.tradeType() == TradeType.BUY) {
+        //     assetClient.getAsset(trade.accountId(), trade.totalPrice());
+        // } else {
+        //     assetClient.getStock(new AssetSellRequest(
+        //             trade.accountId(), trade.stockCode(),
+        //             trade.stockAmount(), executedPrice));
+        // }
+        if (trade.tradeType() == TradeType.BUY) {
+            assetClient.getAsset(userId, new BuyHoldingRequest(
+                    trade.accountId(),
+                    trade.stockCode(),
+                    trade.stockAmount(),
+                    (long) executedPrice   // 주당 가격
+            ));
+        } else {
+            // 수정 전: new AssetSellRequest(..., executedPrice)  ← double을 그대로 넘김
+            assetClient.getStock(userId, new AssetSellRequest(
+                    trade.accountId(), trade.stockCode(),
+                    trade.stockAmount(), (long) executedPrice));
         }
+        Trade success = Trade.updateSuccess(trade);
+        tradeRepository.updateStatus(success);
+        // 수정 전: catch 블록으로 예외를 삼키던 코드 제거
+        // catch (Exception e) {
+        //     log.error("[체결 오류] tradeId={} error={}", trade.tradeId(), e.getMessage());
+        //     tradeRepository.updateStatus(Trade.updateFail(trade));
+        // }
     }
 
     /**
