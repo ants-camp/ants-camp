@@ -87,8 +87,6 @@ public interface DocumentControllerDocs {
     })
     @GetMapping("/{documentId}")
     ResponseEntity<CommonResponse<DocumentDetailResponse>> getDocument(
-            @Parameter(description = "X-Role", in = ParameterIn.HEADER, required = true)
-            @RequestHeader("X-Role") String role,
             @Parameter(description = "문서 UUID", required = true) @PathVariable UUID documentId);
 
     @Operation(summary = "문서 목록 조회", description = "키워드·타입·제목·커서 기반 필터링을 지원합니다.")
