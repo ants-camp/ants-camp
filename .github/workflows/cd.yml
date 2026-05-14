@@ -9,7 +9,7 @@ on:
       deploy_all:
         description: '전체 서비스 강제 배포'
         type: boolean
-        default: false
+        default: true
 
 # ============================================================
 # 배포 방식: GitHub Actions → S3 업로드 → SSM Run Command
