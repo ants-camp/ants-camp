@@ -134,15 +134,15 @@ variable "ports" {
     # domain-ec2
     user    = 8081
     asset   = 8082
-    ranking = 1400
+    ranking = 8094
 
     # domain2-ec2
-    trade       = 1050
-    competition = 1051
+    trade       = 8084
+    competition = 8092
 
     # notification-ec2
-    notification = 1200
-    assistant    = 1201
+    notification = 8098
+    assistant    = 8096
 
     # monitoring-ec2
     prometheus = 9090
