@@ -82,8 +82,8 @@ jobs:
 
           # service|ec2_tag|s3_key|port|container 순서
           SERVICES="
-          user-service|ants-camp-domain-ec2|jars/user-service.jar|8081|antcamp-user
-          asset-service|ants-camp-domain-ec2|jars/asset-service.jar|8082|antcamp-asset
+          user-service|ants-camp-domain-ec2|jars/user-service.jar|8082|antcamp-user
+          asset-service|ants-camp-domain-ec2|jars/asset-service.jar|8086|antcamp-asset
           ranking-service|ants-camp-domain-ec2|jars/ranking-service.jar|8094|antcamp-ranking
           trade-service|ants-camp-domain2-ec2|jars/trade-service.jar|8084|antcamp-trade
           competition-service|ants-camp-domain2-ec2|jars/competition-service.jar|8092|antcamp-competition
