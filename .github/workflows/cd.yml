@@ -50,7 +50,8 @@ jobs:
     name: 변경 서비스 감지
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      infra_matrix: ${{ steps.set-matrix.outputs.infra_matrix }}
+      services_matrix: ${{ steps.set-matrix.outputs.services_matrix }}
 
     steps:
       - uses: actions/checkout@v4.2.2
@@ -78,10 +79,14 @@ jobs:
           CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD 2>/dev/null || echo "")
           COMMON_CHANGED=$(echo "$CHANGED_FILES" | grep "^common/" | wc -l)
 
-          INCLUDES="[]"
+          # ── 1순위: infra 서비스 (Config Server → Eureka 순서 보장) ──
+          INFRA_SERVICES="
+          config-server|ants-camp-infra-ec2|jars/config-server.jar|8888|antcamp-config
+          eureka-server|ants-camp-infra-ec2|jars/eureka-server.jar|8761|antcamp-eureka
+          "
 
-          # service|ec2_tag|s3_key|port|container 순서
-          SERVICES="
+          # ── 2순위: 도메인 서비스 ──────────────────────────────────
+          DOMAIN_SERVICES="
           user-service|ants-camp-domain-ec2|jars/user-service.jar|8082|antcamp-user
           asset-service|ants-camp-domain-ec2|jars/asset-service.jar|8086|antcamp-asset
           ranking-service|ants-camp-domain-ec2|jars/ranking-service.jar|8094|antcamp-ranking
@@ -90,49 +95,53 @@ jobs:
           notification-service|ants-camp-notification-ec2|jars/notification-service.jar|8098|antcamp-notification
           assistant-service|ants-camp-notification-ec2|jars/assistant-service.jar|8096|antcamp-assistant
           api-gateway|ants-camp-gateway-ec2|jars/api-gateway.jar|8080|antcamp-gateway
-          config-server|ants-camp-infra-ec2|jars/config-server.jar|8888|antcamp-config
-          eureka-server|ants-camp-infra-ec2|jars/eureka-server.jar|8761|antcamp-eureka
           "
 
-          while IFS='|' read -r SERVICE EC2_TAG S3_KEY PORT CONTAINER; do
-            SERVICE=$(echo "$SERVICE" | xargs)
-            [ -z "$SERVICE" ] && continue
+          build_matrix() {
+            local SERVICE_LIST="$1"
+            local INCLUDES="[]"
+            while IFS='|' read -r SERVICE EC2_TAG S3_KEY PORT CONTAINER; do
+              SERVICE=$(echo "$SERVICE" | xargs)
+              [ -z "$SERVICE" ] && continue
+              if [ "$DEPLOY_ALL" = "true" ] || [ "$COMMON_CHANGED" -gt "0" ]; then
+                CHANGED=1
+              else
+                CHANGED=$(echo "$CHANGED_FILES" | grep "^apps/$SERVICE/" | wc -l)
+              fi
+              if [ "$CHANGED" -gt "0" ]; then
+                echo "배포 대상: $SERVICE"
+                ENTRY=$(jq -n \
+                  --arg svc "$SERVICE" --arg tag "$EC2_TAG" \
+                  --arg key "$S3_KEY" --arg port "$PORT" --arg ctr "$CONTAINER" \
+                  '{service: $svc, ec2_tag: $tag, s3_key: $key, port: $port, container: $ctr}')
+                INCLUDES=$(echo "$INCLUDES" | jq ". += [$ENTRY]")
+              fi
+            done <<< "$SERVICE_LIST"
+            echo "$INCLUDES" | jq -c '{include: .}'
+          }
 
-            if [ "$DEPLOY_ALL" = "true" ] || [ "$COMMON_CHANGED" -gt "0" ]; then
-              CHANGED=1
-            else
-              CHANGED=$(echo "$CHANGED_FILES" | grep "^apps/$SERVICE/" | wc -l)
-            fi
+          INFRA_MATRIX=$(build_matrix "$INFRA_SERVICES")
+          SERVICES_MATRIX=$(build_matrix "$DOMAIN_SERVICES")
 
-            if [ "$CHANGED" -gt "0" ]; then
-              echo "배포 대상: $SERVICE"
-              ENTRY=$(jq -n \
-                --arg svc "$SERVICE" \
-                --arg tag "$EC2_TAG" \
-                --arg key "$S3_KEY" \
-                --arg port "$PORT" \
-                --arg ctr "$CONTAINER" \
-                '{service: $svc, ec2_tag: $tag, s3_key: $key, port: $port, container: $ctr}')
-              INCLUDES=$(echo "$INCLUDES" | jq ". += [$ENTRY]")
-            fi
-          done <<< "$SERVICES"
-
-          MATRIX=$(echo "$INCLUDES" | jq -c '{include: .}')
-          echo "최종 matrix: $MATRIX"
-          echo "matrix=$MATRIX" >> $GITHUB_OUTPUT
+          echo "infra_matrix: $INFRA_MATRIX"
+          echo "services_matrix: $SERVICES_MATRIX"
+          echo "infra_matrix=$INFRA_MATRIX" >> $GITHUB_OUTPUT
+          echo "services_matrix=$SERVICES_MATRIX" >> $GITHUB_OUTPUT
 
   # ──────────────────────────────────────────────────────────
   # 2. 빌드 → S3 업로드 → SSM 배포
   # ──────────────────────────────────────────────────────────
-  deploy:
-    name: 배포 - ${{ matrix.service }}
+  # 2. infra 먼저 배포 (Config Server → Eureka)
+  # ──────────────────────────────────────────────────────────
+  deploy-infra:
+    name: "[infra] 배포 - ${{ matrix.service }}"
     runs-on: ubuntu-latest
     needs: detect-changes
-    if: ${{ needs.detect-changes.result == 'success' && fromJson(needs.detect-changes.outputs.matrix).include[0] != null }}
+    if: ${{ needs.detect-changes.result == 'success' && fromJson(needs.detect-changes.outputs.infra_matrix).include[0] != null }}
 
     strategy:
-      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-      max-parallel: 1     # EC2 부하 방지: 같은 EC2 대상 순차 실행
+      matrix: ${{ fromJson(needs.detect-changes.outputs.infra_matrix) }}
+      max-parallel: 1
       fail-fast: false
 
     steps:
@@ -140,6 +149,107 @@ jobs:
 
       - name: JDK 17 설정
         uses: actions/setup-java@v4.7.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Gradlew 실행 권한
+        run: chmod +x gradlew
+
+      - name: 빌드 - ${{ matrix.service }}
+        run: |
+          ./gradlew :apps:${{ matrix.service }}:bootJar -x test
+          JAR=$(find apps/${{ matrix.service }}/build/libs/ -name "*.jar" ! -name "*plain*" | head -1)
+          echo "JAR_PATH=$JAR" >> $GITHUB_ENV
+
+      - name: AWS 인증
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: S3 업로드
+        run: |
+          aws s3 cp "${{ env.JAR_PATH }}" "s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}"
+
+      - name: EC2 Instance ID 조회
+        id: get-instance
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=${{ matrix.ec2_tag }}" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" --output text)
+          [ "$INSTANCE_ID" = "None" ] && { echo "EC2 없음: ${{ matrix.ec2_tag }}"; exit 1; }
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: SSM 배포 - ${{ matrix.service }}
+        id: ssm-deploy
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ steps.get-instance.outputs.instance_id }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=[
+              \"set -eux\",
+              \"APP_DIR=/opt/ants-camp\",
+              \"mkdir -p \$APP_DIR\",
+              \"JAR_FILE=\$APP_DIR/${{ matrix.service }}.jar\",
+              \"CONTAINER=${{ matrix.container }}\",
+              \"PORT=${{ matrix.port }}\",
+              \"aws s3 cp s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }} \$JAR_FILE\",
+              \"docker stop \$CONTAINER 2>/dev/null || true\",
+              \"docker rm \$CONTAINER 2>/dev/null || true\",
+              \"OLD=\$(docker ps -q --filter publish=\$PORT 2>/dev/null); if [ -n \\\"\$OLD\\\" ]; then docker stop \$OLD 2>/dev/null || true; docker rm \$OLD 2>/dev/null || true; fi\",
+              \"docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT --env-file \$APP_DIR/.env -v \$JAR_FILE:/app/app.jar:ro eclipse-temurin:17-jre-jammy java -Xms256m -Xmx512m -jar /app/app.jar --server.port=\$PORT\",
+              \"echo '헬스체크 (최대 3분)...'\",
+              \"sleep 30\",
+              \"set +e\",
+              \"HEALTH_OK=0; for i in \$(seq 1 15); do HTTP=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:\$PORT/actuator/health 2>/dev/null); if [ \\\"\$HTTP\\\" = \\\"200\\\" ]; then echo \\\"헬스체크 성공 (시도 \$i)\\\"; HEALTH_OK=1; break; fi; echo \\\"대기 중... (\$i/15, HTTP '\$HTTP')\\\"; sleep 10; done\",
+              \"if [ \\\"\$HEALTH_OK\\\" != \\\"1\\\" ]; then echo \\\"헬스체크 실패\\\"; docker logs --tail 80 \$CONTAINER 2>&1; exit 1; fi\"
+            ]" \
+            --timeout-seconds 400 \
+            --query "Command.CommandId" --output text)
+          echo "command_id=$COMMAND_ID" >> $GITHUB_OUTPUT
+
+      - name: SSM 결과 확인
+        run: |
+          COMMAND_ID="${{ steps.ssm-deploy.outputs.command_id }}"
+          INSTANCE_ID="${{ steps.get-instance.outputs.instance_id }}"
+          for i in $(seq 1 40); do
+            STATUS=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query "Status" --output text 2>/dev/null || echo "Pending")
+            echo "[$i/40] Status: $STATUS"
+            if [ "$STATUS" = "Success" ] || [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ]; then break; fi
+            sleep 10
+          done
+          RESULT=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+            --query '{Status: Status, Output: StandardOutputContent, Error: StandardErrorContent}' --output json)
+          echo "=== EC2 실행 로그 ===" && echo "$RESULT" | jq -r '.Output'
+          [ "$(echo $RESULT | jq -r '.Status')" != "Success" ] && { echo "=== 에러 로그 ===" && echo "$RESULT" | jq -r '.Error'; exit 1; }
+
+  # ──────────────────────────────────────────────────────────
+  # 3. 도메인 서비스 배포 (infra 완료 후 실행)
+  # ──────────────────────────────────────────────────────────
+  deploy:
+    name: "배포 - ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+    needs: [detect-changes, deploy-infra]
+    if: |
+      always() &&
+      needs.detect-changes.result == 'success' &&
+      (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped') &&
+      fromJson(needs.detect-changes.outputs.services_matrix).include[0] != null
+
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.services_matrix) }}
+      max-parallel: 1
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4.7.0
+
         with:
           java-version: '17'
           distribution: 'temurin'
@@ -215,7 +325,9 @@ jobs:
               \"docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT --env-file \$APP_DIR/.env -v \$JAR_FILE:/app/app.jar:ro eclipse-temurin:17-jre-jammy java -Xms256m -Xmx512m -jar /app/app.jar --server.port=\$PORT\",
               \"echo '헬스체크 (최대 3분)...' \",
               \"sleep 30\",
-              \"for i in \$(seq 1 15); do HTTP=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:\$PORT/actuator/health 2>/dev/null); if [ \\\"\$HTTP\\\" = \\\"200\\\" ]; then echo \\\"헬스체크 성공 (시도 \$i)\\\"; exit 0; fi; echo \\\"대기 중... (\$i/15, HTTP '\$HTTP')\\\"; sleep 10; done; echo \\\"헬스체크 실패 - 컨테이너 로그:\\\"; docker logs --tail 80 \$CONTAINER 2>&1; exit 1\"
+              \"set +e\",
+              \"HEALTH_OK=0; for i in \$(seq 1 15); do HTTP=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:\$PORT/actuator/health 2>/dev/null); if [ \\\"\$HTTP\\\" = \\\"200\\\" ]; then echo \\\"헬스체크 성공 (시도 \$i)\\\"; HEALTH_OK=1; break; fi; echo \\\"대기 중... (\$i/15, HTTP '\$HTTP')\\\"; sleep 10; done\",
+              \"if [ \\\"\$HEALTH_OK\\\" != \\\"1\\\" ]; then echo \\\"헬스체크 실패 - 컨테이너 로그:\\\"; docker logs --tail 80 \$CONTAINER 2>&1; exit 1; fi\"
             ]" \
             --timeout-seconds 300 \
             --query "Command.CommandId" \
