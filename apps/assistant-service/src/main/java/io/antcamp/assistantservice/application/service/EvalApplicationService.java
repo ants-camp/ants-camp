@@ -63,7 +63,7 @@ public class EvalApplicationService {
 
     public EvalResultListResult getEvalResults(GetEvalResultsQuery query) {
         CursorSlice<EvalResultView, LocalDateTime> slice = evalRepository.findResults(
-                query.judgeModel(), query.lastUpdatedAt(), query.startDate(), query.endDate(), PAGE_SIZE);
+                query.judgeModel(), query.lastUpdatedAt(), query.startDate(), query.endDate(), query.runId(), PAGE_SIZE);
 
         List<EvalResultItemResult> content = slice.items().stream()
                 .map(EvalResultItemResult::from)

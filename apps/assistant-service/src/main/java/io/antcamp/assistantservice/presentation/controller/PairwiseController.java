@@ -34,7 +34,7 @@ public class PairwiseController {
         return CommonResponse.created("Pairwise 비교가 시작되었습니다.", null);
     }
 
-    // Pairwise 결과 집계 조회
+    // Pairwise 결과 집계 + 진행 상태 조회
     @GetMapping
     public ResponseEntity<CommonResponse<PairwiseSummaryResponse>> getSummary(
             @RequestHeader("X-Role") String role,
@@ -45,6 +45,8 @@ public class PairwiseController {
         PairwiseSummary summary = pairwiseApplicationService.getSummary(evalRunIdA, evalRunIdB);
         String ragModelA = pairwiseApplicationService.getRagModel(evalRunIdA);
         String ragModelB = pairwiseApplicationService.getRagModel(evalRunIdB);
-        return CommonResponse.ok(PairwiseSummaryResponse.from(summary, ragModelA, ragModelB));
+        return CommonResponse.ok(PairwiseSummaryResponse.from(
+                summary, ragModelA, ragModelB,
+                pairwiseApplicationService.findLatestRun(evalRunIdA, evalRunIdB)));
     }
 }

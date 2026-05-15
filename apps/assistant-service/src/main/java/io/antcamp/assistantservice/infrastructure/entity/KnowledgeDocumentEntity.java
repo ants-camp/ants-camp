@@ -71,7 +71,8 @@ public class KnowledgeDocumentEntity extends BaseEntity {
         return KnowledgeDocument.restore(
                 this.documentId, this.title, this.type,
                 this.content, this.ingestStatus, this.getUpdatedAt(),
-                this.failureReason, this.retryCount, this.lastAttemptAt
+                this.failureReason, this.retryCount, this.lastAttemptAt,
+                this.getCreatedAt()
         );
     }
 }

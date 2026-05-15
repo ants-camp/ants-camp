@@ -5,14 +5,15 @@ import io.antcamp.assistantservice.domain.model.KnowledgeDocument;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record DocumentItemResult(UUID documentId, String title, String type, LocalDateTime updatedAt) {
+public record DocumentItemResult(UUID documentId, String title, String type, LocalDateTime updatedAt, String ingestStatus) {
 
     public static DocumentItemResult from(KnowledgeDocument document) {
         return new DocumentItemResult(
                 document.getDocumentId(),
                 document.getTitle(),
                 document.getType().name(),
-                document.getUpdatedAt()
+                document.getUpdatedAt(),
+                document.getIngestStatus().name()
         );
     }
 }

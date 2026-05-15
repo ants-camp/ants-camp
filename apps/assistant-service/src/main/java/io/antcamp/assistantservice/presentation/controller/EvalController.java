@@ -76,11 +76,12 @@ public class EvalController {
             @RequestParam(required = false) String judgeModel,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime lastUpdatedAt,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) UUID runId
     ) {
         managerRoleGuard.require(role);
         EvalResultListResult result = evalApplicationService.getEvalResults(
-                new GetEvalResultsQuery(judgeModel, lastUpdatedAt, startDate, endDate));
+                new GetEvalResultsQuery(judgeModel, lastUpdatedAt, startDate, endDate, runId));
         return CommonResponse.ok(EvalResultListResponse.from(result));
     }
 }
