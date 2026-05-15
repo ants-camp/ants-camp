@@ -9,7 +9,7 @@ import org.springframework.data.domain.AuditorAware;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"io.antcamp.competitionservice", "common"})
 @EnableJpaAuditing
 @EnableScheduling
 @EnableDiscoveryClient

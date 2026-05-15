@@ -33,4 +33,12 @@ public class RankingRepositoryImpl implements RankingRepository {
                 .map(RankingEntity::toDomain)
                 .toList();
     }
+
+    @Override
+    public List<Ranking> findAllByUserId(UUID userId) {
+        return jpaRepository.findAllByUserIdAndIsFinalizedTrue(userId)
+                .stream()
+                .map(RankingEntity::toDomain)
+                .toList();
+    }
 }

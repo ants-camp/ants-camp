@@ -287,9 +287,15 @@ public class TradeServiceImpl implements TradeService {
                         request.accountId(), request.stockCode(), e.getMessage());
                 throw new BusinessException(ErrorCode.ASSET_SERVICE_ERROR);
             }
-            if (held < request.stockAmount()) {
-                log.info("[주문] 보유 부족 거부 — accountId={} stockCode={} 보유={} 요청={}",
-                        request.accountId(), request.stockCode(), held, request.stockAmount());
+            // 이미 PENDING 상태인 지정가 매도 주문에 묶인 수량을 차감해 실제 가용 수량 계산.
+            // 이를 반영하지 않으면 보유 1주로 지정가 매도 주문을 무제한 적재할 수 있음.
+            int lockedInPending = tradeRepository.sumPendingLimitSellQuantity(
+                    request.accountId(), request.stockCode());
+            int available = held - lockedInPending;
+            if (available < request.stockAmount()) {
+                log.info("[주문] 보유 부족 거부 — accountId={} stockCode={} 보유={} 미체결잠금={} 가용={} 요청={}",
+                        request.accountId(), request.stockCode(), held, lockedInPending,
+                        available, request.stockAmount());
                 throw new BusinessException(ErrorCode.INSUFFICIENT_HOLDINGS);
             }
             return;

@@ -9,7 +9,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"io.antcamp.tradeservice", "common"})
 @EnableFeignClients(basePackageClasses = KisClient.class)
 @EnableDiscoveryClient
 @EnableScheduling
