@@ -212,9 +212,9 @@ jobs:
               \"docker rm \$CONTAINER 2>/dev/null || true\",
               \"echo '새 컨테이너 기동...' \",
               \"docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT --env-file \$APP_DIR/.env -v \$JAR_FILE:/app/app.jar:ro eclipse-temurin:17-jre-jammy java -Xms256m -Xmx512m -jar /app/app.jar --server.port=\$PORT\",
-              \"echo '헬스체크...' \",
-              \"sleep 20\",
-              \"for i in \$(seq 1 6); do HTTP=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:\$PORT/actuator/health 2>/dev/null || echo 000); if [ \\\"\$HTTP\\\" = \\\"200\\\" ]; then echo \\\"헬스체크 성공\\\"; exit 0; fi; echo \\\"대기 중... (\$i/6, HTTP \$HTTP)\\\"; sleep 10; done; echo \\\"헬스체크 실패\\\"; docker logs --tail 50 \$CONTAINER; exit 1\"
+              \"echo '헬스체크 (최대 3분)...' \",
+              \"sleep 30\",
+              \"for i in \$(seq 1 15); do HTTP=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:\$PORT/actuator/health 2>/dev/null); if [ \\\"\$HTTP\\\" = \\\"200\\\" ]; then echo \\\"헬스체크 성공 (시도 \$i)\\\"; exit 0; fi; echo \\\"대기 중... (\$i/15, HTTP '\$HTTP')\\\"; sleep 10; done; echo \\\"헬스체크 실패 - 컨테이너 로그:\\\"; docker logs --tail 80 \$CONTAINER 2>&1; exit 1\"
             ]" \
             --timeout-seconds 300 \
             --query "Command.CommandId" \
@@ -229,25 +229,37 @@ jobs:
           COMMAND_ID="${{ steps.ssm-deploy.outputs.command_id }}"
           INSTANCE_ID="${{ steps.get-instance.outputs.instance_id }}"
 
-          echo "SSM 명령 완료 대기 중..."
-          aws ssm wait command-executed \
-            --command-id "$COMMAND_ID" \
-            --instance-id "$INSTANCE_ID" \
-            --region "${{ env.AWS_REGION }}" || true
+          echo "SSM 명령 완료 대기 중... (Command ID: $COMMAND_ID)"
 
-          # 상세 결과 조회
+          # polling 방식으로 결과 대기 (waiter 대신)
+          for i in $(seq 1 30); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query "Status" --output text 2>/dev/null || echo "Pending")
+
+            echo "[$i/30] Status: $STATUS"
+
+            if [ "$STATUS" = "Success" ]; then
+              break
+            elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          # 전체 결과 출력
           RESULT=$(aws ssm get-command-invocation \
             --command-id "$COMMAND_ID" \
             --instance-id "$INSTANCE_ID" \
             --query '{Status: Status, Output: StandardOutputContent, Error: StandardErrorContent}' \
             --output json)
 
-          STATUS=$(echo "$RESULT" | jq -r '.Status')
-          echo "=== SSM 실행 결과 ==="
+          echo "=== EC2 실행 로그 ==="
           echo "$RESULT" | jq -r '.Output'
 
           if [ "$STATUS" != "Success" ]; then
-            echo "=== 에러 출력 ==="
+            echo "=== 에러 로그 ==="
             echo "$RESULT" | jq -r '.Error'
             echo "배포 실패 (Status: $STATUS)"
             exit 1
