@@ -184,6 +184,15 @@ resource "aws_security_group" "monitoring" {
     cidr_blocks = [var.vpc_cidr]
   }
 
+  # Zipkin: VPC 내부 서비스에서 트레이스 전송
+  ingress {
+    description = "Zipkin from VPC"
+    from_port   = 9411
+    to_port     = 9411
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
   # SSH: 관리자 IP에서만
   ingress {
     description = "SSH from admin"
