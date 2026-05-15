@@ -84,8 +84,8 @@ public class EvalPersistenceAdapter implements EvalRepository {
 
     @Override
     public CursorSlice<EvalResultView, LocalDateTime> findResults(
-            String judgeModel, LocalDateTime lastUpdatedAt, LocalDate startDate, LocalDate endDate, int pageSize) {
-        return evalResultQueryRepository.findResults(judgeModel, lastUpdatedAt, startDate, endDate, pageSize);
+            String judgeModel, LocalDateTime lastUpdatedAt, LocalDate startDate, LocalDate endDate, UUID runId, int pageSize) {
+        return evalResultQueryRepository.findResults(judgeModel, lastUpdatedAt, startDate, endDate, runId, pageSize);
     }
 
     @Override

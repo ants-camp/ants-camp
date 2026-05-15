@@ -44,10 +44,8 @@ public class DocumentController implements DocumentControllerDocs {
 
     @GetMapping("/{documentId}")
     public ResponseEntity<CommonResponse<DocumentDetailResponse>> getDocument(
-            @RequestHeader("X-Role") String role,
             @PathVariable UUID documentId
     ) {
-        managerRoleGuard.require(role);
         return CommonResponse.ok(DocumentDetailResponse.from(documentApplicationService.getDocument(documentId)));
     }
 

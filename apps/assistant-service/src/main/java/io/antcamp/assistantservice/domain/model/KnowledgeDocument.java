@@ -18,6 +18,7 @@ public class KnowledgeDocument {
     private String content;
     private IngestStatus ingestStatus;
     private LocalDateTime updatedAt;
+    private LocalDateTime createdAt;
     private String failureReason;
     private int retryCount;
     private LocalDateTime lastAttemptAt;
@@ -38,7 +39,8 @@ public class KnowledgeDocument {
 
     public static KnowledgeDocument restore(UUID documentId, String title, DocType type,
                                             String content, IngestStatus ingestStatus, LocalDateTime updatedAt,
-                                            String failureReason, int retryCount, LocalDateTime lastAttemptAt) {
+                                            String failureReason, int retryCount, LocalDateTime lastAttemptAt,
+                                            LocalDateTime createdAt) {
         return KnowledgeDocument.builder()
                 .documentId(documentId)
                 .title(title)
@@ -46,6 +48,7 @@ public class KnowledgeDocument {
                 .content(content)
                 .ingestStatus(ingestStatus)
                 .updatedAt(updatedAt)
+                .createdAt(createdAt)
                 .failureReason(failureReason)
                 .retryCount(retryCount)
                 .lastAttemptAt(lastAttemptAt)

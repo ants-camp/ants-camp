@@ -4,6 +4,7 @@ import io.antcamp.assistantservice.application.dto.command.RunPairwiseCommand;
 import io.antcamp.assistantservice.domain.exception.EvalRunNotFoundException;
 import io.antcamp.assistantservice.domain.exception.InvalidEvaluationException;
 import io.antcamp.assistantservice.domain.model.EvalRun;
+import io.antcamp.assistantservice.domain.model.PairwiseRun;
 import io.antcamp.assistantservice.domain.model.PairwiseSummary;
 import io.antcamp.assistantservice.domain.repository.EvalRepository;
 import io.antcamp.assistantservice.domain.repository.PairwiseRepository;
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -35,7 +37,10 @@ public class PairwiseApplicationService {
             throw InvalidEvaluationException.sameRunConfig();
         }
 
-        pairwiseProcessor.comparePairwise(command);
+        PairwiseRun run = pairwiseRepository.savePairwiseRun(
+                PairwiseRun.create(command.evalRunIdA(), command.evalRunIdB()));
+
+        pairwiseProcessor.comparePairwise(run.getPairwiseRunId(), command);
     }
 
     public PairwiseSummary getSummary(UUID evalRunIdA, UUID evalRunIdB) {
@@ -46,5 +51,9 @@ public class PairwiseApplicationService {
         return evalRepository.findEvalRunById(evalRunId)
                 .orElseThrow(EvalRunNotFoundException::new)
                 .getRagModel();
+    }
+
+    public Optional<PairwiseRun> findLatestRun(UUID evalRunIdA, UUID evalRunIdB) {
+        return pairwiseRepository.findLatestRun(evalRunIdA, evalRunIdB);
     }
 }

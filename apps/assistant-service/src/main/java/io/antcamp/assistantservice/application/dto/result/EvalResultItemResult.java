@@ -19,7 +19,11 @@ public record EvalResultItemResult(
         String feedback,
         LocalDateTime evaluatedAt,
         List<RetrievedChunk> retrievedChunks,
-        String promptUsed
+        String promptUsed,
+        UUID runId,
+        String ragModel,
+        List<String> judgeModels,
+        String memo
 ) {
     public static EvalResultItemResult from(EvalResultView view) {
         return new EvalResultItemResult(
@@ -34,7 +38,11 @@ public record EvalResultItemResult(
                 view.scores().feedback(),
                 view.evaluatedAt(),
                 view.retrievedChunks(),
-                view.promptUsed()
+                view.promptUsed(),
+                view.runId(),
+                view.ragModel(),
+                view.judgeModels(),
+                view.memo()
         );
     }
 }

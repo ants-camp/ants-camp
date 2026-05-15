@@ -32,7 +32,7 @@ public interface EvalRepository {
     EvalResult saveEvalResult(EvalResult evalResult);
 
     CursorSlice<EvalResultView, LocalDateTime> findResults(
-            String judgeModel, LocalDateTime lastUpdatedAt, LocalDate startDate, LocalDate endDate, int pageSize);
+            String judgeModel, LocalDateTime lastUpdatedAt, LocalDate startDate, LocalDate endDate, UUID runId, int pageSize);
 
     EvalSummary calculateSummary(String judgeModel, LocalDate startDate, LocalDate endDate);
 }

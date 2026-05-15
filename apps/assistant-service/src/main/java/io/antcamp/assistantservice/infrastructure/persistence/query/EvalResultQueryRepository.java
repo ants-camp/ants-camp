@@ -9,6 +9,7 @@ import io.antcamp.assistantservice.domain.model.EvalResultView;
 import io.antcamp.assistantservice.domain.model.EvalScores;
 import io.antcamp.assistantservice.domain.model.RetrievedChunk;
 import io.antcamp.assistantservice.infrastructure.entity.QEvalResultEntity;
+import io.antcamp.assistantservice.infrastructure.entity.QEvalRunEntity;
 import io.antcamp.assistantservice.infrastructure.entity.QRagQueryEntity;
 import io.antcamp.assistantservice.infrastructure.util.JsonConverter;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 @Repository
 @RequiredArgsConstructor
@@ -25,10 +27,11 @@ public class EvalResultQueryRepository {
     private final JPAQueryFactory queryFactory;
 
     public CursorSlice<EvalResultView, LocalDateTime> findResults(
-            String judgeModel, LocalDateTime lastUpdatedAt, LocalDate startDate, LocalDate endDate, int pageSize) {
+            String judgeModel, LocalDateTime lastUpdatedAt, LocalDate startDate, LocalDate endDate, UUID runId, int pageSize) {
 
         QEvalResultEntity eval = QEvalResultEntity.evalResultEntity;
         QRagQueryEntity rag = QRagQueryEntity.ragQueryEntity;
+        QEvalRunEntity run = QEvalRunEntity.evalRunEntity;
 
         List<Tuple> rows = queryFactory
                 .select(
@@ -41,16 +44,22 @@ public class EvalResultQueryRepository {
                         eval.createdAt,
                         eval.updatedAt,
                         rag.retrievedChunks,
-                        rag.promptUsed
+                        rag.promptUsed,
+                        run.evalRunId,
+                        run.ragModel,
+                        run.judgeModels,
+                        run.memo
                 )
                 .from(eval)
                 .join(rag).on(eval.ragQueryId.eq(rag.ragQueryId))
+                .join(run).on(eval.evalRunId.eq(run.evalRunId))
                 .where(
                         eval.deletedAt.isNull(),
                         judgeModelEq(eval, judgeModel),
                         cursorBefore(eval, lastUpdatedAt),
                         startDateGte(eval, startDate),
-                        endDateLt(eval, endDate)
+                        endDateLt(eval, endDate),
+                        runIdEq(eval, runId)
                 )
                 .orderBy(eval.updatedAt.desc())
                 .limit(pageSize + 1L)
@@ -60,13 +69,14 @@ public class EvalResultQueryRepository {
         List<Tuple> page = hasNext ? rows.subList(0, pageSize) : rows;
         LocalDateTime nextCursor = page.isEmpty() ? null : page.get(page.size() - 1).get(eval.updatedAt);
 
-        List<EvalResultView> views = page.stream().map(t -> toView(t, eval, rag)).toList();
+        List<EvalResultView> views = page.stream().map(t -> toView(t, eval, rag, run)).toList();
         return new CursorSlice<>(views, hasNext, nextCursor);
     }
 
-    private EvalResultView toView(Tuple t, QEvalResultEntity eval, QRagQueryEntity rag) {
+    private EvalResultView toView(Tuple t, QEvalResultEntity eval, QRagQueryEntity rag, QEvalRunEntity run) {
         EvalScores scores = JsonConverter.fromJson(t.get(eval.scores), new TypeReference<>() {});
         List<RetrievedChunk> chunks = JsonConverter.fromJson(t.get(rag.retrievedChunks), new TypeReference<>() {});
+        List<String> judgeModels = JsonConverter.fromJson(t.get(run.judgeModels), new TypeReference<>() {});
         return new EvalResultView(
                 t.get(eval.evalResultId),
                 t.get(eval.ragQueryId),
@@ -76,7 +86,11 @@ public class EvalResultQueryRepository {
                 scores,
                 t.get(eval.createdAt),
                 chunks,
-                t.get(rag.promptUsed)
+                t.get(rag.promptUsed),
+                t.get(run.evalRunId),
+                t.get(run.ragModel),
+                judgeModels,
+                t.get(run.memo)
         );
     }
 
@@ -94,5 +108,9 @@ public class EvalResultQueryRepository {
 
     private BooleanExpression endDateLt(QEvalResultEntity eval, LocalDate endDate) {
         return endDate != null ? eval.createdAt.lt(endDate.plusDays(1).atStartOfDay()) : null;
+    }
+
+    private BooleanExpression runIdEq(QEvalResultEntity eval, UUID runId) {
+        return runId != null ? eval.evalRunId.eq(runId) : null;
     }
 }
