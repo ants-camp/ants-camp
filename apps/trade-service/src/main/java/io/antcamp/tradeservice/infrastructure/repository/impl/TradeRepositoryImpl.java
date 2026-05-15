@@ -57,4 +57,9 @@ public class TradeRepositoryImpl implements TradeRepository {
                 .map(TradeEntity::toDomain)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public int sumPendingLimitSellQuantity(UUID accountId, String stockCode) {
+        return tradeJpaRepository.sumPendingLimitSellQuantity(accountId, stockCode);
+    }
 }
