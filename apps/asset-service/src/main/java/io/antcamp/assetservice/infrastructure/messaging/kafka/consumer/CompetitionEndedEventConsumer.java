@@ -1,26 +1,25 @@
 package io.antcamp.assetservice.infrastructure.messaging.kafka.consumer;
 
 import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
+import io.antcamp.assetservice.application.event.TotalAssetEventProducer;
 import io.antcamp.assetservice.application.service.AssetService;
+import io.antcamp.assetservice.domain.event.payload.CompetitionEndedEvent;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
-import io.antcamp.assetservice.application.event.TotalAssetEventProducer;
 import io.antcamp.assetservice.infrastructure.client.StockPriceClient;
-import io.antcamp.assetservice.domain.event.payload.CompetitionEndedEvent;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -55,10 +54,11 @@ public class CompetitionEndedEventConsumer {
     @KafkaListener(
             topics = "${topics.competition.finished}",
             groupId = "${spring.kafka.consumer.group-id}",
-            containerFactory = "competitionRegisteredFactory"
+            containerFactory = "competitionEndedFactory"
     )
     public void handleCompetitionEnded(CompetitionEndedEvent payload) {
-        log.info("[Kafka] CompetitionEndedEvent 수신. competitionId={}, 참가자수={}", payload.competitionId(), payload.participantUserIds().size());
+        log.info("[Kafka] CompetitionEndedEvent 수신. competitionId={}, 참가자수={}", payload.competitionId(),
+                payload.participantUserIds().size());
         String lockKey = "lock:competition:ended:" + payload.competitionId();
         String lockToken = UUID.randomUUID().toString();
 
@@ -75,8 +75,14 @@ public class CompetitionEndedEventConsumer {
 
             List<Account> accounts = accountRepository.findAllByCompetitionId(payload.competitionId());
 
-            if (accounts.isEmpty() || accounts.get(0).isEnded()) {
-                log.warn("이미 종료 처리된 대회입니다. competitionId={}", payload.competitionId());
+            // 수정 전: accounts.isEmpty() || accounts.get(0).isEnded()
+            //   ← 첫 번째 계좌만 검사하므로 부분 처리된 경우 나머지 계좌가 영원히 미종료로 남을 수 있음
+            if (accounts.isEmpty()) {
+                log.warn("종료 이벤트 수신했으나 계좌가 없습니다. competitionId={}", payload.competitionId());
+                return;
+            }
+            if (accounts.stream().allMatch(Account::isEnded)) {
+                log.warn("이미 모든 계좌가 종료 처리된 대회입니다. competitionId={}", payload.competitionId());
                 return;
             }
 
@@ -88,7 +94,8 @@ public class CompetitionEndedEventConsumer {
                     String cacheKey = cachePrefix + holding.getStockCode();
                     Long price = redisTemplate.opsForValue().get(cacheKey);
                     if (price == null) {
-                        price = stockPriceClient.getPriceAt(holding.getStockCode(), payload.endedAt()).getData().longValue();
+                        price = stockPriceClient.getPriceAt(holding.getStockCode(), payload.endedAt()).getData()
+                                .longValue();
                         redisTemplate.opsForValue().set(cacheKey, price, 1, TimeUnit.HOURS);
                     }
                     priceCache.put(holding.getStockCode(), price);

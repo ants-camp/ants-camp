@@ -2,12 +2,13 @@ package io.antcamp.rankingservice.presentation;
 
 import common.dto.CommonResponse;
 import io.antcamp.rankingservice.application.RankingService;
+import io.antcamp.rankingservice.presentation.docs.RankingControllerDocs;
 import io.antcamp.rankingservice.presentation.dto.FinalizeRankingsResponse;
+import io.antcamp.rankingservice.presentation.dto.MyCompetitionHistoryResponse;
 import io.antcamp.rankingservice.presentation.dto.MyRankingResponse;
 import io.antcamp.rankingservice.presentation.dto.RankingResponse;
 import java.util.List;
 import java.util.UUID;
-import io.antcamp.rankingservice.presentation.docs.RankingControllerDocs;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,6 +50,16 @@ public class RankingController implements RankingControllerDocs {
         return CommonResponse.ok(rankingService.findTopRankings(competitionId, page, size)
                 .stream()
                 .map(RankingResponse::from)
+                .toList());
+    }
+
+    // 내 대회 참여 이력 조회 (확정된 대회만)
+    @GetMapping("/me")
+    public ResponseEntity<CommonResponse<List<MyCompetitionHistoryResponse>>> findMyHistory(
+            @RequestHeader("X-User-Id") UUID userId) {
+        return CommonResponse.ok(rankingService.findMyHistory(userId)
+                .stream()
+                .map(MyCompetitionHistoryResponse::from)
                 .toList());
     }
 }

@@ -1,8 +1,16 @@
 package io.antcamp.tradeservice.application.service;
 
+import io.antcamp.tradeservice.domain.model.Trade;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
-import io.antcamp.tradeservice.presentation.dto.*;
-
+import io.antcamp.tradeservice.presentation.dto.BuyStockResponse;
+import io.antcamp.tradeservice.presentation.dto.DailyChartResponse;
+import io.antcamp.tradeservice.presentation.dto.MinutePriceResponse;
+import io.antcamp.tradeservice.presentation.dto.PendingOrderResponse;
+import io.antcamp.tradeservice.presentation.dto.SellStockResponse;
+import io.antcamp.tradeservice.presentation.dto.StockList;
+import io.antcamp.tradeservice.presentation.dto.StockPriceList;
+import io.antcamp.tradeservice.presentation.dto.TradeOrderRequest;
+import io.antcamp.tradeservice.presentation.dto.TradeOrderResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -11,27 +19,32 @@ public interface TradeService {
 
     // ── 토큰 ─────────────────────────────────────────────────────────────
     AccessTokenResponse requestAccessToken();
+
     String requestApprovalKey();
+
     void clearAll();
 
     // ── 가격 조회 ─────────────────────────────────────────────────────────
     double getMinutePrice(String stockCode, LocalDateTime dateTime);
+
     double getNowPrice(String stockCode, LocalDateTime dateTime);
+
     MinutePriceResponse getPrice(String stockCode, LocalDateTime dateTime);
+
     StockPriceList stockPriceList(StockList stockList, LocalDateTime dateTime);
+
     DailyChartResponse getDailyChart(String stockCode, String startDate, String endDate, String periodDivCode);
 
     // ── 주문 (시장가 / 지정가 통합) ────────────────────────────────────────
-    /**
-     * 매수/매도 주문.
-     * - MARKET : 현재가로 즉시 체결
-     * - LIMIT  : 조건 충족 시 즉시 체결, 미충족 시 PENDING 으로 저장
-     */
-    TradeOrderResponse placeOrder(TradeOrderRequest request, UUID accountId);
 
     /**
-     * 미체결(PENDING) 지정가 주문 취소.
-     * 본인 주문이 아닐 경우 예외.
+     * 매수/매도 주문. - MARKET : 현재가로 즉시 체결 - LIMIT  : 조건 충족 시 즉시 체결, 미충족 시 PENDING 으로 저장
+     */
+    // 수정 전: TradeOrderResponse placeOrder(TradeOrderRequest request);
+    TradeOrderResponse placeOrder(TradeOrderRequest request, UUID userId);
+
+    /**
+     * 미체결(PENDING) 지정가 주문 취소. 본인 주문이 아닐 경우 예외.
      */
     TradeOrderResponse cancelOrder(UUID tradeId, UUID accountId);
 
@@ -45,7 +58,16 @@ public interface TradeService {
      */
     void executePendingLimitOrders();
 
+    /**
+     * 스케줄러 내부 헬퍼: 단일 PENDING 건을 독립 트랜잭션으로 체결.
+     * Self-proxy 호출 + REQUIRES_NEW 를 위해 인터페이스로 노출하지만, 외부 호출 대상은 아님.
+     */
+    void executePendingLimitOrder(Trade order, double currentPrice);
+
     // ── 레거시 (하위 호환) ────────────────────────────────────────────────
-    BuyStockResponse buyStock(LocalDateTime time, String stockCode, int stockAmount, UUID accountId);
-    SellStockResponse sellStock(LocalDateTime now, String stockCode, int stockAmount, UUID accountId);
+    // 수정 전: BuyStockResponse buyStock(LocalDateTime time, String stockCode, int stockAmount, UUID accountId);
+    BuyStockResponse buyStock(LocalDateTime time, String stockCode, int stockAmount, UUID accountId, UUID userId);
+
+    // 수정 전: SellStockResponse sellStock(LocalDateTime now, String stockCode, int stockAmount, UUID accountId);
+    SellStockResponse sellStock(LocalDateTime now, String stockCode, int stockAmount, UUID accountId, UUID userId);
 }

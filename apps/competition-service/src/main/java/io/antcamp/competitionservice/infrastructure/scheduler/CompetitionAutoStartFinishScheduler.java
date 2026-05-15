@@ -20,10 +20,10 @@ public class CompetitionAutoStartFinishScheduler {
     private final CompetitionService competitionService;
 
     /**
-     * 30분마다 대회 시작 시간이 지난 PREPARING 대회를 자동으로 ONGOING으로 전환한다.
-     * 최소 참가 인원 미달 시 대회를 자동 취소한다.
+     * 30분마다 대회 시작 시간이 지난 PREPARING 대회를 자동으로 ONGOING으로 전환한다. 최소 참가 인원 미달 시 대회를 자동 취소한다.
      */
-    @Scheduled(cron = "0 */30 * * * *")
+//    @Scheduled(cron = "0 */30 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void autoStartCompetitions() {
         List<UUID> ids = competitionRepository.findAllIdsReadyToStart();
 
@@ -56,7 +56,7 @@ public class CompetitionAutoStartFinishScheduler {
     /**
      * 30분마다 대회 종료 시간이 지난 ONGOING 대회를 자동으로 FINISHED로 전환한다.
      */
-    @Scheduled(cron = "0 */30 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     public void autoFinishCompetitions() {
         List<UUID> ids = competitionRepository.findAllIdsReadyToFinish();
 

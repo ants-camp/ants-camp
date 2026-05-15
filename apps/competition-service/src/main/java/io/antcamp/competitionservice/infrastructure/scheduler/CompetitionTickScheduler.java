@@ -26,6 +26,7 @@ public class CompetitionTickScheduler {
         List<UUID> ongoingIds = competitionRepository.findAllOngoingIds();
 
         if (ongoingIds.isEmpty()) {
+            log.warn("[Scheduler] ONGOING 상태인 대회가 없습니다. 틱 이벤트 발행 생략.");
             return;
         }
 

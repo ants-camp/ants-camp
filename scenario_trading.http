@@ -17,9 +17,9 @@
 ###
 ###  자동 세팅값 (응답에서 자동 캡처)
 ###    competition_id  ← 01번 대회 생성 응답
-###    account_id_1    ← 04번 유저1 계좌 생성 응답
-###    account_id_2    ← 06번 유저2 계좌 생성 응답
-###    account_id_3    ← 08번 유저3 계좌 생성 응답
+###    account_id_1    ← 03-a번 유저1 계좌 조회 응답 (03번 참가 → Kafka → 자동 생성)
+###    account_id_2    ← 05-a번 유저2 계좌 조회 응답 (05번 참가 → Kafka → 자동 생성)
+###    account_id_3    ← 07-a번 유저3 계좌 조회 응답 (07번 참가 → Kafka → 자동 생성)
 ###
 ###  ✅ 실행 순서
 ###    00-a. 운영자(user0) 로그인
@@ -31,12 +31,15 @@
 ###    00-d. 유저3 로그인
 ###    01. 대회 생성                 (유저0(admin) 로그인)
 ###    02. 대회 게시                 (유저0(admin) 로그인)
-###    03. 유저1 대회 참가 신청        (유저1 로그인)
-###    04. 유저1 계좌 생성           → account_id_1 자동 세팅
-###    05. 유저2 대회 참가 신청        (유저2 로그인)
-###    06. 유저2 계좌 생성           → account_id_2 자동 세팅
-###    07. 유저3 대회 참가 신청        (유저3 로그인)
-###    08. 유저3 계좌 생성           → account_id_3 자동 세팅
+###    03. 유저1 대회 참가 신청        (유저1 로그인) → Kafka → 계좌 자동 생성
+###    03-a. 유저1 계좌 ID 조회      → account_id_1 세팅  (계좌 없으면 잠시 후 재시도)
+###    04. [폴백] 유저1 계좌 수동 생성 → 03-a 계좌 없을 때만
+###    05. 유저2 대회 참가 신청        (유저2 로그인) → Kafka → 계좌 자동 생성
+###    05-a. 유저2 계좌 ID 조회      → account_id_2 세팅
+###    06. [폴백] 유저2 계좌 수동 생성 → 05-a 계좌 없을 때만
+###    07. 유저3 대회 참가 신청        (유저3 로그인) → Kafka → 계좌 자동 생성
+###    07-a. 유저3 계좌 ID 조회      → account_id_3 세팅
+###    08. [폴백] 유저3 계좌 수동 생성 → 07-a 계좌 없을 때만
 ###    09. 대회 시작                 (유저0(admin) 로그인)
 ###    10. 유저1 매수 (삼성전자 10주)   (유저1 로그인)
 ###    ── 1분 경과 후 실행 ──
@@ -238,7 +241,7 @@ Authorization: Bearer {{access_token_0}}
   "type": "PERSONAL",
   "description": "유저1 vs 유저2 vs 유저3 수익률 대결",
   "firstSeed": 10000000,
-  "registerStartAt": "2026-01-01T00:00:00",
+  "registerStartAt": "2026-05-01T00:00:00",
   "registerEndAt": "2026-12-30T23:59:59",
   "competitionStartAt": "2026-12-31T00:00:00",
   "competitionEndAt": "2027-12-31T23:59:59",
@@ -247,15 +250,42 @@ Authorization: Bearer {{access_token_0}}
 }
 
 > {%
+    console.log("응답 상태:", response.status);
+    console.log("응답 바디:", JSON.stringify(response.body));
+
     client.test("201 Created", function() {
         client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
-    var id = response.body.competitionId || (response.body.data && response.body.data.competitionId);
-    if (id) {
-        client.global.set("competition_id", id);
-        console.log("✅ competition_id 세팅:", id);
+
+    if (response.body && response.body.data) {
+        var id = response.body.data.competitionId;
+        if (id) {
+            client.global.set("competition_id", id);
+            console.log("✅ competition_id 세팅:", id);
+        }
     }
 %}
+
+# ---------------------------------------------------------------
+# 01-1. 대회 생성 (대회서비스로 직접 요청)(운영자)
+# ---------------------------------------------------------------
+### @name createCompetition
+POST localhost:8092/api/competitions
+Content-Type: application/json
+Authorization: Bearer {{access_token_0}}
+
+{
+  "name": "2026 거래 테스트 대회",
+  "type": "PERSONAL",
+  "description": "유저1 vs 유저2 vs 유저3 수익률 대결",
+  "firstSeed": 10000000,
+  "registerStartAt": "2026-05-01T00:00:00",
+  "registerEndAt": "2026-12-30T23:59:59",
+  "competitionStartAt": "2026-12-31T00:00:00",
+  "competitionEndAt": "2027-12-31T23:59:59",
+  "minParticipants": 2,
+  "maxParticipants": 100
+}
 
 
 # ---------------------------------------------------------------
@@ -278,28 +308,45 @@ Authorization: Bearer {{access_token_0}}
 # ================================================================
 
 # ---------------------------------------------------------------
-# 03. 유저1 대회 참가 신청
+# 03. 유저1 대회 참가 신청  →  Kafka 이벤트로 계좌 자동 생성
 # ---------------------------------------------------------------
 ### @name joinUser1
 POST {{gateway_base}}/api/competitions/{{competition_id}}/participants
 Content-Type: application/json
 Authorization: Bearer {{access_token_1}}
 
-{
-  "userId": "{{user_id_1}}",
-  "nickname": "플레이어1"
-}
-
 > {%
     client.test("201 Created", function() {
         client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
-    console.log("✅ 유저1 참가 신청 완료");
+    console.log("✅ 유저1 참가 신청 완료 (Kafka → 자산서비스 계좌 자동 생성 대기 중)");
 %}
 
 
 # ---------------------------------------------------------------
-# 04. 유저1 계좌 수동 생성  →  account_id_1 자동 세팅
+# 03-a. 유저1 계좌 ID 조회  →  account_id_1 세팅
+#   ⚠️ Kafka 비동기 처리 후 실행 — 계좌가 없으면 잠시 후 재시도
+# ---------------------------------------------------------------
+### @name fetchAccountUser1
+GET {{gateway_base}}/api/accounts
+Authorization: Bearer {{access_token_1}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    var accounts = response.body.data;
+    if (accounts && accounts.length > 0) {
+        client.global.set("account_id_1", accounts[0].accountId);
+        console.log("✅ account_id_1 세팅:", accounts[0].accountId);
+    } else {
+        console.log("⚠️ 계좌가 아직 없음 — Kafka 처리 완료 후 재시도하세요.");
+    }
+%}
+
+
+# ---------------------------------------------------------------
+# 04. [폴백] 유저1 계좌 수동 생성  →  03-a 에서 계좌가 없을 때만 실행
 # ---------------------------------------------------------------
 ### @name createAccountUser1
 POST {{gateway_base}}/api/accounts
@@ -310,23 +357,23 @@ Authorization: Bearer {{access_token_1}}
   "userId": "{{user_id_1}}",
   "type": "COMPETITION",
   "initialAmount": 10000000,
-  "competitionId": "{{competition_id}}}"
+  "competitionId": "{{competition_id}}"
 }
 
 > {%
     client.test("201 Created", function() {
         client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
-    var id = response.body.accountId || response.body || (response.body.data && response.body.data.accountId);
+    var id = response.body.data && response.body.data.accountId;
     if (id) {
         client.global.set("account_id_1", id);
-        console.log("✅ account_id_1 세팅:", id);
+        console.log("✅ account_id_1 세팅 (수동):", id);
     }
 %}
 
 
 # ---------------------------------------------------------------
-# 05. 유저2 대회 참가 신청
+# 05. 유저2 대회 참가 신청  →  Kafka 이벤트로 계좌 자동 생성
 # ---------------------------------------------------------------
 ### @name joinUser2
 POST {{gateway_base}}/api/competitions/{{competition_id}}/participants
@@ -342,12 +389,34 @@ Authorization: Bearer {{access_token_2}}
     client.test("201 Created", function() {
         client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
-    console.log("✅ 유저2 참가 신청 완료");
+    console.log("✅ 유저2 참가 신청 완료 (Kafka → 자산서비스 계좌 자동 생성 대기 중)");
 %}
 
 
 # ---------------------------------------------------------------
-# 06. 유저2 계좌 수동 생성  →  account_id_2 자동 세팅
+# 05-a. 유저2 계좌 ID 조회  →  account_id_2 세팅
+#   ⚠️ Kafka 비동기 처리 후 실행 — 계좌가 없으면 잠시 후 재시도
+# ---------------------------------------------------------------
+### @name fetchAccountUser2
+GET {{gateway_base}}/api/accounts
+Authorization: Bearer {{access_token_2}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    var accounts = response.body.data;
+    if (accounts && accounts.length > 0) {
+        client.global.set("account_id_2", accounts[0].accountId);
+        console.log("✅ account_id_2 세팅:", accounts[0].accountId);
+    } else {
+        console.log("⚠️ 계좌가 아직 없음 — Kafka 처리 완료 후 재시도하세요.");
+    }
+%}
+
+
+# ---------------------------------------------------------------
+# 06. [폴백] 유저2 계좌 수동 생성  →  05-a 에서 계좌가 없을 때만 실행
 # ---------------------------------------------------------------
 ### @name createAccountUser2
 POST {{gateway_base}}/api/accounts
@@ -364,16 +433,16 @@ Authorization: Bearer {{access_token_2}}
     client.test("201 Created", function() {
         client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
-    var id = response.body.accountId || response.body || (response.body.data && response.body.data.accountId);
+    var id = response.body.data && response.body.data.accountId;
     if (id) {
         client.global.set("account_id_2", id);
-        console.log("✅ account_id_2 세팅:", id);
+        console.log("✅ account_id_2 세팅 (수동):", id);
     }
 %}
 
 
 # ---------------------------------------------------------------
-# 07. 유저3 대회 참가 신청
+# 07. 유저3 대회 참가 신청  →  Kafka 이벤트로 계좌 자동 생성
 # ---------------------------------------------------------------
 ### @name joinUser3
 POST {{gateway_base}}/api/competitions/{{competition_id}}/participants
@@ -389,12 +458,34 @@ Authorization: Bearer {{access_token_3}}
     client.test("201 Created", function() {
         client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
-    console.log("✅ 유저3 참가 신청 완료");
+    console.log("✅ 유저3 참가 신청 완료 (Kafka → 자산서비스 계좌 자동 생성 대기 중)");
 %}
 
 
 # ---------------------------------------------------------------
-# 08. 유저3 계좌 수동 생성  →  account_id_3 자동 세팅
+# 07-a. 유저3 계좌 ID 조회  →  account_id_3 세팅
+#   ⚠️ Kafka 비동기 처리 후 실행 — 계좌가 없으면 잠시 후 재시도
+# ---------------------------------------------------------------
+### @name fetchAccountUser3
+GET {{gateway_base}}/api/accounts
+Authorization: Bearer {{access_token_3}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    var accounts = response.body.data;
+    if (accounts && accounts.length > 0) {
+        client.global.set("account_id_3", accounts[0].accountId);
+        console.log("✅ account_id_3 세팅:", accounts[0].accountId);
+    } else {
+        console.log("⚠️ 계좌가 아직 없음 — Kafka 처리 완료 후 재시도하세요.");
+    }
+%}
+
+
+# ---------------------------------------------------------------
+# 08. [폴백] 유저3 계좌 수동 생성  →  07-a 에서 계좌가 없을 때만 실행
 # ---------------------------------------------------------------
 ### @name createAccountUser3
 POST {{gateway_base}}/api/accounts
@@ -411,13 +502,12 @@ Authorization: Bearer {{access_token_3}}
     client.test("201 Created", function() {
         client.assert(response.status === 201, "Expected 201, got " + response.status);
     });
-    var id = response.body.accountId || response.body || (response.body.data && response.body.data.accountId);
+    var id = response.body.data && response.body.data.accountId;
     if (id) {
         client.global.set("account_id_3", id);
-        console.log("✅ account_id_3 세팅:", id);
+        console.log("✅ account_id_3 세팅 (수동):", id);
     }
 %}
-
 
 # ================================================================
 #  09. 대회 시작  (운영자)
@@ -440,10 +530,13 @@ Authorization: Bearer {{access_token_0}}
 # ================================================================
 
 ### @name buyStockUser1
+### body => stockCode, stockAmout, orderType, side, limitPrice(double) => 지정가 주문시 필수 필드, 시장가는 null,
+### header => X-ACCOUNT-ID (프론트에서 헤더로 넘겨준다)
+### 대회 자동시작/종료 테스트 해보기
+### 대회 종료 이벤트 발행되는지 체크
 POST {{gateway_base}}/api/holdings/buy
 Content-Type: application/json
 Authorization: Bearer {{access_token_1}}
-X-User-Id: {{user_id_1}}
 
 {
   "accountId": "{{account_id_1}}",
@@ -468,7 +561,6 @@ X-User-Id: {{user_id_1}}
 ### @name getHoldingsUser1
 GET {{gateway_base}}/api/holdings?accountId={{account_id_1}}
 Authorization: Bearer {{access_token_1}}
-X-User-Id: {{user_id_1}}
 
 > {%
     client.test("200 OK", function() {
@@ -489,7 +581,6 @@ X-User-Id: {{user_id_1}}
 ### @name getAssetUser1_after_buy
 GET {{gateway_base}}/api/accounts/{{account_id_1}}
 Authorization: Bearer {{access_token_1}}
-X-User-Id: {{user_id_1}}
 
 > {%
     client.test("200 OK", function() {
@@ -506,7 +597,6 @@ X-User-Id: {{user_id_1}}
 ### @name getAssetUser2_after_buy
 GET {{gateway_base}}/api/accounts/{{account_id_2}}
 Authorization: Bearer {{access_token_2}}
-X-User-Id: {{user_id_2}}
 
 > {%
     client.test("200 OK", function() {
@@ -523,7 +613,6 @@ X-User-Id: {{user_id_2}}
 ### @name getAssetUser3_after_buy
 GET {{gateway_base}}/api/accounts/{{account_id_3}}
 Authorization: Bearer {{access_token_3}}
-X-User-Id: {{user_id_3}}
 
 > {%
     client.test("200 OK", function() {
@@ -567,12 +656,12 @@ Authorization: Bearer {{access_token_0}}
 POST {{gateway_base}}/api/holdings/sell
 Content-Type: application/json
 Authorization: Bearer {{access_token_1}}
-X-User-Id: {{user_id_1}}
 
 {
   "accountId": "{{account_id_1}}",
   "stockCode": "{{stock_code}}",
-  "stockAmount": 5
+  "stockAmount": 5,
+  "price": 75000
 }
 
 > {%

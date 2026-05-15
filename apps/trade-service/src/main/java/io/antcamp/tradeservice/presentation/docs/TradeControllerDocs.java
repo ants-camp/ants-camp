@@ -2,21 +2,32 @@ package io.antcamp.tradeservice.presentation.docs;
 
 import common.dto.CommonResponse;
 import io.antcamp.tradeservice.infrastructure.dto.AccessTokenResponse;
-import io.antcamp.tradeservice.presentation.dto.*;
+import io.antcamp.tradeservice.presentation.dto.DailyChartResponse;
+import io.antcamp.tradeservice.presentation.dto.MinutePriceResponse;
+import io.antcamp.tradeservice.presentation.dto.PendingOrderResponse;
+import io.antcamp.tradeservice.presentation.dto.StockList;
+import io.antcamp.tradeservice.presentation.dto.StockPriceList;
+import io.antcamp.tradeservice.presentation.dto.TradeOrderRequest;
+import io.antcamp.tradeservice.presentation.dto.TradeOrderResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Tag(name = "Trade", description = "KIS 주식 가격 조회 / 주문 접수·취소 / 미체결 목록")
 public interface TradeControllerDocs {
@@ -222,7 +233,7 @@ public interface TradeControllerDocs {
     @PostMapping("/order")
     ResponseEntity<CommonResponse<TradeOrderResponse>> placeOrder(
             @RequestBody TradeOrderRequest request,
-            @Parameter(hidden = true) UUID accountId);
+            @RequestHeader("X-User-Id") UUID userId);
 
     @Operation(summary = "미체결 주문 취소", description = "PENDING 상태의 지정가 주문을 취소합니다. 본인 주문만 취소 가능합니다.")
     @ApiResponses({

@@ -1,10 +1,9 @@
 package io.antcamp.rankingservice.application;
 
-import common.exception.BusinessException;
-import common.exception.ErrorCode;
+import io.antcamp.rankingservice.application.dto.CompetitionHistoryResult;
 import io.antcamp.rankingservice.application.dto.RankingResult;
 import io.antcamp.rankingservice.application.event.RankingFinalizedEvent;
-import io.antcamp.rankingservice.domain.event.TotalAssetCalcuatedEvent;
+import io.antcamp.rankingservice.domain.event.TotalAssetCalculatedEvent;
 import io.antcamp.rankingservice.domain.model.RankTier;
 import io.antcamp.rankingservice.domain.model.Ranking;
 import io.antcamp.rankingservice.domain.repository.RankingRedisRepository;
@@ -66,7 +65,7 @@ public class RankingServiceImpl implements RankingService {
     @Transactional
     public void finalizeRankingsWithValuations(
             UUID competitionId,
-            List<TotalAssetCalcuatedEvent.ParticipantTotalAsset> valuations
+            List<TotalAssetCalculatedEvent.ParticipantTotalAsset> valuations
     ) {
         if (valuations.isEmpty()) {
             return;
@@ -76,7 +75,7 @@ public class RankingServiceImpl implements RankingService {
 
         // 1. valuations를 자산 내림차순 정렬 후 DB에 직접 저장 (Redis 거치지 않음)
         // Redis는 진행 중 전광판용이고, 최종 결과의 원천은 자산 서비스가 준 확정 데이터
-        List<TotalAssetCalcuatedEvent.ParticipantTotalAsset> sorted = valuations.stream()
+        List<TotalAssetCalculatedEvent.ParticipantTotalAsset> sorted = valuations.stream()
                 .sorted((a, b) -> Double.compare(b.totalAsset(), a.totalAsset()))
                 .toList();
 
@@ -105,6 +104,15 @@ public class RankingServiceImpl implements RankingService {
                         entry.userId(),
                         entry.totalAsset(),
                         entry.rank()))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CompetitionHistoryResult> findMyHistory(UUID userId) {
+        return rankingRepository.findAllByUserId(userId)
+                .stream()
+                .map(CompetitionHistoryResult::from)
                 .toList();
     }
 
