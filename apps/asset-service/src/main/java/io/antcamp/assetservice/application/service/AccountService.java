@@ -1,11 +1,10 @@
 package io.antcamp.assetservice.application.service;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.assetservice.application.dto.command.CreateAccountCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.application.dto.query.BalanceResult;
-import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
-import io.antcamp.assetservice.domain.exception.InvalidAmountException;
-import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
@@ -45,43 +44,44 @@ public class AccountService {
     public BalanceResult deposit(UUID accountId, Long amount) {
         log.info("[Account] 입금 요청. accountId={}, amount={}", accountId, amount);
         Account account = accountRepository.findByIdWithLock(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND)); // ✅ 변경
 
         if (account.isEnded()) {
-            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT); // ✅ 변경
         }
 
         account.deposit(amount);
         accountRepository.save(account);
         log.info("[Account] 입금 완료. accountId={}, 잔액={}", accountId, account.getAccountAmount());
-        return new BalanceResult (accountId, account.getAccountAmount());
+        return new BalanceResult(accountId, account.getAccountAmount());
     }
 
     @Transactional
-    public BalanceResult  withdraw(UUID accountId, Long amount) {
+    public BalanceResult withdraw(UUID accountId, Long amount) {
         log.info("[Account] 출금 요청. accountId={}, amount={}", accountId, amount);
         Account account = accountRepository.findByIdWithLock(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND)); // ✅ 변경
 
         if (account.isEnded()) {
-            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT); // ✅ 변경
         }
 
         account.withdraw(amount);
         accountRepository.save(account);
         log.info("[Account] 출금 완료. accountId={}, 잔액={}", accountId, account.getAccountAmount());
-        return new BalanceResult (accountId, account.getAccountAmount());
+        return new BalanceResult(accountId, account.getAccountAmount());
     }
 
     @Transactional(readOnly = true)
     public AccountResult getAccount(UUID accountId, UUID requesterUserId) {
         log.debug("[Account] 계좌 조회 요청. accountId={}, userId={}", accountId, requesterUserId);
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND)); // ✅ 변경
 
         if (!account.getUserId().equals(requesterUserId)) {
-            log.warn("[Account] 권한 없는 계좌 접근 시도. accountId={}, 요청userId={}, 계좌ownerId={}", accountId, requesterUserId, account.getUserId());
-            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+            log.warn("[Account] 권한 없는 계좌 접근 시도. accountId={}, 요청userId={}, 계좌ownerId={}",
+                    accountId, requesterUserId, account.getUserId());
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACCOUNT_ACCESS); // ✅ 변경
         }
 
         return new AccountResult(
@@ -94,7 +94,7 @@ public class AccountService {
     @Transactional(readOnly = true)
     Account getAccountDomain(UUID accountId) {
         return accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND)); // ✅ 변경
     }
 
     /**

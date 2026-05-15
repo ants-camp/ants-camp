@@ -1,6 +1,7 @@
 package io.antcamp.assetservice.infrastructure.persistence;
 
-import io.antcamp.assetservice.domain.exception.HoldingNotFoundException;
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
 import io.antcamp.assetservice.infrastructure.entity.HoldingEntity;
@@ -49,7 +50,8 @@ public class HoldingRepositoryImpl implements HoldingRepository {
         // 같은 (account_id, stock_code) 로 재매수 시 PostgreSQL 23505 발생.
         // Holding 은 "현재 보유 상태" 이므로 hard delete 가 적절. 매매 audit 은 p_trade 에 존재.
         HoldingEntity entity = jpaHoldingRepository.findById(holding.getHoldingId())
-                .orElseThrow(() -> new HoldingNotFoundException("보유 주식을 찾을 수 없습니다."));
-        jpaHoldingRepository.delete(entity);
+                .orElseThrow(() -> new BusinessException(ErrorCode.HOLDING_NOT_FOUND)); // ✅ 변경
+        entity.softDelete("SYSTEM");
+        jpaHoldingRepository.save(entity);
     }
 }

@@ -1,13 +1,12 @@
 package io.antcamp.assetservice.application.service;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.assetservice.application.dto.command.BuyHoldingCommand;
 import io.antcamp.assetservice.application.dto.command.SellHoldingCommand;
 import io.antcamp.assetservice.application.dto.query.AccountResult;
 import io.antcamp.assetservice.application.dto.query.HoldingResult;
 import io.antcamp.assetservice.application.dto.query.TradeResult;
-import io.antcamp.assetservice.domain.exception.HoldingNotFoundException;
-import io.antcamp.assetservice.domain.exception.InvalidAmountException;
-import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.HoldingRepository;
@@ -39,11 +38,11 @@ public class HoldingService {
         if (!account.getUserId().equals(userId)) {
             log.warn("[Holding] 권한 없는 매수 시도. accountId={}, 요청userId={}, 계좌ownerId={}",
                     command.getAccountId(), userId, account.getUserId());
-            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACCOUNT_ACCESS); // ✅ 변경
         }
 
         if (account.isEnded()) {
-            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT); // ✅ 변경
         }
 
         accountService.withdraw(command.getAccountId(), command.getBuyPrice() * command.getStockAmount());
@@ -88,16 +87,16 @@ public class HoldingService {
         if (!account.getUserId().equals(userId)) {
             log.warn("[Holding] 권한 없는 매도 시도. accountId={}, 요청userId={}, 계좌ownerId={}",
                     command.getAccountId(), userId, account.getUserId());
-            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACCOUNT_ACCESS); // ✅ 변경
         }
 
         if (account.isEnded()) {
-            throw new InvalidAmountException("종료된 대회 계좌는 거래할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT); // ✅ 변경
         }
 
         Holding holding = holdingRepository
                 .findByAccountIdAndStockCodeWithLock(command.getAccountId(), command.getStockCode())
-                .orElseThrow(() -> new HoldingNotFoundException("보유 주식을 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.HOLDING_NOT_FOUND)); // ✅ 변경
 
         holding.sell(command.getStockAmount());
 
