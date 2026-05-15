@@ -1,5 +1,6 @@
 package io.antcamp.rankingservice.application;
 
+import io.antcamp.rankingservice.application.dto.CompetitionHistoryResult;
 import io.antcamp.rankingservice.application.dto.RankingResult;
 import io.antcamp.rankingservice.domain.event.TotalAssetCalculatedEvent;
 import java.util.List;
@@ -33,4 +34,9 @@ public interface RankingService {
 
     // Read
     RankingResult findMyRanking(UUID competitionId, UUID userId);
+
+    /**
+     * 유저의 전체 대회 참여 이력 조회 (확정된 것만, DB 기반)
+     */
+    List<CompetitionHistoryResult> findMyHistory(UUID userId);
 }

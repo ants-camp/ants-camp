@@ -119,6 +119,28 @@ Content-Type: application/json
 
 
 # ---------------------------------------------------------------
+# 00-reg-d. 유저4 회원가입
+# ---------------------------------------------------------------
+### @name registerUser4
+POST {{gateway_base}}/api/users/register
+Content-Type: application/json
+
+{
+  "email": "{{user4_email}}",
+  "password": "{{user4_password}}",
+  "name": "존버왕최지수",
+  "phone": "010-1111-0004"
+}
+
+> {%
+    client.test("User4 Register Success", function() {
+        client.assert(response.status === 201, "Register failed: " + response.status);
+    });
+    console.log("✅ 유저4 회원가입 완료");
+%}
+
+
+# ---------------------------------------------------------------
 # 00-b. 유저1 로그인
 # ---------------------------------------------------------------
 ### @name loginUser1
@@ -184,6 +206,29 @@ Content-Type: application/json
     client.global.set("access_token_3", data.accessToken);
     client.global.set("user_id_3", data.user.userId);
     console.log("✅ 유저3 로그인 완료 | userId:", data.user.userId);
+%}
+
+
+# ---------------------------------------------------------------
+# 00-e. 유저4 로그인
+# ---------------------------------------------------------------
+### @name loginUser4
+POST {{gateway_base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{user4_email}}",
+  "password": "{{user4_password}}"
+}
+
+> {%
+    client.test("User4 Login Success", function() {
+        client.assert(response.status === 200, "Login failed: " + response.status);
+    });
+    var data = response.body.data;
+    client.global.set("access_token_4", data.accessToken);
+    client.global.set("user_id_4", data.user.userId);
+    console.log("✅ 유저4 로그인 완료 | userId:", data.user.userId);
 %}
 
 # ================================================================
@@ -384,6 +429,45 @@ Authorization: Bearer {{access_token_3}}
     }
 %}
 
+# ---------------------------------------------------------------
+# 08. 유저4 대회 참가 신청  →  Kafka 이벤트로 계좌 자동 생성
+#  ⚠️ 유저4는 매수 없이 시드머니(1,000,000원)만 유지 → 자연스럽게 4등
+# ---------------------------------------------------------------
+### @name joinUser4
+POST {{gateway_base}}/api/competitions/{{competition_id}}/participants
+Authorization: Bearer {{access_token_4}}
+
+> {%
+    client.test("201 Created", function() {
+        client.assert(response.status === 201, "Expected 201, got " + response.status);
+    });
+    console.log("✅ 유저4 참가 신청 완료 (Kafka → 자산서비스 계좌 자동 생성 대기 중)");
+%}
+
+
+# ---------------------------------------------------------------
+# 08-a. 유저4 계좌 ID 조회  →  account_id_4 세팅
+#   ⚠️ Kafka 비동기 처리 후 실행 — 계좌가 없으면 잠시 후 재시도
+# ---------------------------------------------------------------
+### @name fetchAccountUser4
+GET {{gateway_base}}/api/accounts
+Authorization: Bearer {{access_token_4}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+
+    var accounts = (response.body && response.body.data) || [];
+    if (accounts.length > 0) {
+        var lastAccount = accounts[accounts.length - 1];
+        client.global.set("account_id_4", lastAccount.accountId);
+        console.log("✅ 유저4 마지막 계좌로 세팅 완료 | account_id_4:", lastAccount.accountId);
+    } else {
+        console.log("⚠️ 유저4의 계좌가 없습니다. Kafka 처리 대기 중이거나 계좌 생성 실패 여부를 확인하세요.");
+    }
+%}
+
 # ================================================================
 #  09. 대회 시작  (운영자)
 # ================================================================
@@ -451,7 +535,7 @@ Authorization: Bearer {{access_token_1}}
   "stockAmount": 1,
   "orderType": "LIMIT",
   "side": "BUY",
-  "limitPrice": 295500.00,
+  "limitPrice": 270000.00,
   "accountId": "{{account_id_1}}"
 }
 
@@ -618,7 +702,7 @@ Authorization: Bearer {{access_token_1}}
   "stockAmount": 1,
   "orderType": "LIMIT",
   "side": "SELL",
-  "limitPrice": 293000.00,
+  "limitPrice": 273000.00,
   "accountId": "{{account_id_1}}"
 }
 
@@ -743,6 +827,129 @@ Authorization: Bearer {{access_token_0}}
         });
     } else {
         console.log(JSON.stringify(data, null, 2));
+    }
+%}
+
+
+# ================================================================
+#  22. 대회 참여 이력 조회  (대회 종료 후)
+#  ⚠️  20번(대회 종료) + Kafka 처리 완료 후 실행.
+#      isFinalized=true 인 대회만 반환되므로,
+#      종료 직후 Kafka 처리가 아직 안 됐다면 빈 배열이 올 수 있음.
+#
+#  기대 RankTier (유저1~3은 매수로 자산 증가, 유저4는 시드머니 유지):
+#    유저1 → RANK_1 or RANK_2 or RANK_3  (매수한 주식 평가 순서에 따라)
+#    유저2 → RANK_1 or RANK_2 or RANK_3
+#    유저3 → RANK_1 or RANK_2 or RANK_3
+#    유저4 → TOP_10  (4명 중 4등 = 4/4 * 100 = 100% → TOP_100 아님 주의:
+#             rank=4, total=4 → percentile=100 → TOP_100)
+#  ※ 실제로 4등/4명이면 TOP_100 이 나옴. TOP_10 확인은 10명 중 1등 시나리오.
+#    4등이 TOP_10임을 확인하려면 참가자가 최소 40명 필요.
+#    이 시나리오에서는 4등 = TOP_100 이 정상.
+# ================================================================
+
+# ---------------------------------------------------------------
+# 22-a. 유저1 대회 참여 이력 조회  (기대: RANK_1 or RANK_2 or RANK_3)
+# ---------------------------------------------------------------
+### @name getMyHistoryUser1
+GET {{gateway_base}}/api/rankings/me
+Authorization: Bearer {{access_token_1}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저1 대회 참여 이력 ===");
+    var data = (response.body && response.body.data) || response.body;
+    if (Array.isArray(data) && data.length > 0) {
+        data.forEach(function(h) {
+            console.log("  competitionId:", h.competitionId,
+                        "| rankTier:", h.rankTier,
+                        "| lastUpdatedAt:", h.lastUpdatedAt);
+        });
+    } else {
+        console.log("  이력 없음 (Kafka 처리 대기 중이거나 미확정 상태)");
+    }
+%}
+
+# ---------------------------------------------------------------
+# 22-b. 유저2 대회 참여 이력 조회  (기대: RANK_1 or RANK_2 or RANK_3)
+# ---------------------------------------------------------------
+### @name getMyHistoryUser2
+GET {{gateway_base}}/api/rankings/me
+Authorization: Bearer {{access_token_2}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저2 대회 참여 이력 ===");
+    var data = (response.body && response.body.data) || response.body;
+    if (Array.isArray(data) && data.length > 0) {
+        data.forEach(function(h) {
+            console.log("  competitionId:", h.competitionId,
+                        "| rankTier:", h.rankTier,
+                        "| lastUpdatedAt:", h.lastUpdatedAt);
+        });
+    } else {
+        console.log("  이력 없음 (Kafka 처리 대기 중이거나 미확정 상태)");
+    }
+%}
+
+# ---------------------------------------------------------------
+# 22-c. 유저3 대회 참여 이력 조회  (기대: RANK_1 or RANK_2 or RANK_3)
+# ---------------------------------------------------------------
+### @name getMyHistoryUser3
+GET {{gateway_base}}/api/rankings/me
+Authorization: Bearer {{access_token_3}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저3 대회 참여 이력 ===");
+    var data = (response.body && response.body.data) || response.body;
+    if (Array.isArray(data) && data.length > 0) {
+        data.forEach(function(h) {
+            console.log("  competitionId:", h.competitionId,
+                        "| rankTier:", h.rankTier,
+                        "| lastUpdatedAt:", h.lastUpdatedAt);
+        });
+    } else {
+        console.log("  이력 없음 (Kafka 처리 대기 중이거나 미확정 상태)");
+    }
+%}
+
+# ---------------------------------------------------------------
+# 22-d. 유저4 대회 참여 이력 조회  (기대: TOP_100 — 4명 중 4등)
+#   ※ 4등/4명 → percentile = 4/4 * 100 = 100% → TOP_100
+#      TOP_10 티어를 확인하려면 참가자 40명 이상 필요 (4/40 * 100 = 10%)
+# ---------------------------------------------------------------
+### @name getMyHistoryUser4
+GET {{gateway_base}}/api/rankings/me
+Authorization: Bearer {{access_token_4}}
+
+> {%
+    client.test("200 OK", function() {
+        client.assert(response.status === 200, "Expected 200, got " + response.status);
+    });
+    console.log("=== 유저4 대회 참여 이력 ===");
+    var data = (response.body && response.body.data) || response.body;
+    if (Array.isArray(data) && data.length > 0) {
+        data.forEach(function(h) {
+            console.log("  competitionId:", h.competitionId,
+                        "| rankTier:", h.rankTier,
+                        "| lastUpdatedAt:", h.lastUpdatedAt);
+        });
+        // 4명 중 4등이면 TOP_100 이 정상
+        var tier = data[0] && data[0].rankTier;
+        if (tier === "TOP_100") {
+            console.log("✅ 기대값 일치: 4명 중 4등 → TOP_100");
+        } else {
+            console.log("⚠️ 기대값과 다름. 실제 rankTier:", tier);
+        }
+    } else {
+        console.log("  이력 없음 (Kafka 처리 대기 중이거나 미확정 상태)");
     }
 %}
 
