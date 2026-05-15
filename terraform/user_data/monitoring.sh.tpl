@@ -263,7 +263,78 @@ systemctl daemon-reload
 systemctl enable node_exporter
 systemctl start node_exporter
 
+# ── Docker 설치 (Zipkin 실행용) ───────────────────────────────
+apt-get install -y ca-certificates gnupg lsb-release
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+  | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+chmod a+r /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" \
+  > /etc/apt/sources.list.d/docker.list
+apt-get update -y
+apt-get install -y docker-ce docker-ce-cli containerd.io
+systemctl enable docker
+systemctl start docker
+
+# ── Zipkin 설치 (Docker) ──────────────────────────────────────
+docker pull openzipkin/zipkin:latest
+
+cat > /etc/systemd/system/zipkin.service <<EOF
+[Unit]
+Description=Zipkin Distributed Tracing
+After=docker.service network.target
+Requires=docker.service
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=10
+ExecStartPre=-/usr/bin/docker stop zipkin
+ExecStartPre=-/usr/bin/docker rm zipkin
+ExecStart=/usr/bin/docker run --rm --name zipkin \
+  -p 9411:9411 \
+  openzipkin/zipkin:latest
+ExecStop=/usr/bin/docker stop zipkin
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+systemctl daemon-reload
+systemctl enable zipkin
+systemctl start zipkin
+
+# ── Grafana 데이터소스에 Zipkin 추가 ─────────────────────────
+cat > /etc/grafana/provisioning/datasources/datasources.yaml <<EOF
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://localhost:${prometheus_port}
+    isDefault: true
+    editable: false
+
+  - name: Loki
+    type: loki
+    access: proxy
+    url: http://localhost:${loki_port}
+    editable: false
+
+  - name: Zipkin
+    type: zipkin
+    access: proxy
+    url: http://localhost:9411
+    editable: false
+EOF
+
+systemctl restart grafana-server
+
 echo "===== [monitoring-ec2] DONE: $(date) ====="
-echo "  Grafana  → http://$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4):${grafana_port}"
+echo "  Grafana    → http://$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4):${grafana_port}"
 echo "  Prometheus → http://$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4):${prometheus_port}"
-echo "  Loki     → http://$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4):${loki_port}"
+echo "  Loki       → http://$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4):${loki_port}"
+echo "  Zipkin     → http://$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4):9411"
