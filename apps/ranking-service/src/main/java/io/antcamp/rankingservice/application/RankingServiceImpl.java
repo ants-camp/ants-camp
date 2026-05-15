@@ -1,5 +1,6 @@
 package io.antcamp.rankingservice.application;
 
+import io.antcamp.rankingservice.application.dto.CompetitionHistoryResult;
 import io.antcamp.rankingservice.application.dto.RankingResult;
 import io.antcamp.rankingservice.application.event.RankingFinalizedEvent;
 import io.antcamp.rankingservice.domain.event.TotalAssetCalculatedEvent;
@@ -103,6 +104,15 @@ public class RankingServiceImpl implements RankingService {
                         entry.userId(),
                         entry.totalAsset(),
                         entry.rank()))
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CompetitionHistoryResult> findMyHistory(UUID userId) {
+        return rankingRepository.findAllByUserId(userId)
+                .stream()
+                .map(CompetitionHistoryResult::from)
                 .toList();
     }
 

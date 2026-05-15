@@ -18,4 +18,7 @@ public interface RankingRepository {
 
     // Search
     List<Ranking> findAllByCompetitionId(UUID competitionId);
+
+    /** 특정 유저의 전체 대회 참여 이력 (확정된 것만) */
+    List<Ranking> findAllByUserId(UUID userId);
 }

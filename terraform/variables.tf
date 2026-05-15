@@ -181,7 +181,7 @@ variable "kafka_heap_size" {
 variable "config_git_uri" {
   description = "Config Server가 바라볼 Git 저장소 URI"
   type        = string
-  default     = "https://github.com/your-org/config-repo"
+  default     = "https://github.com/ants-camp/ants-camp-config"
 }
 
 variable "config_git_username" {
