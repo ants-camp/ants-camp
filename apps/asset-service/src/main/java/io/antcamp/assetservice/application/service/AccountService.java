@@ -104,7 +104,7 @@ public class AccountService {
     @Transactional(readOnly = true)
     public long getBalance(UUID accountId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND));
         return account.getAccountAmount() != null ? account.getAccountAmount() : 0L;
     }
 

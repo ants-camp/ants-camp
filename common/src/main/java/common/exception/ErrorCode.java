@@ -110,7 +110,6 @@ public enum ErrorCode {
     ASSET_SERVICE_ERROR(HttpStatus.SERVICE_UNAVAILABLE, "ASSET_SERVICE_ERROR", "자산 서비스 에러입니다."),
     ACCOUNT_NOT_FOUND(HttpStatus.NOT_FOUND, "ACCOUNT_NOT_FOUND", "계좌를 찾을 수 없습니다."),
     HOLDING_NOT_FOUND(HttpStatus.NOT_FOUND, "HOLDING_NOT_FOUND", "보유 주식을 찾을 수 없습니다."),
-    INSUFFICIENT_BALANCE(HttpStatus.CONFLICT, "INSUFFICIENT_BALANCE", "잔액이 부족합니다."),
     INVALID_AMOUNT(HttpStatus.BAD_REQUEST, "INVALID_AMOUNT", "잘못된 금액입니다."),
     UNAUTHORIZED_ACCOUNT_ACCESS(HttpStatus.FORBIDDEN, "UNAUTHORIZED_ACCOUNT_ACCESS", "해당 계좌에 접근할 권한이 없습니다."),
 
