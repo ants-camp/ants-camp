@@ -109,7 +109,7 @@ jobs:
                 CHANGED=$(echo "$CHANGED_FILES" | grep "^apps/$SERVICE/" | wc -l)
               fi
               if [ "$CHANGED" -gt "0" ]; then
-                echo "배포 대상: $SERVICE"
+                echo "배포 대상: $SERVICE" >&2
                 ENTRY=$(jq -n \
                   --arg svc "$SERVICE" --arg tag "$EC2_TAG" \
                   --arg key "$S3_KEY" --arg port "$PORT" --arg ctr "$CONTAINER" \
