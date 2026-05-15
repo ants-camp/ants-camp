@@ -2,6 +2,7 @@ package io.antcamp.rankingservice.presentation.docs;
 
 import common.dto.CommonResponse;
 import io.antcamp.rankingservice.presentation.dto.FinalizeRankingsResponse;
+import io.antcamp.rankingservice.presentation.dto.MyCompetitionHistoryResponse;
 import io.antcamp.rankingservice.presentation.dto.MyRankingResponse;
 import io.antcamp.rankingservice.presentation.dto.RankingResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -113,4 +114,26 @@ public interface RankingControllerDocs {
             @Parameter(description = "대회 UUID", required = true) @PathVariable UUID competitionId,
             @Parameter(description = "페이지 번호 (0부터 시작, 기본 0)") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "페이지 크기 (기본 20)") @RequestParam(defaultValue = "20") int size);
+
+    @Operation(summary = "내 대회 참여 이력 조회", description = "유저가 참여한 모든 대회의 최종 성적(RankTier)을 조회합니다. 확정된 대회만 반환됩니다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공",
+                    content = @Content(mediaType = "application/json",
+                            examples = @ExampleObject(name = "성공", value = """
+                                    [
+                                      {
+                                        "competitionId": "550e8400-e29b-41d4-a716-446655440000",
+                                        "rankTier": "TOP_10",
+                                        "lastUpdatedAt": "2026-05-15T15:30:00"
+                                      },
+                                      {
+                                        "competitionId": "661f9511-f3ac-52e5-b827-557766551111",
+                                        "rankTier": "RANK_1",
+                                        "lastUpdatedAt": "2026-04-20T15:30:00"
+                                      }
+                                    ]""")))
+    })
+    @GetMapping("/me")
+    ResponseEntity<CommonResponse<List<MyCompetitionHistoryResponse>>> findMyHistory(
+            @Parameter(description = "사용자 UUID", required = true) @RequestHeader("X-User-Id") UUID userId);
 }

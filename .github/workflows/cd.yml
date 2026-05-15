@@ -1,0 +1,400 @@
+name: AntCamp CD
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      deploy_all:
+        description: '전체 서비스 강제 배포'
+        type: boolean
+        default: true
+
+# ============================================================
+# 배포 방식: GitHub Actions → S3 업로드 → SSM Run Command
+#
+# 필요한 GitHub Secrets:
+#   AWS_ACCESS_KEY_ID      : IAM 액세스 키
+#   AWS_SECRET_ACCESS_KEY  : IAM 시크릿 키
+#
+# 필요한 GitHub Variables:
+#   AWS_REGION             : ap-northeast-2
+#   S3_BUCKET              : ants-camp-deployments
+#
+# EC2별 서비스 배포 대상:
+#   domain-ec2    : user-service, asset-service, ranking-service
+#   domain2-ec2   : trade-service, competition-service
+#   notification-ec2 : notification-service, assistant-service
+#   gateway-ec2   : api-gateway
+#   infra-ec2     : config-server, eureka-server
+# ============================================================
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
+  S3_BUCKET: ${{ vars.S3_BUCKET || 'ants-camp-deployments' }}
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+# ── 서비스 → EC2 태그 / S3 키 / 포트 / 컨테이너명 매핑 ────────
+# detect-changes 에서 matrix로 조합해 deploy job에 전달
+# ─────────────────────────────────────────────────────────────
+
+jobs:
+  # ──────────────────────────────────────────────────────────
+  # 1. 변경된 서비스 감지
+  # ──────────────────────────────────────────────────────────
+  detect-changes:
+    name: 변경 서비스 감지
+    runs-on: ubuntu-latest
+    outputs:
+      infra_matrix: ${{ steps.set-matrix.outputs.infra_matrix }}
+      services_matrix: ${{ steps.set-matrix.outputs.services_matrix }}
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: 변경된 서비스 매트릭스 생성
+        id: set-matrix
+        run: |
+          DEPLOY_ALL="${{ github.event.inputs.deploy_all }}"
+          BASE_SHA="${{ github.event.before }}"
+
+          # 브랜치 최초 push이거나 base sha가 없으면 HEAD~1 사용
+          if [ -z "$BASE_SHA" ] || [ "$BASE_SHA" = "0000000000000000000000000000000000000000" ]; then
+            BASE_SHA="HEAD~1"
+          fi
+
+          echo "=== 디버그 ==="
+          echo "BASE_SHA: $BASE_SHA"
+          echo "HEAD: $(git rev-parse HEAD)"
+          echo "변경된 파일 목록:"
+          git diff --name-only "$BASE_SHA" HEAD || echo "(diff 실패)"
+          echo "=============="
+
+          CHANGED_FILES=$(git diff --name-only "$BASE_SHA" HEAD 2>/dev/null || echo "")
+          COMMON_CHANGED=$(echo "$CHANGED_FILES" | grep "^common/" | wc -l)
+
+          # ── 1순위: infra 서비스 (Config Server → Eureka 순서 보장) ──
+          INFRA_SERVICES="
+          config-server|ants-camp-infra-ec2|jars/config-server.jar|8888|antcamp-config
+          eureka-server|ants-camp-infra-ec2|jars/eureka-server.jar|8761|antcamp-eureka
+          "
+
+          # ── 2순위: 도메인 서비스 ──────────────────────────────────
+          DOMAIN_SERVICES="
+          user-service|ants-camp-domain-ec2|jars/user-service.jar|8082|antcamp-user
+          asset-service|ants-camp-domain-ec2|jars/asset-service.jar|8086|antcamp-asset
+          ranking-service|ants-camp-domain-ec2|jars/ranking-service.jar|8094|antcamp-ranking
+          trade-service|ants-camp-domain2-ec2|jars/trade-service.jar|8084|antcamp-trade
+          competition-service|ants-camp-domain2-ec2|jars/competition-service.jar|8092|antcamp-competition
+          notification-service|ants-camp-notification-ec2|jars/notification-service.jar|8098|antcamp-notification
+          assistant-service|ants-camp-notification-ec2|jars/assistant-service.jar|8096|antcamp-assistant
+          api-gateway|ants-camp-gateway-ec2|jars/api-gateway.jar|8080|antcamp-gateway
+          "
+
+          build_matrix() {
+            local SERVICE_LIST="$1"
+            local INCLUDES="[]"
+            while IFS='|' read -r SERVICE EC2_TAG S3_KEY PORT CONTAINER; do
+              SERVICE=$(echo "$SERVICE" | xargs)
+              [ -z "$SERVICE" ] && continue
+              if [ "$DEPLOY_ALL" = "true" ] || [ "$COMMON_CHANGED" -gt "0" ]; then
+                CHANGED=1
+              else
+                CHANGED=$(echo "$CHANGED_FILES" | grep "^apps/$SERVICE/" | wc -l)
+              fi
+              if [ "$CHANGED" -gt "0" ]; then
+                echo "배포 대상: $SERVICE" >&2
+                ENTRY=$(jq -n \
+                  --arg svc "$SERVICE" --arg tag "$EC2_TAG" \
+                  --arg key "$S3_KEY" --arg port "$PORT" --arg ctr "$CONTAINER" \
+                  '{service: $svc, ec2_tag: $tag, s3_key: $key, port: $port, container: $ctr}')
+                INCLUDES=$(echo "$INCLUDES" | jq ". += [$ENTRY]")
+              fi
+            done <<< "$SERVICE_LIST"
+            echo "$INCLUDES" | jq -c '{include: .}'
+          }
+
+          INFRA_MATRIX=$(build_matrix "$INFRA_SERVICES")
+          SERVICES_MATRIX=$(build_matrix "$DOMAIN_SERVICES")
+
+          echo "infra_matrix: $INFRA_MATRIX"
+          echo "services_matrix: $SERVICES_MATRIX"
+          echo "infra_matrix=$INFRA_MATRIX" >> $GITHUB_OUTPUT
+          echo "services_matrix=$SERVICES_MATRIX" >> $GITHUB_OUTPUT
+
+  # ──────────────────────────────────────────────────────────
+  # 2. 빌드 → S3 업로드 → SSM 배포
+  # ──────────────────────────────────────────────────────────
+  # 2. infra 먼저 배포 (Config Server → Eureka)
+  # ──────────────────────────────────────────────────────────
+  deploy-infra:
+    name: "[infra] 배포 - ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: ${{ needs.detect-changes.result == 'success' && fromJson(needs.detect-changes.outputs.infra_matrix).include[0] != null }}
+
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.infra_matrix) }}
+      max-parallel: 1
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4.7.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Gradlew 실행 권한
+        run: chmod +x gradlew
+
+      - name: 빌드 - ${{ matrix.service }}
+        run: |
+          ./gradlew :apps:${{ matrix.service }}:bootJar -x test
+          JAR=$(find apps/${{ matrix.service }}/build/libs/ -name "*.jar" ! -name "*plain*" | head -1)
+          echo "JAR_PATH=$JAR" >> $GITHUB_ENV
+
+      - name: AWS 인증
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: S3 업로드
+        run: |
+          aws s3 cp "${{ env.JAR_PATH }}" "s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}"
+
+      - name: EC2 Instance ID 조회
+        id: get-instance
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=${{ matrix.ec2_tag }}" "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" --output text)
+          [ "$INSTANCE_ID" = "None" ] && { echo "EC2 없음: ${{ matrix.ec2_tag }}"; exit 1; }
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: SSM 배포 - ${{ matrix.service }}
+        id: ssm-deploy
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ steps.get-instance.outputs.instance_id }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=[
+              \"set -eux\",
+              \"APP_DIR=/opt/ants-camp\",
+              \"mkdir -p \$APP_DIR\",
+              \"JAR_FILE=\$APP_DIR/${{ matrix.service }}.jar\",
+              \"CONTAINER=${{ matrix.container }}\",
+              \"PORT=${{ matrix.port }}\",
+              \"aws s3 cp s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }} \$JAR_FILE\",
+              \"docker stop \$CONTAINER 2>/dev/null || true\",
+              \"docker rm \$CONTAINER 2>/dev/null || true\",
+              \"OLD=\$(docker ps -q --filter publish=\$PORT 2>/dev/null); if [ -n \\\"\$OLD\\\" ]; then docker stop \$OLD 2>/dev/null || true; docker rm \$OLD 2>/dev/null || true; fi\",
+              \"set -a; . \$APP_DIR/.env; set +a\",
+              \"docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT --env-file \$APP_DIR/.env -e SPRING_PROFILES_ACTIVE=prod -v \$JAR_FILE:/app/app.jar:ro eclipse-temurin:17-jre-jammy java -Xms256m -Xmx512m -jar /app/app.jar --server.port=\$PORT --spring.profiles.active=prod\",
+              \"echo '헬스체크 (최대 3분)...'\",
+              \"sleep 30\",
+              \"set +e\",
+              \"HEALTH_OK=0; for i in \$(seq 1 15); do HTTP=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:\$PORT/actuator/health 2>/dev/null); if [ \\\"\$HTTP\\\" = \\\"200\\\" ]; then echo \\\"헬스체크 성공 (시도 \$i)\\\"; HEALTH_OK=1; break; fi; echo \\\"대기 중... (\$i/15, HTTP '\$HTTP')\\\"; sleep 10; done\",
+              \"if [ \\\"\$HEALTH_OK\\\" != \\\"1\\\" ]; then echo \\\"헬스체크 실패\\\"; docker logs --tail 80 \$CONTAINER 2>&1; exit 1; fi\"
+            ]" \
+            --timeout-seconds 400 \
+            --query "Command.CommandId" --output text)
+          echo "command_id=$COMMAND_ID" >> $GITHUB_OUTPUT
+
+      - name: SSM 결과 확인
+        run: |
+          COMMAND_ID="${{ steps.ssm-deploy.outputs.command_id }}"
+          INSTANCE_ID="${{ steps.get-instance.outputs.instance_id }}"
+          for i in $(seq 1 40); do
+            STATUS=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" --query "Status" --output text 2>/dev/null || echo "Pending")
+            echo "[$i/40] Status: $STATUS"
+            if [ "$STATUS" = "Success" ] || [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ]; then break; fi
+            sleep 10
+          done
+          RESULT=$(aws ssm get-command-invocation --command-id "$COMMAND_ID" --instance-id "$INSTANCE_ID" \
+            --query '{Status: Status, Output: StandardOutputContent, Error: StandardErrorContent}' --output json)
+          echo "=== EC2 실행 로그 ==="
+          echo "$RESULT" | jq -r '.Output'
+          STATUS_FINAL=$(echo "$RESULT" | jq -r '.Status')
+          echo "최종 상태: $STATUS_FINAL"
+          if [ "$STATUS_FINAL" != "Success" ]; then
+            echo "=== 에러 로그 ==="
+            echo "$RESULT" | jq -r '.Error'
+            echo "배포 실패 (Status: $STATUS_FINAL)"
+            exit 1
+          fi
+
+  # ──────────────────────────────────────────────────────────
+  # 3. 도메인 서비스 배포 (infra 완료 후 실행)
+  # ──────────────────────────────────────────────────────────
+  deploy:
+    name: "배포 - ${{ matrix.service }}"
+    runs-on: ubuntu-latest
+    needs: [detect-changes, deploy-infra]
+    if: |
+      always() &&
+      needs.detect-changes.result == 'success' &&
+      (needs.deploy-infra.result == 'success' || needs.deploy-infra.result == 'skipped') &&
+      fromJson(needs.detect-changes.outputs.services_matrix).include[0] != null
+
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.services_matrix) }}
+      max-parallel: 1
+      fail-fast: false
+
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: JDK 17 설정
+        uses: actions/setup-java@v4.7.0
+
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Gradlew 실행 권한
+        run: chmod +x gradlew
+
+      # ── 빌드 ─────────────────────────────────────────────
+      - name: 빌드 - ${{ matrix.service }}
+        run: |
+          ./gradlew :apps:${{ matrix.service }}:bootJar -x test
+          JAR=$(find apps/${{ matrix.service }}/build/libs/ -name "*.jar" ! -name "*plain*" | head -1)
+          echo "JAR_PATH=$JAR" >> $GITHUB_ENV
+          echo "빌드 완료: $JAR"
+
+      # ── AWS 인증 ─────────────────────────────────────────
+      - name: AWS 인증
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── S3 업로드 ─────────────────────────────────────────
+      - name: S3 업로드
+        run: |
+          aws s3 cp "${{ env.JAR_PATH }}" \
+            "s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}"
+          echo "업로드 완료: s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}"
+
+      # ── 배포 대상 EC2 Instance ID 조회 ───────────────────
+      - name: EC2 Instance ID 조회
+        id: get-instance
+        run: |
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters \
+              "Name=tag:Name,Values=${{ matrix.ec2_tag }}" \
+              "Name=instance-state-name,Values=running" \
+            --query "Reservations[0].Instances[0].InstanceId" \
+            --output text)
+
+          if [ "$INSTANCE_ID" = "None" ] || [ -z "$INSTANCE_ID" ]; then
+            echo "실행 중인 EC2 없음: ${{ matrix.ec2_tag }}"
+            exit 1
+          fi
+
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+          echo "배포 대상 EC2: $INSTANCE_ID (${{ matrix.ec2_tag }})"
+
+      # ── SSM Run Command 배포 ──────────────────────────────
+      # 흐름: S3에서 JAR 다운로드 → 기존 컨테이너 중지 → 새 컨테이너 기동
+      - name: SSM 배포 - ${{ matrix.service }}
+        id: ssm-deploy
+        run: |
+          COMMAND_ID=$(aws ssm send-command \
+            --instance-ids "${{ steps.get-instance.outputs.instance_id }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=[
+              \"set -eux\",
+              \"echo '=== 배포 시작: ${{ matrix.service }} ===' \",
+              \"APP_DIR=/opt/ants-camp\",
+              \"JAR_FILE=\$APP_DIR/${{ matrix.service }}.jar\",
+              \"CONTAINER=${{ matrix.container }}\",
+              \"PORT=${{ matrix.port }}\",
+              \"echo 'S3에서 JAR 다운로드...' \",
+              \"aws s3 cp s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }} \$JAR_FILE\",
+              \"echo '기존 컨테이너 및 포트 정리...' \",
+              \"docker stop \$CONTAINER 2>/dev/null || true\",
+              \"docker rm \$CONTAINER 2>/dev/null || true\",
+              \"OLD=\$(docker ps -q --filter publish=\$PORT 2>/dev/null); if [ -n \\\"\$OLD\\\" ]; then echo \\\"포트 \$PORT 사용 중인 컨테이너 강제 제거: \$OLD\\\"; docker stop \$OLD 2>/dev/null || true; docker rm \$OLD 2>/dev/null || true; fi\",
+              \"echo '새 컨테이너 기동...' \",
+              \"set -a; . \$APP_DIR/.env; set +a\",
+              \"docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT --env-file \$APP_DIR/.env -e SPRING_PROFILES_ACTIVE=prod -v \$JAR_FILE:/app/app.jar:ro eclipse-temurin:17-jre-jammy java -Xms256m -Xmx512m -jar /app/app.jar --server.port=\$PORT --spring.profiles.active=prod\",
+              \"echo '헬스체크 (최대 3분)...' \",
+              \"sleep 30\",
+              \"set +e\",
+              \"HEALTH_OK=0; for i in \$(seq 1 15); do HTTP=\$(curl -s -o /dev/null -w '%{http_code}' http://localhost:\$PORT/actuator/health 2>/dev/null); if [ \\\"\$HTTP\\\" = \\\"200\\\" ]; then echo \\\"헬스체크 성공 (시도 \$i)\\\"; HEALTH_OK=1; break; fi; echo \\\"대기 중... (\$i/15, HTTP '\$HTTP')\\\"; sleep 10; done\",
+              \"if [ \\\"\$HEALTH_OK\\\" != \\\"1\\\" ]; then echo \\\"헬스체크 실패 - 컨테이너 로그:\\\"; docker logs --tail 80 \$CONTAINER 2>&1; exit 1; fi\"
+            ]" \
+            --timeout-seconds 300 \
+            --query "Command.CommandId" \
+            --output text)
+
+          echo "command_id=$COMMAND_ID" >> $GITHUB_OUTPUT
+          echo "SSM Command ID: $COMMAND_ID"
+
+      # ── SSM 실행 결과 대기 ────────────────────────────────
+      - name: SSM 결과 확인
+        run: |
+          COMMAND_ID="${{ steps.ssm-deploy.outputs.command_id }}"
+          INSTANCE_ID="${{ steps.get-instance.outputs.instance_id }}"
+
+          echo "SSM 명령 완료 대기 중... (Command ID: $COMMAND_ID)"
+
+          # polling 방식으로 결과 대기 (waiter 대신)
+          for i in $(seq 1 30); do
+            STATUS=$(aws ssm get-command-invocation \
+              --command-id "$COMMAND_ID" \
+              --instance-id "$INSTANCE_ID" \
+              --query "Status" --output text 2>/dev/null || echo "Pending")
+
+            echo "[$i/30] Status: $STATUS"
+
+            if [ "$STATUS" = "Success" ]; then
+              break
+            elif [ "$STATUS" = "Failed" ] || [ "$STATUS" = "Cancelled" ] || [ "$STATUS" = "TimedOut" ]; then
+              break
+            fi
+            sleep 10
+          done
+
+          # 전체 결과 출력
+          RESULT=$(aws ssm get-command-invocation \
+            --command-id "$COMMAND_ID" \
+            --instance-id "$INSTANCE_ID" \
+            --query '{Status: Status, Output: StandardOutputContent, Error: StandardErrorContent}' \
+            --output json)
+
+          echo "=== EC2 실행 로그 ==="
+          echo "$RESULT" | jq -r '.Output'
+
+          if [ "$STATUS" != "Success" ]; then
+            echo "=== 에러 로그 ==="
+            echo "$RESULT" | jq -r '.Error'
+            echo "배포 실패 (Status: $STATUS)"
+            exit 1
+          fi
+
+          echo "배포 성공: ${{ matrix.service }}"
+
+      # ── 결과 요약 ─────────────────────────────────────────
+      - name: 배포 결과 요약
+        if: always()
+        run: |
+          echo "### ${{ matrix.service }} 배포 결과" >> $GITHUB_STEP_SUMMARY
+          echo "- EC2: \`${{ matrix.ec2_tag }}\` (\`${{ steps.get-instance.outputs.instance_id }}\`)" >> $GITHUB_STEP_SUMMARY
+          echo "- JAR: \`s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 커밋: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
