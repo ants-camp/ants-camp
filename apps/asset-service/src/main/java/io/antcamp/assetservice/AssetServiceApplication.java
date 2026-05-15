@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 @EnableDiscoveryClient
 @EnableFeignClients
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"io.antcamp.assetservice", "common"})
 public class AssetServiceApplication {
 
     public static void main(String[] args) {
