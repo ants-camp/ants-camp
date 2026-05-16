@@ -1,6 +1,7 @@
 package io.antcamp.assetservice.domain.model;
 
-import io.antcamp.assetservice.domain.exception.InvalidAmountException;
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import lombok.Getter;
 
 import java.util.UUID;
@@ -68,7 +69,7 @@ public class Holding {
         validateStockAmount(quantity);
 
         if (this.stockAmount < quantity) {
-            throw new InvalidAmountException("보유 수량보다 많이 매도할 수 없습니다.");
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT); // ✅ 변경
         }
 
         this.stockAmount -= quantity;
@@ -80,13 +81,13 @@ public class Holding {
 
     private static void validateStockAmount(Integer stockAmount) {
         if (stockAmount == null || stockAmount <= 0) {
-            throw new InvalidAmountException("주식 수량은 0보다 커야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT); // ✅ 변경
         }
     }
 
     private static void validatePrice(Long price) {
         if (price == null || price <= 0) {
-            throw new InvalidAmountException("주식 가격은 0보다 커야 합니다.");
+            throw new BusinessException(ErrorCode.INVALID_AMOUNT); // ✅ 변경
         }
     }
 

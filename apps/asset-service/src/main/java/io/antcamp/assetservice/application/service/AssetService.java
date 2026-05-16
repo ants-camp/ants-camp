@@ -1,9 +1,9 @@
 package io.antcamp.assetservice.application.service;
 
+import common.exception.BusinessException;
+import common.exception.ErrorCode;
 import io.antcamp.assetservice.application.dto.query.AssetResult;
 import io.antcamp.assetservice.application.dto.query.ParticipantTotalAssetResult;
-import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
-import io.antcamp.assetservice.domain.exception.UnauthorizedAccountAccessException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.model.Holding;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
@@ -61,12 +61,12 @@ public class AssetService {
     @Transactional(readOnly = true)
     public Account getAccountWithValidation(UUID accountId, UUID userId) {
         Account account = accountRepository.findById(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND)); // ✅ 변경
 
         if (!account.getUserId().equals(userId)) {
             log.warn("[Asset] 권한 없는 계좌 접근 시도. accountId={}, 요청userId={}, 계좌ownerId={}",
                     accountId, userId, account.getUserId());
-            throw new UnauthorizedAccountAccessException("해당 계좌에 접근할 권한이 없습니다.");
+            throw new BusinessException(ErrorCode.UNAUTHORIZED_ACCOUNT_ACCESS); // ✅ 변경
         }
         return account;
     }
@@ -119,7 +119,7 @@ public class AssetService {
     public void endAccount(UUID accountId) {
         log.info("[Asset] 계좌 종료 요청. accountId={}", accountId);
         Account account = accountRepository.findByIdWithLock(accountId)
-                .orElseThrow(() -> new AccountNotFoundException("계좌를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.ACCOUNT_NOT_FOUND)); // ✅ 변경
 
         account.end();
         accountRepository.save(account);

@@ -1,6 +1,5 @@
 package io.antcamp.assetservice.infrastructure.persistence;
 
-import io.antcamp.assetservice.domain.exception.AccountNotFoundException;
 import io.antcamp.assetservice.domain.model.Account;
 import io.antcamp.assetservice.domain.repository.AccountRepository;
 import io.antcamp.assetservice.infrastructure.entity.AccountEntity;
