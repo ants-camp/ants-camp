@@ -58,6 +58,13 @@ jar_keys = {
   assistant     = "jars/assistant-service.jar"
 }
 
+# ── ECR (Elastic Container Registry) ─────────────────────────
+# 각 서비스의 Docker 멀티 스테이지 빌드 이미지를 저장하는 리포지토리
+# terraform apply 후 출력되는 ecr_registry_url 값을 GitHub Variables → ECR_REGISTRY 에 설정
+
+# ECR 리포지토리당 보관할 최대 이미지 수 (초과분 자동 삭제)
+ecr_image_retention_count = 10
+
 # ── Config Server ──────────────────────────────────────────────
 config_git_uri      = "https://github.com/your-org/config-repo"
 config_git_username = ""          # private repo 인 경우
