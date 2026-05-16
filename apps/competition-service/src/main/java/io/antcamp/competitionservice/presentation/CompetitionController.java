@@ -7,7 +7,6 @@ import io.antcamp.competitionservice.application.dto.CancelCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.CreateCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.JoinCompetitionCommand;
 import io.antcamp.competitionservice.application.dto.UpdateCompetitionCommand;
-import io.antcamp.competitionservice.application.event.CompetitionEventProducer;
 import io.antcamp.competitionservice.domain.model.Competition;
 import io.antcamp.competitionservice.domain.model.CompetitionStatus;
 import io.antcamp.competitionservice.infrastructure.scheduler.CompetitionTickScheduler;
@@ -48,7 +47,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class CompetitionController implements CompetitionControllerDocs {
 
     private final CompetitionTickScheduler competitionTickScheduler;
-    private final CompetitionEventProducer competitionEventProducer;
     private final CompetitionService competitionService;
     private final CompetitionParticipantService competitionParticipantService;
 

@@ -146,10 +146,6 @@ public class Competition {
         if (status != CompetitionStatus.PREPARING) {
             throw new BusinessException(ErrorCode.COMPETITION_CANNOT_START);
         }
-        // [변경] 시간 검증 제거 - 운영자 수동 트리거 정책
-        // if (!competitionPeriod.isOngoing()) {
-        //     throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
-        // }
         if (!participantCount.isMetMinimum()) {
             throw new BusinessException(ErrorCode.COMPETITION_MIN_PARTICIPANTS_NOT_MET);
         }
@@ -160,10 +156,6 @@ public class Competition {
         if (status != CompetitionStatus.ONGOING) {
             throw new BusinessException(ErrorCode.COMPETITION_CANNOT_FINISH);
         }
-        // [변경] 시간 검증 제거 - 운영자 수동 트리거 정책
-        // if (competitionPeriod.isOngoing()) {
-        //     throw new BusinessException(ErrorCode.COMPETITION_INVALID_STATUS);
-        // }
         this.status = CompetitionStatus.FINISHED;
     }
 

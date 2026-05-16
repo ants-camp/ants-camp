@@ -24,11 +24,6 @@ public class CompetitionPeriod {
         return new CompetitionPeriod(startAt, endAt);
     }
 
-    public boolean isOngoing() {
-        LocalDateTime now = LocalDateTime.now();
-        return now.isAfter(startAt) && now.isBefore(endAt);
-    }
-
     public LocalDateTime getStartAt() {
         return startAt;
     }
