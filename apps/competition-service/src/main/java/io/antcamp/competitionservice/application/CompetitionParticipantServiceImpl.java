@@ -33,11 +33,10 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
 
         if (competition.getRegisterPeriod().getEndAt().isBefore(LocalDateTime.now())) {
-            // 대회 신청기간이 지나서 신청할 수 없습니다 예외 반환
             throw new BusinessException(ErrorCode.COMPETITION_CANNOT_REGISTER);
         }
 
-        // 2. 락 획득 후 중복 신청 체크 (이 시점엔 앞선 트랜잭션이 이미 commit된 상태)
+        // 락 획득 후 중복 신청 체크 (이 시점엔 앞선 트랜잭션이 이미 commit된 상태)
         competitionParticipantRepository.findByUserIdAndCompetitionId(command.userId(), command.competitionId())
                 .ifPresent(p -> {
                     throw new BusinessException(ErrorCode.COMPETITION_ALREADY_REGISTERED);
@@ -46,7 +45,6 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
         competition.register();
         competitionRepository.save(competition);
 
-        // 3. 대회 참여자 저장
         CompetitionParticipant participant = CompetitionParticipant.create(
                 command.userId(),
                 command.username(),
@@ -54,7 +52,7 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
         );
         CompetitionParticipant saved = competitionParticipantRepository.save(participant);
 
-        // 4. Spring 내부 이벤트 발행 → DB 커밋 완료 후 리스너가 Kafka로 전달
+        // DB 커밋 완료 후 리스너가 Kafka로 전달
         applicationEventPublisher.publishEvent(new CompetitionRegisteredEvent(
                 competition.getCompetitionId(),
                 competition.getName(),
@@ -74,15 +72,13 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
         competition.cancelRegister();
         competitionRepository.save(competition);
 
-        // 2. 참여자 조회 (비관적 락)
         CompetitionParticipant participant = competitionParticipantRepository
                 .findByUserIdAndCompetitionId(command.userId(), command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_NOT_FOUND));
 
-        // 3. 참여자 소프트 삭제
         competitionParticipantRepository.delete(participant, command.userId().toString());
 
-        // 4. Spring 내부 이벤트 발행 → DB 커밋 완료 후 리스너가 Kafka로 전달
+        // DB 커밋 완료 후 리스너가 Kafka로 전달
         applicationEventPublisher.publishEvent(new CompetitionCancelledEvent(
                 command.competitionId(),
                 command.userId()
@@ -91,7 +87,6 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
         return participant;
     }
 
-    // 대회 참가자 목록 조회
     @Transactional(readOnly = true)
     public List<CompetitionParticipant> findAllByCompetitionId(UUID competitionId) {
         return competitionParticipantRepository.findAllByCompetitionId(competitionId);

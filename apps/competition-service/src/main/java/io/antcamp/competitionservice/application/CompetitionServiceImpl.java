@@ -78,7 +78,6 @@ public class CompetitionServiceImpl implements CompetitionService {
         return competitionRepository.save(competition);
     }
 
-    // 대회의 정보를 변경하고 변경 내역을 competition_change_notice에 저장
     @Override
     @Transactional
     public Competition updateInfo(UpdateCompetitionCommand command) {
@@ -93,7 +92,7 @@ public class CompetitionServiceImpl implements CompetitionService {
                 ParticipantCount.of(command.minParticipants(), command.maxParticipants())
         );
 
-        // isReadable = true인 경우 변경 공지 저장
+        // 공개된 대회만 변경 공지를 남긴다
         if (competition.isReadable()) {
             CompetitionChangeNotice notice = CompetitionChangeNotice.create(
                     competition.getCompetitionId(),
@@ -114,7 +113,6 @@ public class CompetitionServiceImpl implements CompetitionService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
 
-        // 도메인 상태 변경 (PREPARING -> ONGOING)
         // 계좌 생성은 대회 신청 시점에 이미 완료되므로 별도 이벤트 발행 없음
         competition.startCompetition();
         return competitionRepository.save(competition);
@@ -126,30 +124,24 @@ public class CompetitionServiceImpl implements CompetitionService {
         Competition competition = competitionRepository.findById(competitionId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_NOT_FOUND));
 
-        // 1. 도메인 상태 변경 (ONGOING -> FINISHED)
         competition.finishCompetition();
         Competition saved = competitionRepository.save(competition);
 
-        // 2. 참가자 userId 목록 조회
         List<CompetitionParticipant> participants = competitionParticipantRepository.findAllByCompetitionId(
                 competitionId);
         List<UUID> participantUserIds = participants.stream()
                 .map(CompetitionParticipant::getUserId)
                 .toList();
 
-        // 3. 대회 종료 이벤트 발행 (자산 서비스가 컨슘 → 최종 총자산 계산 후 랭킹 서비스로 전달)
-        CompetitionEndedEvent event = new CompetitionEndedEvent(
+        // 자산 서비스가 컨슘 → 최종 총자산 계산 후 랭킹 서비스로 전달
+        applicationEventPublisher.publishEvent(new CompetitionEndedEvent(
                 saved.getCompetitionId(),
                 participantUserIds,
                 LocalDateTime.now()
-        );
-
-        // 대회가 끝나고, 최종 랭킹을 계산하도록 하는 이벤트 발행
-        applicationEventPublisher.publishEvent(event);
+        ));
         return saved;
     }
 
-    // 대회의 상태를 취소됨으로 변경 및 대회 취소됨 이벤트 발행
     @Override
     @Transactional
     public Competition cancelCompetition(UUID competitionId) {
@@ -158,14 +150,13 @@ public class CompetitionServiceImpl implements CompetitionService {
         competition.cancelCompetition();
         Competition saved = competitionRepository.save(competition);
 
-        // 참가자 userId 목록 조회 후 대회 취소 이벤트 발행
         List<UUID> participantUserIds = competitionParticipantRepository
                 .findAllByCompetitionId(competitionId)
                 .stream()
                 .map(CompetitionParticipant::getUserId)
                 .toList();
 
-        // 이미 대회에 참가 신청을 한 유저의 계좌를 정리하도록 하는 이벤트 발행
+        // 참가자 계좌 정리를 위해 이벤트 발행
         CompetitionAbortedEvent event = new CompetitionAbortedEvent(saved.getCompetitionId(), participantUserIds);
         applicationEventPublisher.publishEvent(event);
 
@@ -197,7 +188,6 @@ public class CompetitionServiceImpl implements CompetitionService {
         return competitionRepository.findAllByCompetitionStatus(status, pageable);
     }
 
-    // 대회 변경 이력 목록을 조회(사용자들이 대회의 변경사항을 알 수 있도록)
     @Override
     @Transactional(readOnly = true)
     public List<CompetitionChangeNotice> findChangeNotices(UUID competitionId) {

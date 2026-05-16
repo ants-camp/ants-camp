@@ -24,9 +24,6 @@ public class Competition {
     private CompetitionPeriod competitionPeriod;
     private ParticipantCount participantCount;
 
-    /**
-     * 신규 대회 생성용 빌더 생성자. 외부에서는 createCompetition() 정적 팩토리 메서드를 통해서만 호출 가능.
-     */
     @Builder(access = AccessLevel.PRIVATE)
     private Competition(
             String name,

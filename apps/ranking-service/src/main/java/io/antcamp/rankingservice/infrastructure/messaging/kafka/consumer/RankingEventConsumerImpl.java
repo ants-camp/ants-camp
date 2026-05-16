@@ -19,7 +19,7 @@ public class RankingEventConsumerImpl implements RankingEventConsumer {
     private final RankingService rankingService;
 
     /**
-     * 대회 종료 후 최종 총자산 수신 → Redis + DB에 최종 순위 확정
+     * 대회 종료 후 최종 총자산 수신 → DB에 최종 순위 확정 후 Redis 동기화
      */
     @Override
     @KafkaListener(

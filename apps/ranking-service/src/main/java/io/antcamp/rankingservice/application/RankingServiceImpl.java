@@ -27,7 +27,7 @@ public class RankingServiceImpl implements RankingService {
 
     // ── Update ────────────────────────────────────────────────────────────────
 
-    // 대회 종료 시 최종 랭킹을 DB에 저장하는 메서드(DB에 관리자가 수동으로 저장할 때 사용)
+    // 관리자 수동 트리거용 - Redis 기준으로 최종 순위를 DB에 확정
     @Override
     @Transactional
     public int finalizeRankings(UUID competitionId) {
@@ -36,11 +36,9 @@ public class RankingServiceImpl implements RankingService {
             return 0;
         }
 
-        // RankingEntry는 유저id, 총자산, 순위로 구성, 전체 참가자의 랭킹 목록 조회
         List<RankingRedisRepository.RankingEntry> all =
                 rankingRedisRepository.getTopRankings(competitionId, 0, totalCount);
 
-        // 참가자마다 최종 순위를 기록하고 isFinalized = true로 저장
         all.forEach(entry -> {
             Ranking ranking = Ranking.createRanking(competitionId, entry.userId());
             ranking.finalize(RankTier.from(entry.rank(), totalCount));
@@ -50,7 +48,6 @@ public class RankingServiceImpl implements RankingService {
         return all.size();
     }
 
-    // 대회 종료 이벤트 수신 시 최종 순위를 DB에 저장하고, 커밋 후 Redis를 동기화하는 메서드
     @Override
     @Transactional
     public void finalizeRankingsWithValuations(
@@ -63,23 +60,20 @@ public class RankingServiceImpl implements RankingService {
 
         long totalCount = valuations.size();
 
-        // 1. valuations를 자산 내림차순 정렬 후 DB에 직접 저장 (Redis 거치지 않음)
-        // Redis는 진행 중 전광판용이고, 최종 결과의 원천은 자산 서비스가 준 확정 데이터
+        // 자산 서비스가 전달한 확정 데이터를 내림차순 정렬해 DB에 직접 저장
+        // Redis는 대회 진행 중 실시간 전광판용이므로 최종 결과의 원천은 이 valuations
         List<TotalAssetCalculatedEvent.ParticipantTotalAsset> sorted = valuations.stream()
                 .sorted((a, b) -> Double.compare(b.totalAsset(), a.totalAsset()))
                 .toList();
 
-        // 참가자마다 랭킹을 기록하고 isFinalized = true로 저장
         for (int i = 0; i < sorted.size(); i++) {
             var v = sorted.get(i);
-            // 랭킹 데이터를 생성
             Ranking ranking = Ranking.createRanking(competitionId, v.userId());
-            // 최중 순위를 기록하고, isFinalized = true로 변경
-            ranking.finalize(RankTier.from((long) i + 1, totalCount)); // 1-based rank
+            ranking.finalize(RankTier.from((long) i + 1, totalCount));
             rankingRepository.save(ranking);
         }
 
-        // 2. DB 커밋 완료 후 Redis를 최종값으로 동기화 (AFTER_COMMIT 리스너가 처리)
+        // DB 커밋 완료 후 Redis를 최종값으로 동기화 (AFTER_COMMIT 리스너가 처리)
         applicationEventPublisher.publishEvent(new RankingFinalizedEvent(competitionId, valuations));
     }
 
@@ -111,13 +105,7 @@ public class RankingServiceImpl implements RankingService {
         // getRank(), getScore() 모두 userId 기반으로 직접 조회하므로
         // 다른 참가자의 순위 변경과 무관하게 항상 정확한 값을 반환한다.
         long rank0based = rankingRedisRepository.getRank(competitionId, userId);
-//        if (rank0based < 0) {
-//            throw new BusinessException(ErrorCode.INVALID_INPUT);
-//        }
         Double totalAsset = rankingRedisRepository.getScore(competitionId, userId);
-//        if (totalAsset == null) {
-//            throw new BusinessException(ErrorCode.INVALID_INPUT);
-//        }
         long rank1based = rank0based + 1;
         return new RankingResult(userId, totalAsset, rank1based);
     }
