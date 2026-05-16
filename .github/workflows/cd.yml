@@ -12,7 +12,11 @@ on:
         default: true
 
 # ============================================================
-# 배포 방식: GitHub Actions → S3 업로드 → SSM Run Command
+# 배포 방식: GitHub Actions → Docker 멀티 스테이지 빌드 → ECR 푸시 → SSM Run Command
+#
+# 빌드: apps/<service>/Dockerfile 의 멀티 스테이지 빌드 활용
+#   Stage 1 (builder) : gradle:8.5-jdk17  — Gradle 빌드
+#   Stage 2           : eclipse-temurin:17-jre — 실행 이미지
 #
 # 필요한 GitHub Secrets:
 #   AWS_ACCESS_KEY_ID      : IAM 액세스 키
@@ -20,7 +24,7 @@ on:
 #
 # 필요한 GitHub Variables:
 #   AWS_REGION             : ap-northeast-2
-#   S3_BUCKET              : ants-camp-deployments
+#   ECR_REGISTRY           : {account_id}.dkr.ecr.ap-northeast-2.amazonaws.com
 #
 # EC2별 서비스 배포 대상:
 #   domain-ec2    : user-service, asset-service, ranking-service
@@ -32,13 +36,13 @@ on:
 
 env:
   AWS_REGION: ${{ vars.AWS_REGION || 'ap-northeast-2' }}
-  S3_BUCKET: ${{ vars.S3_BUCKET || 'ants-camp-deployments' }}
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
 
 concurrency:
   group: deploy-${{ github.ref }}
   cancel-in-progress: true
 
-# ── 서비스 → EC2 태그 / S3 키 / 포트 / 컨테이너명 매핑 ────────
+# ── 서비스 → EC2 태그 / 포트 / 컨테이너명 매핑 ──────────────
 # detect-changes 에서 matrix로 조합해 deploy job에 전달
 # ─────────────────────────────────────────────────────────────
 
@@ -81,26 +85,26 @@ jobs:
 
           # ── 1순위: infra 서비스 (Config Server → Eureka 순서 보장) ──
           INFRA_SERVICES="
-          config-server|ants-camp-infra-ec2|jars/config-server.jar|8888|antcamp-config
-          eureka-server|ants-camp-infra-ec2|jars/eureka-server.jar|8761|antcamp-eureka
+          config-server|ants-camp-infra-ec2|8888|antcamp-config
+          eureka-server|ants-camp-infra-ec2|8761|antcamp-eureka
           "
 
           # ── 2순위: 도메인 서비스 ──────────────────────────────────
           DOMAIN_SERVICES="
-          user-service|ants-camp-domain-ec2|jars/user-service.jar|8082|antcamp-user
-          asset-service|ants-camp-domain-ec2|jars/asset-service.jar|8086|antcamp-asset
-          ranking-service|ants-camp-domain-ec2|jars/ranking-service.jar|8094|antcamp-ranking
-          trade-service|ants-camp-domain2-ec2|jars/trade-service.jar|8084|antcamp-trade
-          competition-service|ants-camp-domain2-ec2|jars/competition-service.jar|8092|antcamp-competition
-          notification-service|ants-camp-notification-ec2|jars/notification-service.jar|8098|antcamp-notification
-          assistant-service|ants-camp-notification-ec2|jars/assistant-service.jar|8096|antcamp-assistant
-          api-gateway|ants-camp-gateway-ec2|jars/api-gateway.jar|8080|antcamp-gateway
+          user-service|ants-camp-domain-ec2|8082|antcamp-user
+          asset-service|ants-camp-domain-ec2|8086|antcamp-asset
+          ranking-service|ants-camp-domain-ec2|8094|antcamp-ranking
+          trade-service|ants-camp-domain2-ec2|8084|antcamp-trade
+          competition-service|ants-camp-domain2-ec2|8092|antcamp-competition
+          notification-service|ants-camp-notification-ec2|8098|antcamp-notification
+          assistant-service|ants-camp-notification-ec2|8096|antcamp-assistant
+          api-gateway|ants-camp-gateway-ec2|8080|antcamp-gateway
           "
 
           build_matrix() {
             local SERVICE_LIST="$1"
             local INCLUDES="[]"
-            while IFS='|' read -r SERVICE EC2_TAG S3_KEY PORT CONTAINER; do
+            while IFS='|' read -r SERVICE EC2_TAG PORT CONTAINER; do
               SERVICE=$(echo "$SERVICE" | xargs)
               [ -z "$SERVICE" ] && continue
               if [ "$DEPLOY_ALL" = "true" ] || [ "$COMMON_CHANGED" -gt "0" ]; then
@@ -112,8 +116,8 @@ jobs:
                 echo "배포 대상: $SERVICE" >&2
                 ENTRY=$(jq -n \
                   --arg svc "$SERVICE" --arg tag "$EC2_TAG" \
-                  --arg key "$S3_KEY" --arg port "$PORT" --arg ctr "$CONTAINER" \
-                  '{service: $svc, ec2_tag: $tag, s3_key: $key, port: $port, container: $ctr}')
+                  --arg port "$PORT" --arg ctr "$CONTAINER" \
+                  '{service: $svc, ec2_tag: $tag, port: $port, container: $ctr}')
                 INCLUDES=$(echo "$INCLUDES" | jq ". += [$ENTRY]")
               fi
             done <<< "$SERVICE_LIST"
@@ -128,8 +132,6 @@ jobs:
           echo "infra_matrix=$INFRA_MATRIX" >> $GITHUB_OUTPUT
           echo "services_matrix=$SERVICES_MATRIX" >> $GITHUB_OUTPUT
 
-  # ──────────────────────────────────────────────────────────
-  # 2. 빌드 → S3 업로드 → SSM 배포
   # ──────────────────────────────────────────────────────────
   # 2. Kafka 상태 확인 및 기동 (가장 먼저)
   # ──────────────────────────────────────────────────────────
@@ -195,22 +197,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: JDK 17 설정
-        uses: actions/setup-java@v4.7.0
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
-
-      - name: Gradlew 실행 권한
-        run: chmod +x gradlew
-
-      - name: 빌드 - ${{ matrix.service }}
-        run: |
-          ./gradlew :apps:${{ matrix.service }}:bootJar -x test
-          JAR=$(find apps/${{ matrix.service }}/build/libs/ -name "*.jar" ! -name "*plain*" | head -1)
-          echo "JAR_PATH=$JAR" >> $GITHUB_ENV
-
       - name: AWS 인증
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -218,9 +204,29 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: S3 업로드
+      # ── ECR 로그인 ────────────────────────────────────────
+      - name: ECR 로그인
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Docker 멀티 스테이지 빌드 & ECR 푸시 ─────────────
+      # apps/<service>/Dockerfile 의 Stage 1(builder)에서 Gradle 빌드,
+      # Stage 2에서 JRE만 포함된 경량 실행 이미지 생성
+      - name: Docker 멀티 스테이지 빌드 & ECR 푸시 - ${{ matrix.service }}
         run: |
-          aws s3 cp "${{ env.JAR_PATH }}" "s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}"
+          ECR_IMAGE=${{ env.ECR_REGISTRY }}/ants-camp/${{ matrix.service }}:${{ github.sha }}
+          ECR_IMAGE_LATEST=${{ env.ECR_REGISTRY }}/ants-camp/${{ matrix.service }}:latest
+
+          docker build \
+            -f apps/${{ matrix.service }}/Dockerfile \
+            -t $ECR_IMAGE \
+            -t $ECR_IMAGE_LATEST \
+            .
+
+          docker push $ECR_IMAGE
+          docker push $ECR_IMAGE_LATEST
+
+          echo "ECR_IMAGE=$ECR_IMAGE" >> $GITHUB_ENV
+          echo "빌드 & 푸시 완료: $ECR_IMAGE"
 
       - name: EC2 Instance ID 조회
         id: get-instance
@@ -239,18 +245,24 @@ jobs:
             --document-name "AWS-RunShellScript" \
             --parameters "commands=[
               \"set -eux\",
-              \"APP_DIR=/opt/ants-camp\",
-              \"mkdir -p \$APP_DIR\",
-              \"JAR_FILE=\$APP_DIR/${{ matrix.service }}.jar\",
               \"CONTAINER=${{ matrix.container }}\",
               \"PORT=${{ matrix.port }}\",
-              \"aws s3 cp s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }} \$JAR_FILE\",
+              \"ECR_IMAGE=${{ env.ECR_IMAGE }}\",
+              \"echo 'ECR 로그인...'\",
+              \"aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}\",
+              \"echo 'Docker 이미지 Pull...'\",
+              \"docker pull \$ECR_IMAGE\",
+              \"echo '기존 컨테이너 및 포트 정리...'\",
               \"docker stop \$CONTAINER 2>/dev/null || true\",
               \"docker rm \$CONTAINER 2>/dev/null || true\",
               \"OLD=\$(docker ps -q --filter publish=\$PORT 2>/dev/null); if [ -n \\\"\$OLD\\\" ]; then docker stop \$OLD 2>/dev/null || true; docker rm \$OLD 2>/dev/null || true; fi\",
+              \"echo '새 컨테이너 기동...'\",
+              \"APP_DIR=/opt/ants-camp\",
               \"set -a; . \$APP_DIR/.env; set +a\",
               \"ENV_FLAGS=\$(grep -v '^[[:space:]]*#' \$APP_DIR/.env | grep '=' | sed 's/^/-e /' | tr '\n' ' ')\",
-              \"eval docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT \$ENV_FLAGS -v \$JAR_FILE:/app/app.jar:ro eclipse-temurin:17-jre-jammy java -Xms256m -Xmx512m -jar /app/app.jar --server.port=\$PORT --spring.profiles.active=prod\",
+              \"eval docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT \$ENV_FLAGS -e JAVA_TOOL_OPTIONS='-Xms256m -Xmx512m' \$ECR_IMAGE --server.port=\$PORT --spring.profiles.active=prod\",
+              \"echo '사용하지 않는 이미지 정리...'\",
+              \"docker image prune -f\",
               \"echo '헬스체크 (최대 3분)...'\",
               \"sleep 30\",
               \"set +e\",
@@ -285,7 +297,7 @@ jobs:
           fi
 
   # ──────────────────────────────────────────────────────────
-  # 3. 도메인 서비스 배포 (infra 완료 후 실행)
+  # 4. 도메인 서비스 배포 (infra 완료 후 실행)
   # ──────────────────────────────────────────────────────────
   deploy:
     name: "배포 - ${{ matrix.service }}"
@@ -306,26 +318,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4.2.2
 
-      - name: JDK 17 설정
-        uses: actions/setup-java@v4.7.0
-
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-          cache: 'gradle'
-
-      - name: Gradlew 실행 권한
-        run: chmod +x gradlew
-
-      # ── 빌드 ─────────────────────────────────────────────
-      - name: 빌드 - ${{ matrix.service }}
-        run: |
-          ./gradlew :apps:${{ matrix.service }}:bootJar -x test
-          JAR=$(find apps/${{ matrix.service }}/build/libs/ -name "*.jar" ! -name "*plain*" | head -1)
-          echo "JAR_PATH=$JAR" >> $GITHUB_ENV
-          echo "빌드 완료: $JAR"
-
-      # ── AWS 인증 ─────────────────────────────────────────
       - name: AWS 인증
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -333,12 +325,29 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      # ── S3 업로드 ─────────────────────────────────────────
-      - name: S3 업로드
+      # ── ECR 로그인 ────────────────────────────────────────
+      - name: ECR 로그인
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # ── Docker 멀티 스테이지 빌드 & ECR 푸시 ─────────────
+      # apps/<service>/Dockerfile 의 Stage 1(builder)에서 Gradle 빌드,
+      # Stage 2에서 JRE만 포함된 경량 실행 이미지 생성
+      - name: Docker 멀티 스테이지 빌드 & ECR 푸시 - ${{ matrix.service }}
         run: |
-          aws s3 cp "${{ env.JAR_PATH }}" \
-            "s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}"
-          echo "업로드 완료: s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}"
+          ECR_IMAGE=${{ env.ECR_REGISTRY }}/ants-camp/${{ matrix.service }}:${{ github.sha }}
+          ECR_IMAGE_LATEST=${{ env.ECR_REGISTRY }}/ants-camp/${{ matrix.service }}:latest
+
+          docker build \
+            -f apps/${{ matrix.service }}/Dockerfile \
+            -t $ECR_IMAGE \
+            -t $ECR_IMAGE_LATEST \
+            .
+
+          docker push $ECR_IMAGE
+          docker push $ECR_IMAGE_LATEST
+
+          echo "ECR_IMAGE=$ECR_IMAGE" >> $GITHUB_ENV
+          echo "빌드 & 푸시 완료: $ECR_IMAGE"
 
       # ── 배포 대상 EC2 Instance ID 조회 ───────────────────
       - name: EC2 Instance ID 조회
@@ -360,7 +369,7 @@ jobs:
           echo "배포 대상 EC2: $INSTANCE_ID (${{ matrix.ec2_tag }})"
 
       # ── SSM Run Command 배포 ──────────────────────────────
-      # 흐름: S3에서 JAR 다운로드 → 기존 컨테이너 중지 → 새 컨테이너 기동
+      # 흐름: ECR 이미지 Pull → 기존 컨테이너 중지 → 새 컨테이너 기동
       - name: SSM 배포 - ${{ matrix.service }}
         id: ssm-deploy
         run: |
@@ -370,20 +379,24 @@ jobs:
             --parameters "commands=[
               \"set -eux\",
               \"echo '=== 배포 시작: ${{ matrix.service }} ===' \",
-              \"APP_DIR=/opt/ants-camp\",
-              \"JAR_FILE=\$APP_DIR/${{ matrix.service }}.jar\",
               \"CONTAINER=${{ matrix.container }}\",
               \"PORT=${{ matrix.port }}\",
-              \"echo 'S3에서 JAR 다운로드...' \",
-              \"aws s3 cp s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }} \$JAR_FILE\",
+              \"ECR_IMAGE=${{ env.ECR_IMAGE }}\",
+              \"echo 'ECR 로그인...' \",
+              \"aws ecr get-login-password --region ${{ env.AWS_REGION }} | docker login --username AWS --password-stdin ${{ env.ECR_REGISTRY }}\",
+              \"echo 'Docker 이미지 Pull...' \",
+              \"docker pull \$ECR_IMAGE\",
               \"echo '기존 컨테이너 및 포트 정리...' \",
               \"docker stop \$CONTAINER 2>/dev/null || true\",
               \"docker rm \$CONTAINER 2>/dev/null || true\",
               \"OLD=\$(docker ps -q --filter publish=\$PORT 2>/dev/null); if [ -n \\\"\$OLD\\\" ]; then echo \\\"포트 \$PORT 사용 중인 컨테이너 강제 제거: \$OLD\\\"; docker stop \$OLD 2>/dev/null || true; docker rm \$OLD 2>/dev/null || true; fi\",
               \"echo '새 컨테이너 기동...' \",
+              \"APP_DIR=/opt/ants-camp\",
               \"set -a; . \$APP_DIR/.env; set +a\",
               \"ENV_FLAGS=\$(grep -v '^[[:space:]]*#' \$APP_DIR/.env | grep '=' | sed 's/^/-e /' | tr '\n' ' ')\",
-              \"eval docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT \$ENV_FLAGS -v \$JAR_FILE:/app/app.jar:ro eclipse-temurin:17-jre-jammy java -Xms256m -Xmx512m -jar /app/app.jar --server.port=\$PORT --spring.profiles.active=prod\",
+              \"eval docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT \$ENV_FLAGS -e JAVA_TOOL_OPTIONS='-Xms256m -Xmx512m' \$ECR_IMAGE --server.port=\$PORT --spring.profiles.active=prod\",
+              \"echo '사용하지 않는 이미지 정리...' \",
+              \"docker image prune -f\",
               \"echo '헬스체크 (최대 3분)...' \",
               \"sleep 30\",
               \"set +e\",
@@ -405,7 +418,6 @@ jobs:
 
           echo "SSM 명령 완료 대기 중... (Command ID: $COMMAND_ID)"
 
-          # polling 방식으로 결과 대기 (waiter 대신)
           for i in $(seq 1 30); do
             STATUS=$(aws ssm get-command-invocation \
               --command-id "$COMMAND_ID" \
@@ -422,7 +434,6 @@ jobs:
             sleep 10
           done
 
-          # 전체 결과 출력
           RESULT=$(aws ssm get-command-invocation \
             --command-id "$COMMAND_ID" \
             --instance-id "$INSTANCE_ID" \
@@ -447,5 +458,5 @@ jobs:
         run: |
           echo "### ${{ matrix.service }} 배포 결과" >> $GITHUB_STEP_SUMMARY
           echo "- EC2: \`${{ matrix.ec2_tag }}\` (\`${{ steps.get-instance.outputs.instance_id }}\`)" >> $GITHUB_STEP_SUMMARY
-          echo "- JAR: \`s3://${{ env.S3_BUCKET }}/${{ matrix.s3_key }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 이미지: \`${{ env.ECR_IMAGE }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- 커밋: \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
