@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
 
-@FeignClient(name = "assetClient", url = "${feign.url.asset}")
+@FeignClient(name = "assetClient")
 public interface AssetClient {
 
     // 수정 전:
