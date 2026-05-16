@@ -245,6 +245,7 @@ resource "aws_instance" "monitoring" {
     grafana_port        = var.ports["grafana"]
     loki_port           = var.ports["loki"]
     node_exporter_port  = var.ports["node_exporter"]
+    promtail_port       = var.ports["promtail"]
     kafka_ip            = aws_instance.kafka.private_ip
     infra_ip            = aws_instance.infra.private_ip
     domain_ip           = aws_instance.domain.private_ip

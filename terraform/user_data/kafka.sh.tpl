@@ -8,71 +8,70 @@ echo "===== [kafka-ec2] START: $(date) ====="
 apt-get update -y
 apt-get install -y curl wget unzip jq netcat-openbsd awscli
 
-# Java 17
-apt-get install -y openjdk-17-jdk
-export JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+# ── Docker 설치 ───────────────────────────────────────────────
+echo "Installing Docker..."
+curl -fsSL https://get.docker.com | sh
+systemctl enable docker
+systemctl start docker
 
-# ── Kafka 설치 (KRaft 모드) ───────────────────────────────────
-KAFKA_VERSION="3.7.0"
-KAFKA_DIR="/opt/kafka"
-
-wget -q "https://downloads.apache.org/kafka/$${KAFKA_VERSION}/kafka_2.13-$${KAFKA_VERSION}.tgz" \
-  -O /tmp/kafka.tgz
-tar -xzf /tmp/kafka.tgz -C /opt/
-ln -s /opt/kafka_2.13-$${KAFKA_VERSION} $${KAFKA_DIR}
-
-# ── KRaft 설정 ────────────────────────────────────────────────
-KAFKA_CLUSTER_ID=$($${KAFKA_DIR}/bin/kafka-storage.sh random-uuid)
-NODE_ID="${node_id}"
-PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
-
-cat > $${KAFKA_DIR}/config/kraft/server.properties <<EOF
-# KRaft 모드 기본 설정
-process.roles=broker,controller
-node.id=$${NODE_ID}
-controller.quorum.voters=$${NODE_ID}@$${PRIVATE_IP}:${kafka_controller_port}
-
-listeners=PLAINTEXT://$${PRIVATE_IP}:${kafka_broker_port},CONTROLLER://$${PRIVATE_IP}:${kafka_controller_port}
-advertised.listeners=PLAINTEXT://$${PRIVATE_IP}:${kafka_broker_port}
-
-controller.listener.names=CONTROLLER
-inter.broker.listener.name=PLAINTEXT
-listener.security.protocol.map=PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
-
-log.dirs=/var/kafka/data
-num.partitions=3
-default.replication.factor=1
-offsets.topic.replication.factor=1
-transaction.state.log.replication.factor=1
-transaction.state.log.min.isr=1
-
-log.retention.hours=168
-log.segment.bytes=1073741824
-log.retention.check.interval.ms=300000
-auto.create.topics.enable=true
-EOF
-
-# ── 데이터 디렉토리 & 포맷 ────────────────────────────────────
+# ── 데이터 디렉토리 ───────────────────────────────────────────
 mkdir -p /var/kafka/data
-$${KAFKA_DIR}/bin/kafka-storage.sh format \
-  -t $${KAFKA_CLUSTER_ID} \
-  -c $${KAFKA_DIR}/config/kraft/server.properties
+chown -R 1001:1001 /var/kafka/data   # bitnami/kafka 컨테이너 UID
 
-# ── systemd 서비스 등록 ───────────────────────────────────────
-cat > /etc/systemd/system/kafka.service <<EOF
+# ── Private IP 획득 (user_data 실행 시점에 결정) ─────────────
+PRIVATE_IP=$(curl -s http://169.254.169.254/latest/meta-data/local-ipv4)
+echo "Private IP: $PRIVATE_IP"
+
+# ── Kafka 이미지 사전 pull ────────────────────────────────────
+docker pull bitnami/kafka:3.7
+
+# ── Kafka 기동 래퍼 스크립트 ─────────────────────────────────
+# Private IP는 user_data 실행 시점에 스크립트에 고정됨
+cat > /usr/local/bin/start-kafka.sh << SCRIPTEOF
+#!/bin/bash
+exec docker run --rm --name kafka \
+  --log-driver json-file \
+  --log-opt max-size=100m \
+  --log-opt max-file=3 \
+  -p ${kafka_broker_port}:${kafka_broker_port} \
+  -p ${kafka_controller_port}:${kafka_controller_port} \
+  -v /var/kafka/data:/bitnami/kafka/data \
+  -e KAFKA_CFG_NODE_ID=${node_id} \
+  -e KAFKA_CFG_PROCESS_ROLES=broker,controller \
+  -e "KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=${node_id}@0.0.0.0:${kafka_controller_port}" \
+  -e "KAFKA_CFG_LISTENERS=PLAINTEXT://:${kafka_broker_port},CONTROLLER://:${kafka_controller_port}" \
+  -e "KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://$PRIVATE_IP:${kafka_broker_port}" \
+  -e KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT \
+  -e KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER \
+  -e KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true \
+  -e KAFKA_CFG_NUM_PARTITIONS=3 \
+  -e KAFKA_CFG_DEFAULT_REPLICATION_FACTOR=1 \
+  -e KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR=1 \
+  -e KAFKA_CFG_TRANSACTION_STATE_LOG_REPLICATION_FACTOR=1 \
+  -e KAFKA_CFG_TRANSACTION_STATE_LOG_MIN_ISR=1 \
+  -e KAFKA_CFG_LOG_RETENTION_HOURS=168 \
+  -e KAFKA_CFG_LOG_SEGMENT_BYTES=1073741824 \
+  -e "KAFKA_HEAP_OPTS=-Xmx${kafka_heap} -Xms${kafka_heap}" \
+  bitnami/kafka:3.7
+SCRIPTEOF
+
+chmod +x /usr/local/bin/start-kafka.sh
+
+# ── systemd 서비스 ────────────────────────────────────────────
+cat > /etc/systemd/system/kafka.service << EOF
 [Unit]
-Description=Apache Kafka (KRaft)
-After=network.target
+Description=Apache Kafka (KRaft, Docker)
+After=docker.service network-online.target
+Requires=docker.service
 
 [Service]
 Type=simple
-User=root
-Environment="JAVA_HOME=$${JAVA_HOME}"
-Environment="KAFKA_HEAP_OPTS=-Xmx${kafka_heap} -Xms${kafka_heap}"
-ExecStart=$${KAFKA_DIR}/bin/kafka-server-start.sh $${KAFKA_DIR}/config/kraft/server.properties
-ExecStop=$${KAFKA_DIR}/bin/kafka-server-stop.sh
-Restart=on-failure
-RestartSec=10
+Restart=always
+RestartSec=15
+ExecStartPre=-/usr/bin/docker stop kafka
+ExecStartPre=-/usr/bin/docker rm kafka
+ExecStart=/usr/local/bin/start-kafka.sh
+ExecStop=/usr/bin/docker stop kafka
 LimitNOFILE=65536
 
 [Install]
@@ -86,7 +85,7 @@ systemctl start kafka
 # ── Kafka 기동 대기 ───────────────────────────────────────────
 echo "Waiting for Kafka to be ready..."
 for i in $(seq 1 60); do
-  if nc -z localhost "${kafka_broker_port}" 2>/dev/null; then
+  if nc -z localhost ${kafka_broker_port} 2>/dev/null; then
     echo "Kafka is ready!"
     break
   fi
@@ -94,14 +93,14 @@ for i in $(seq 1 60); do
   sleep 5
 done
 
-# ── Node Exporter 설치 (Prometheus 메트릭) ────────────────────
+# ── Node Exporter (시스템 메트릭 → Prometheus) ────────────────
 NODE_EXPORTER_VERSION="1.8.0"
 wget -q "https://github.com/prometheus/node_exporter/releases/download/v$${NODE_EXPORTER_VERSION}/node_exporter-$${NODE_EXPORTER_VERSION}.linux-amd64.tar.gz" \
   -O /tmp/node_exporter.tgz
 tar -xzf /tmp/node_exporter.tgz -C /tmp/
 mv /tmp/node_exporter-$${NODE_EXPORTER_VERSION}.linux-amd64/node_exporter /usr/local/bin/
 
-cat > /etc/systemd/system/node_exporter.service <<EOF
+cat > /etc/systemd/system/node_exporter.service << EOF
 [Unit]
 Description=Prometheus Node Exporter
 After=network.target
@@ -119,7 +118,7 @@ systemctl daemon-reload
 systemctl enable node_exporter
 systemctl start node_exporter
 
-# ── Promtail 설치 (로그 → Loki) ──────────────────────────────
+# ── Promtail (로그 → Loki) ────────────────────────────────────
 PROMTAIL_VERSION="3.0.0"
 wget -q "https://github.com/grafana/loki/releases/download/v$${PROMTAIL_VERSION}/promtail-linux-amd64.zip" \
   -O /tmp/promtail.zip
@@ -129,7 +128,7 @@ chmod +x /usr/local/bin/promtail
 
 mkdir -p /etc/promtail
 
-cat > /etc/promtail/config.yaml <<EOF
+cat > /etc/promtail/config.yaml << EOF
 server:
   http_listen_port: ${promtail_port}
   grpc_listen_port: 0
@@ -141,14 +140,21 @@ clients:
   - url: http://${loki_ip}:${loki_port}/loki/api/v1/push
 
 scrape_configs:
-  - job_name: kafka
+  # Kafka Docker 컨테이너 로그 (json-file 드라이버)
+  - job_name: kafka-docker
+    pipeline_stages:
+      - json:
+          expressions:
+            log: log
+      - output:
+          source: log
     static_configs:
       - targets:
           - localhost
         labels:
           job: kafka
           host: kafka-ec2
-          __path__: /opt/kafka/logs/*.log
+          __path__: /var/lib/docker/containers/*/*.log
 
   - job_name: system
     static_configs:
@@ -160,7 +166,7 @@ scrape_configs:
           __path__: /var/log/syslog
 EOF
 
-cat > /etc/systemd/system/promtail.service <<EOF
+cat > /etc/systemd/system/promtail.service << EOF
 [Unit]
 Description=Promtail (log shipper to Loki)
 After=network.target
@@ -180,3 +186,4 @@ systemctl enable promtail
 systemctl start promtail
 
 echo "===== [kafka-ec2] DONE: $(date) ====="
+echo "  Kafka broker → $PRIVATE_IP:${kafka_broker_port}"

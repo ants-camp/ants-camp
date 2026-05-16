@@ -172,8 +172,8 @@ jobs:
             --parameters "commands=[
               \"set -eux\",
               \"echo 'Kafka 상태 확인...'\",
-              \"if ! systemctl is-active --quiet kafka 2>/dev/null; then echo 'Kafka 미실행 - 기동 시도'; systemctl start kafka 2>/dev/null || true; sleep 10; fi\",
-              \"nc -zv localhost 9092 && echo 'Kafka 포트 확인 성공' || echo 'Kafka 포트 미응답'\"
+              \"if ! docker ps --filter name=^/kafka$ --filter status=running --quiet | grep -q .; then echo 'Kafka 컨테이너 미실행 - 기동 시도'; docker start kafka 2>/dev/null || systemctl start kafka 2>/dev/null || true; sleep 20; fi\",
+              \"nc -zv localhost 9092 && echo 'Kafka 포트 확인 성공' || { echo 'Kafka 포트 미응답 - 배포 중단'; exit 1; }\"
             ]" \
             --timeout-seconds 60 \
             --query "Command.CommandId" --output text)
