@@ -219,6 +219,13 @@ jobs:
       # Stage 2에서 JRE만 포함된 경량 실행 이미지 생성
       - name: Docker 멀티 스테이지 빌드 & ECR 푸시 - ${{ matrix.service }}
         run: |
+          if [ -z "${{ env.ECR_REGISTRY }}" ]; then
+            echo "ECR_REGISTRY 변수가 설정되지 않았습니다."
+            echo "GitHub Repository → Settings → Variables → Actions 에서"
+            echo "ECR_REGISTRY = <account_id>.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com 를 추가해주세요."
+            exit 1
+          fi
+
           ECR_IMAGE=${{ env.ECR_REGISTRY }}/ants-camp/${{ matrix.service }}:${{ github.sha }}
           ECR_IMAGE_LATEST=${{ env.ECR_REGISTRY }}/ants-camp/${{ matrix.service }}:latest
 
@@ -266,7 +273,8 @@ jobs:
               \"APP_DIR=/opt/ants-camp\",
               \"set -a; . \$APP_DIR/.env; set +a\",
               \"ENV_FLAGS=\$(grep -v '^[[:space:]]*#' \$APP_DIR/.env | grep '=' | sed 's/^/-e /' | tr '\n' ' ')\",
-              \"eval docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT \$ENV_FLAGS -e JAVA_TOOL_OPTIONS='-Xms256m -Xmx512m' \$ECR_IMAGE --server.port=\$PORT --spring.profiles.active=prod\",
+              \"export JAVA_TOOL_OPTIONS='-Xms256m -Xmx512m'\",
+              \"eval docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT \$ENV_FLAGS -e JAVA_TOOL_OPTIONS \$ECR_IMAGE --server.port=\$PORT --spring.profiles.active=prod\",
               \"echo '사용하지 않는 이미지 정리...'\",
               \"docker image prune -f\",
               \"echo '헬스체크 (최대 3분)...'\",
@@ -340,6 +348,13 @@ jobs:
       # Stage 2에서 JRE만 포함된 경량 실행 이미지 생성
       - name: Docker 멀티 스테이지 빌드 & ECR 푸시 - ${{ matrix.service }}
         run: |
+          if [ -z "${{ env.ECR_REGISTRY }}" ]; then
+            echo "ECR_REGISTRY 변수가 설정되지 않았습니다."
+            echo "GitHub Repository → Settings → Variables → Actions 에서"
+            echo "ECR_REGISTRY = <account_id>.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com 를 추가해주세요."
+            exit 1
+          fi
+
           ECR_IMAGE=${{ env.ECR_REGISTRY }}/ants-camp/${{ matrix.service }}:${{ github.sha }}
           ECR_IMAGE_LATEST=${{ env.ECR_REGISTRY }}/ants-camp/${{ matrix.service }}:latest
 
@@ -400,7 +415,8 @@ jobs:
               \"APP_DIR=/opt/ants-camp\",
               \"set -a; . \$APP_DIR/.env; set +a\",
               \"ENV_FLAGS=\$(grep -v '^[[:space:]]*#' \$APP_DIR/.env | grep '=' | sed 's/^/-e /' | tr '\n' ' ')\",
-              \"eval docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT \$ENV_FLAGS -e JAVA_TOOL_OPTIONS='-Xms256m -Xmx512m' \$ECR_IMAGE --server.port=\$PORT --spring.profiles.active=prod\",
+              \"export JAVA_TOOL_OPTIONS='-Xms256m -Xmx512m'\",
+              \"eval docker run -d --name \$CONTAINER --restart unless-stopped -p \$PORT:\$PORT \$ENV_FLAGS -e JAVA_TOOL_OPTIONS \$ECR_IMAGE --server.port=\$PORT --spring.profiles.active=prod\",
               \"echo '사용하지 않는 이미지 정리...' \",
               \"docker image prune -f\",
               \"echo '헬스체크 (최대 3분)...' \",
