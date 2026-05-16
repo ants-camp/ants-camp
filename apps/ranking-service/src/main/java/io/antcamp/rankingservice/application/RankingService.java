@@ -11,11 +11,6 @@ public interface RankingService {
     // Update
 
     /**
-     * 매매 체결 시 단건 Redis 갱신 (실시간 순위, DB 저장 없음)
-     */
-    void updateLiveRanking(UUID competitionId, UUID userId, Double totalAsset);
-
-    /**
      * 대회 종료 시 최종 순위 확정 (HTTP - 수동 트리거용)
      *
      * @return 확정된 랭킹 수

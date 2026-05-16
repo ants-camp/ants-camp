@@ -9,7 +9,7 @@ import java.util.UUID;
 public interface RankingRedisRepository {
 
     // Update
-    /** 매매 체결 시 해당 유저의 총자산 점수를 Redis ZSet에 갱신 */
+    /** 해당 유저의 총자산 점수를 Redis ZSet에 저장/갱신 (대회 종료 후 최종 동기화 시 사용) */
     void upsertScore(UUID competitionId, UUID userId, Double totalAsset);
 
     // Read

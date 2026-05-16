@@ -2,7 +2,6 @@ package io.antcamp.rankingservice.domain.repository;
 
 import io.antcamp.rankingservice.domain.model.Ranking;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -13,12 +12,7 @@ public interface RankingRepository {
     // Create / Update
     Ranking save(Ranking ranking);
 
-    // Read
-    Optional<Ranking> findByCompetitionIdAndUserId(UUID competitionId, UUID userId);
-
     // Search
-    List<Ranking> findAllByCompetitionId(UUID competitionId);
-
     /** 특정 유저의 전체 대회 참여 이력 (확정된 것만) */
     List<Ranking> findAllByUserId(UUID userId);
 }
