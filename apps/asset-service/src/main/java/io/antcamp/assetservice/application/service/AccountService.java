@@ -87,7 +87,9 @@ public class AccountService {
         return new AccountResult(
                 account.getAccountId(),
                 account.getAccountNumber(),
-                account.getAccountAmount()
+                account.getAccountAmount(),
+                account.getCompetitionId(),
+                account.isEnded()
         );
     }
 
@@ -131,7 +133,9 @@ public class AccountService {
                 .map(account -> new AccountResult(
                         account.getAccountId(),
                         account.getAccountNumber(),
-                        account.getAccountAmount()
+                        account.getAccountAmount(),
+                        account.getCompetitionId(),
+                        account.isEnded()
                 ))
                 .toList();
 

@@ -177,6 +177,24 @@ public class TradeServiceImpl implements TradeService {
         MinutePriceResponse priceResponse = getKisPrice(request.stockCode(), now);
         String stockName = priceResponse.minutePriceOutput1().stockName();
         double currentPrice = Double.parseDouble(priceResponse.minutePriceOutput1().priceNow());
+        if (currentPrice <= 0) {
+            // output1.stck_prpr 이 0이면 (장 마감 후 KIS 응답) → output2 마지막 캔들 종가로 폴백
+            currentPrice = priceResponse.minutePriceOutput2() != null
+                    && !priceResponse.minutePriceOutput2().isEmpty()
+                    ? priceResponse.minutePriceOutput2().stream()
+                        .mapToDouble(c -> {
+                            try { return Double.parseDouble(c.priceNow()); } catch (Exception e) { return 0; }
+                        })
+                        .filter(p -> p > 0)
+                        .max()
+                        .orElse(0)
+                    : 0;
+            if (currentPrice <= 0) {
+                log.warn("[주문] 현재가 조회 불가 — output1·output2 모두 0 stockCode={}", request.stockCode());
+                throw new BusinessException(ErrorCode.KIS_SERVER_ERROR);
+            }
+            log.info("[주문] output1 현재가 0 → output2 폴백 적용 stockCode={} price={}", request.stockCode(), currentPrice);
+        }
 
         OrderType orderType = request.isMarket() ? OrderType.MARKET : OrderType.LIMIT;
         TradeType tradeType = request.side().equalsIgnoreCase("BUY") ? TradeType.BUY : TradeType.SELL;
