@@ -79,7 +79,7 @@ public class CompetitionParticipantServiceImpl implements CompetitionParticipant
                 .findByUserIdAndCompetitionId(command.userId(), command.competitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_NOT_FOUND));
 
-        // 3. 참여자 소프트 삭제
+        // 3. 참여자 삭제
         competitionParticipantRepository.delete(participant, command.userId().toString());
 
         // 4. Spring 내부 이벤트 발행 → DB 커밋 완료 후 리스너가 Kafka로 전달

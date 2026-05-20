@@ -40,7 +40,8 @@ public class CompetitionParticipantRepositoryImpl implements CompetitionParticip
         CompetitionParticipantEntity entity = competitionParticipantJpaRepository
                 .findByUserIdAndCompetitionIdWithLock(participant.getUserId(), participant.getCompetitionId())
                 .orElseThrow(() -> new BusinessException(ErrorCode.COMPETITION_PARTICIPANT_NOT_FOUND));
-        entity.softDelete(deletedBy);
+
+        competitionParticipantJpaRepository.delete(entity);
     }
 
     // ── Search ────────────────────────────────────────────────────────────────
